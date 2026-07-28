@@ -124,9 +124,19 @@ class JsnHelper
 				foreach ($matches as $match) {
 					$formatNameCustom = preg_replace("|$match[0]|", $user->getField($match[1],true), $formatNameCustom, 1);
 				}
-				$formatNameCustom = str_replace('  ',' ',$formatNameCustom);// Remove multiple white space between fields
-				$formatNameCustom = str_replace('  ',' ',$formatNameCustom);// Remove multiple white space between fields
-				return trim($formatNameCustom);
+				$formatNameCustom = str_replace('  ',' ',$formatNameCustom);
+				$resultName = trim((string) strip_tags($formatNameCustom));
+				if (!empty($resultName) && $resultName !== '-' && strpos($resultName, 'COM_USERS_PROFILE_VALUE_NOT_FOUND') === false) {
+					return $resultName;
+				}
+				$candidates = ['nombre_comercial', 'empresa_agencia', 'razon_social', 'nombre_comercial_ma', 'razon_social_ma'];
+				foreach ($candidates as $candidate) {
+					$val = trim((string) strip_tags($user->getField($candidate, true)));
+					if (!empty($val) && $val !== '-' && strpos($val, 'COM_USERS_PROFILE_VALUE_NOT_FOUND') === false) {
+						return $val;
+					}
+				}
+				return !empty($user->name) ? $user->name : '';
 			break;
 		}
 	}
