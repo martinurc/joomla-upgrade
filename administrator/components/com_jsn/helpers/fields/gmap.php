@@ -89,7 +89,8 @@ class JsnGmapFieldHelper
                 name="' . $item->alias . '_lat"
                 type="textfull"
                 validate="regex"
-                pattern="/[-+]?[0-9]*\.?[0-9]*/"
+                validate_regex="^[-+]?[0-9]*\.?[0-9]*$"
+                pattern="^[-+]?[0-9]*\.?[0-9]*$"
                 id="' . $item->alias . '_lat"
                 ' . $readonly . '
             />
@@ -97,7 +98,8 @@ class JsnGmapFieldHelper
                 name="' . $item->alias . '_lng"
                 type="textfull"
                 validate="regex"
-                pattern="/[-+]?[0-9]*\.?[0-9]*/"
+                validate_regex="^[-+]?[0-9]*\.?[0-9]*$"
+                pattern="^[-+]?[0-9]*\.?[0-9]*$"
                 id="' . $item->alias . '_lng"
                 ' . $readonly . '
             />

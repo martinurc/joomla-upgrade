@@ -17,7 +17,7 @@ ini_set('display_errors', false);
 error_reporting(E_ALL & ~E_STRICT & ~E_NOTICE);
 
 $version=new JVersion();
-if($version->RELEASE=='3.0'){
+if(!empty($version->RELEASE) && $version->RELEASE=='3.0'){
 	JHtml::addIncludePath(JPATH_COMPONENT.'/helpers/j30/html');
 	JFormHelper::addRulePath(JPATH_COMPONENT.'/helpers/j30/rule');
 	define('JSNPREFIX','j30');

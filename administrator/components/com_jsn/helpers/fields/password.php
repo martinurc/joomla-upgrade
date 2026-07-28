@@ -50,7 +50,7 @@ class JsnPasswordFieldHelper
 					minimum_integers="'.$configUsers->get('minimum_integers',0).'"
 					minimum_symbols="'.$configUsers->get('minimum_symbols',0).'"
 					minimum_uppercase="'.$configUsers->get('minimum_uppercase',0).'"
-					'.(($version->RELEASE=='3.0' || $version->getShortVersion()=='3.1.1' || $version->getShortVersion()=='3.1.0') ? 'field="password2" validate="equals" message="COM_USERS_PROFILE_PASSWORD1_MESSAGE"' : 'validate="password"').'
+					'.(((!empty($version->RELEASE) && $version->RELEASE=='3.0') || $version->getShortVersion()=='3.1.1' || $version->getShortVersion()=='3.1.0') ? 'field="password2" validate="equals" message="COM_USERS_PROFILE_PASSWORD1_MESSAGE"' : 'validate="password"').'
 					'.$required.'
 					'.$placeholder.'
 					'.$strengthmeter.'
@@ -62,7 +62,7 @@ class JsnPasswordFieldHelper
 				$xml.='
 				<field name="password2" type="confirmpassword"
 					autocomplete="new-password"
-					'.(($version->RELEASE=='3.0' || $version->getShortVersion()=='3.1.1' || $version->getShortVersion()=='3.1.0') ? '' : 'field="password1" validate="equals" message="COM_USERS_PROFILE_PASSWORD1_MESSAGE"').'
+					'.(((!empty($version->RELEASE) && $version->RELEASE=='3.0') || $version->getShortVersion()=='3.1.1' || $version->getShortVersion()=='3.1.0') ? '' : 'field="password1" validate="equals" message="COM_USERS_PROFILE_PASSWORD1_MESSAGE"').'
 					class="validate-confirmpassword"
 					description="COM_USERS_PROFILE_PASSWORD2_DESC"
 					filter="raw"

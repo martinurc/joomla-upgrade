@@ -243,7 +243,7 @@ class JsnModelField extends JModelAdmin
 		}
 
 		$version=new JVersion();
-		if($version->RELEASE=='3.0') $this->preprocessDataJ30('com_jsn.field', $data);
+		if(!empty($version->RELEASE) && $version->RELEASE=='3.0') $this->preprocessDataJ30('com_jsn.field', $data);
 		else $this->preprocessData('com_jsn.field', $data);
 
 		return $data;

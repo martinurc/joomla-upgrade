@@ -72,7 +72,7 @@ class JsnTextFieldHelper
         $cleanRegex = self::formatJsnRegex($rawRegex);
 
         if (!empty($cleanRegex)) {
-            $regex = 'class="validate-pattern ' . $item->params->get('field_cssclass', '') . '" validate="regex" pattern="' . htmlspecialchars($cleanRegex, ENT_QUOTES, 'UTF-8') . '"';
+            $regex = 'class="validate-pattern ' . $item->params->get('field_cssclass', '') . '" validate="regex" validate_regex="' . htmlspecialchars($cleanRegex, ENT_QUOTES, 'UTF-8') . '" pattern="' . htmlspecialchars($cleanRegex, ENT_QUOTES, 'UTF-8') . '"';
         } else {
             $regex = 'class="' . $item->params->get('field_cssclass', '') . '"';
         }
