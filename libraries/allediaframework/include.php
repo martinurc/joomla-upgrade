@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2016-2023 Joomlashack.com. All rights reserved
+ * @copyright 2016-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -22,9 +23,13 @@
  */
 
 use Alledia\Framework\AutoLoader;
+use Alledia\Framework\Helper;
+use Joomla\CMS\HTML\Helpers\Sidebar;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Version;
+use Joomla\Component\Content\Site\Helper\RouteHelper;
 
+// phpcs:disable PSR1.Files.SideEffects.FoundWithSymbols
 defined('_JEXEC') or die();
 
 if (!defined('ALLEDIA_FRAMEWORK_LOADED')) {
@@ -43,8 +48,13 @@ if (!defined('ALLEDIA_FRAMEWORK_LOADED')) {
     class_alias('\\Alledia\\Framework\\Joomla\Extension\Licensed', '\\Alledia\\Framework\\Extension');
 
     if (Version::MAJOR_VERSION < 4) {
-        // Add some shims for Joomla 3
-        class_alias('JHtmlSidebar', '\\Joomla\\CMS\\HTML\\Helpers\\Sidebar');
+        JLoader::register(ContentHelperRoute::class, JPATH_SITE . '/components/com_content/helpers/route.php');
+
+        // Add shims for Joomla 3
+        Helper::createClassAliases([
+            JHtmlSidebar::class       => Sidebar::class,
+            ContentHelperRoute::class => RouteHelper::class,
+        ]);
     }
 }
 

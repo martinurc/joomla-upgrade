@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="4.0" type="plugin" group="system" method="upgrade">
+	<name>PLG_SYSTEM_RSFORMCONSOLE</name>
+	<author>RSJoomla!</author>
+	<authorEmail>support@rsjoomla.com</authorEmail>
+	<authorUrl>https://www.rsjoomla.com</authorUrl>
+	<copyright>(c) 2015 www.rsjoomla.com</copyright>
+	<license>http://www.gnu.org/copyleft/gpl.html GNU/GPL</license> 
+	<version>1.0.0</version>
+	<description>PLG_SYSTEM_RSFORMCONSOLE_XML_DESCRIPTION</description>
+	<namespace path="src">Rsjoomla\Plugin\System\Rsformconsole</namespace>
+	<files>
+		<folder>src</folder>
+		<filename plugin="rsformconsole">rsformconsole.php</filename>
+		<filename>index.html</filename>
+	</files>
+	<languages>
+		<language tag="en-GB">language/en-GB/en-GB.plg_system_rsformconsole.ini</language>
+		<language tag="en-GB">language/en-GB/en-GB.plg_system_rsformconsole.sys.ini</language>
+	</languages>
+</extension>

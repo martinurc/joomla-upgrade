@@ -28,7 +28,7 @@ class PlgAuthenticationJsn_Auth extends JPlugin
 			self::_setResponse($options, $response);
 			$response->status 	= JAuthentication::STATUS_SUCCESS;
 		}
-		else//if (JFactory::getApplication()->isSite())
+		else
 		{
 			// Get a database object
 			$db		= JFactory::getDbo();

@@ -27,6 +27,10 @@ abstract class RSFormProValidations
 		{
 			$param = str_replace(array("\r","\n"),'', $param);
 		}
+		if (!is_string($extra))
+		{
+			$extra = '';
+		}
 
 		for ($i = 0; $i < strlen($param); $i++)
 		{
@@ -45,6 +49,10 @@ abstract class RSFormProValidations
 		{
 			$param = str_replace(array("\r","\n"),'', $param);
 		}
+		if (!is_string($extra))
+		{
+			$extra = '';
+		}
 
 		for ($i = 0; $i < strlen($param); $i++)
 		{
@@ -62,6 +70,10 @@ abstract class RSFormProValidations
 		if (strpos($param,"\n") !== false)
 		{
 			$param = str_replace(array("\r","\n"),'', $param);
+		}
+		if (!is_string($extra))
+		{
+			$extra = '';
 		}
 
 		for ($i = 0; $i < strlen($param); $i++)
@@ -188,7 +200,14 @@ abstract class RSFormProValidations
 		}
 
 		// IDN convert
-		$email = PunycodeHelper::emailToPunycode($email);
+		try
+		{
+			$email = PunycodeHelper::emailToPunycode($email);
+		}
+		catch (Exception $e)
+		{
+			return false;
+		}
 		list($user, $domain) = explode('@', $email, 2);
 
 		// Does this domain have a mail exchange record?
@@ -345,11 +364,14 @@ abstract class RSFormProValidations
 			$param = str_replace(array("\r","\n"),'', $param);
 		}
 
-		for ($i = 0; $i < strlen($param); $i++)
+		if ($extra !== null)
 		{
-			if (strpos($extra, $param[$i]) === false)
+			for ($i = 0; $i < strlen($param); $i++)
 			{
-				return false;
+				if (strpos($extra, $param[$i]) === false)
+				{
+					return false;
+				}
 			}
 		}
 

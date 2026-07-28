@@ -47,6 +47,10 @@ class SppagebuilderAddonTab extends SppagebuilderAddons
 
 		foreach ($settings->sp_tab_item as $key => $tab)
 		{
+			if (isset($tab->item_visibility) && !$tab->item_visibility) {
+				continue;
+			}
+
 			$icon_top = '';
 			$icon_bottom = '';
 			$icon_right = '';
@@ -149,6 +153,10 @@ class SppagebuilderAddonTab extends SppagebuilderAddons
 
 		foreach ($settings->sp_tab_item as $key => $tab)
 		{
+			if (isset($tab->item_visibility) && !$tab->item_visibility) {
+				continue;
+			}
+			
 			$output .= '<div id="sppb-tab-' . ($this->addon->id . $key) . '" class="sppb-tab-pane sppb-fade' . (($key == 0) ? " active in" : "") . '" role="tabpanel" aria-labelledby="sppb-content-' . ($this->addon->id . $key) . '">' . $tab->content . '</div>';
 		}
 
@@ -407,7 +415,7 @@ class SppagebuilderAddonTab extends SppagebuilderAddons
 
 				if ($tab_style == "custom" && ($nav_position->$size == "nav-left" || $nav_position->$size == "nav-right"))
 				{
-					$loopOutput .= $addon_id . '.sppb-nav { width: ' . $newNavWidth . '% !important;}';
+					$loopOutput .= $addon_id . ' .sppb-nav { width: ' . $newNavWidth . '% !important;}';
 				}
 			}
 			else
@@ -495,7 +503,7 @@ class SppagebuilderAddonTab extends SppagebuilderAddons
 
 				if ($tab_style == "custom" && ($nav_position == "nav-left" || $nav_position == "nav-right"))
 				{
-					$loopOutput .= "$addon_id .sppb-nav { width: $newNavWidth% !important;}";
+					$loopOutput .= $addon_id . ' .sppb-nav { width: ' . $newNavWidth . '% !important;}';
 				}
 			}
 			$loopOutput .= "}";
@@ -587,7 +595,7 @@ class SppagebuilderAddonTab extends SppagebuilderAddons
 
 			if ($tab_style == "custom" && ($nav_position->xl == "nav-left" || $nav_position->xl == "nav-right"))
 			{
-				$loopOutput .= "$addon_id .sppb-nav { width: $newNavWidth%;}";
+				$loopOutput .= $addon_id . ' .sppb-nav { width: ' . $newNavWidth . '%;}';
 			}
 		}
 		else
@@ -641,7 +649,7 @@ class SppagebuilderAddonTab extends SppagebuilderAddons
 
 
 			$newGutter 	 = is_object($navGutter) ? (empty($navGutter->xl) ? 0 : $navGutter->xl) : $navGutter;
-			$newNavWidth = is_object($navWidth) ? (empty($navWidth->xl) ? 30 : $navGutter->xl) : $navWidth;
+			$newNavWidth = is_object($navWidth) ? (empty($navWidth->xl) ? 30 : $navWidth->xl) : $navWidth;
 
 
 			if ($nav_position == "nav-top")
@@ -676,7 +684,7 @@ class SppagebuilderAddonTab extends SppagebuilderAddons
 
 			if ($tab_style == "custom" && ($nav_position == "nav-left" || $nav_position == "nav-right"))
 			{
-				$loopOutput .= "$addon_id .sppb-nav { width: $newNavWidth%;}";
+				$loopOutput .= $addon_id . ' .sppb-nav { width: ' . $newNavWidth . '% !important;}';
 			}
 		}
 
@@ -793,12 +801,14 @@ class SppagebuilderAddonTab extends SppagebuilderAddons
 		$output .= $lodash->color('color', '.sppb-tab-icon', 'data.icon_color');
 		$output .= $lodash->unit('font-size', '.sppb-tab-icon', 'data.icon_fontsize', 'px');
 
+		$output .= '<# if (!_.isEmpty(data.content_border) && data.content_border !== "px") { #>';
 		$output .= '#sppb-addon-{{ data.id }} .sppb-tab-custom-content > div {border-style: solid;}';
+		$output .= '<# } #>';
 		$output .= $lodash->color('background-color', '.sppb-tab-custom-content > div', 'data.content_backround');
 		$output .= $lodash->color('color', '.sppb-tab-custom-content > div', 'data.content_color');
 		$output .= $lodash->unit('border-color', '.sppb-tab-custom-content > div', 'data.content_border_color');
 		$output .= $lodash->unit('border-radius', '.sppb-tab-custom-content > div', 'data.content_border_radius');
-		$output .= $lodash->unit('border', '.sppb-tab-custom-content > div', 'data.content_border');
+		$output .= $lodash->unit('border-width', '.sppb-tab-custom-content > div', 'data.content_border', 'px');
 		$output .= $lodash->spacing('padding', '.sppb-tab-custom-content > div', 'data.content_padding');
 		$output .= $lodash->spacing('margin', '.sppb-tab-custom-content > div', 'data.content_margin');
 
@@ -833,7 +843,7 @@ class SppagebuilderAddonTab extends SppagebuilderAddons
 
 		// Custom
 		$output .= '<# if (data.style == "custom") { #>';
-		$output .= '<# if (!_.isEmpty(data.nav_border)) { #>';
+		$output .= '<# if (!_.isEmpty(data.nav_border) && data.nav_border?.split(" ")?.join("") != "" && data.nav_border !== "px") { #>';
 		$output .= '#sppb-addon-{{ data.id }} .sppb-nav > li > a {border-style: solid;}';
 		$output .= $lodash->unit('border-width', '.sppb-nav > li > a', 'data.nav_border');
 		$output .= $lodash->unit('border-color', '.sppb-nav > li > a', 'data.nav_border_color', '', false);

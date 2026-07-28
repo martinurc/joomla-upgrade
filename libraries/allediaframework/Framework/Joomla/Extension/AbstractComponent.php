@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2016-2023 Joomlashack.com. All rights reserved
+ * @copyright 2016-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -23,10 +24,14 @@
 
 namespace Alledia\Framework\Joomla\Extension;
 
+// phpcs:disable PSR1.Files.SideEffects.FoundWithSymbols
 defined('_JEXEC') or die();
 
+// phpcs:enable PSR1.Files.SideEffects.FoundWithSymbols
+
 use Alledia\Framework\Factory;
-use Alledia\Framework\Joomla\Table\Base as BaseTable;
+use Alledia\Framework\Joomla\AbstractTable;
+use Alledia\Framework\Joomla\Controller\AbstractBase;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Table\Table;
 
@@ -38,7 +43,7 @@ abstract class AbstractComponent extends Licensed
     protected static $instance = null;
 
     /**
-     * @var object
+     * @var AbstractBase|false|null
      */
     protected $controller = null;
 
@@ -62,7 +67,7 @@ abstract class AbstractComponent extends Licensed
      */
     public static function getInstance($namespace = null)
     {
-        if (empty(static::$instance)) {
+        if (static::$instance === null) {
             static::$instance = new static($namespace);
         }
 
@@ -85,15 +90,20 @@ abstract class AbstractComponent extends Licensed
      */
     public function loadController()
     {
-        if (!is_object($this->controller)) {
+        if ($this->controller === null) {
             $app    = Factory::getApplication();
             $client = $app->isClient('administrator') ? 'Admin' : 'Site';
 
-            $controllerClass = 'Alledia\\' . $this->namespace . '\\' . ucfirst($this->license)
-                . '\\Joomla\\Controller\\' . $client;
             require JPATH_COMPONENT . '/controller.php';
 
-            $this->controller = $controllerClass::getInstance($this->namespace);
+            $callable = [
+                '\\Alledia\\' . $this->namespace . '\\' . ucfirst($this->license) . '\\Joomla\\Controller\\' . $client,
+                'getInstance',
+            ];
+
+            $this->controller = is_callable($callable)
+                ? call_user_func($callable, $this->namespace)
+                : false;
         }
     }
 
@@ -103,11 +113,19 @@ abstract class AbstractComponent extends Licensed
      */
     public function executeRedirectTask()
     {
-        $app  = Factory::getApplication();
-        $task = $app->input->getCmd('task');
+        $app = Factory::getApplication();
+        $input = Factory::getInput($app);
 
-        $this->controller->execute($task);
-        $this->controller->redirect();
+        if ($this->controller) {
+            $task = $input->getCmd('task');
+
+            $this->controller->execute($task);
+            $this->controller->redirect();
+
+        } else {
+            $referer = $input->getCmd('referer');
+            $app->redirect($referer);
+        }
     }
 
     /**
@@ -144,11 +162,11 @@ abstract class AbstractComponent extends Licensed
             $type
         );
         if (class_exists($class)) {
-            $db = Factory::getDbo();
+            $db = Factory::getDatabase();
 
             return new $class($db);
         }
 
-        return BaseTable::getInstance($type, $this->namespace . 'Table');
+        return AbstractTable::getInstance($type, $this->namespace . 'Table');
     }
 }

@@ -3,11 +3,11 @@
  * @package     JCE
  * @subpackage  Editor
  *
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -203,11 +203,11 @@ class WFMediaManagerPlugin extends WFMediaManager
                     continue;
                 }
 
-                $options .= '<option value="' . $kv[0] . '">' . Text::_('WF_MEDIAMANAGER_' . strtoupper($kv[0]) . '_TITLE') . '</option>' . "\n";
+                $options .= '<option value="' . htmlspecialchars($kv[0], ENT_QUOTES, 'UTF-8') . '">' . Text::_('WF_MEDIAMANAGER_' . strtoupper($kv[0]) . '_TITLE') . '</option>' . "\n";
             }
 
             foreach ($this->get('_media_options') as $k => $v) {
-                $options .= '<option value="' . $k . '">' . Text::_($v, ucfirst($k)) . '</option>' . "\n";
+                $options .= '<option value="' . htmlspecialchars($k, ENT_QUOTES, 'UTF-8') . '">' . Text::_($v, ucfirst($k)) . '</option>' . "\n";
             }
 
             if ($this->get('allow_iframes')) {
@@ -242,12 +242,14 @@ class WFMediaManagerPlugin extends WFMediaManager
 
         foreach ($extension->getAggregators() as $aggregator) {
 
-            if ($aggregator->getName() === 'audio' || $aggregator->getName() === 'video') {
+            $name = $aggregator->getName();
+
+            if ($name === 'audio' || $name === 'video') {
                 continue;
             }
 
-            $tpl .= '<div class="media_option ' . $aggregator->getName() . '" id="' . $aggregator->getName() . '_options" style="display:none;"><h4>' . Text::_($aggregator->getTitle()) . '</h4>';
-            $tpl .= $extension->loadTemplate($aggregator->getName());
+            $tpl .= '<div class="media_option ' . $name . '" id="' . $name . '_options" style="display:none;"><h4>' . Text::_($aggregator->getTitle()) . '</h4>';
+            $tpl .= $extension->loadTemplate($name);
             $tpl .= '</div>';
         }
 
@@ -356,7 +358,7 @@ class WFMediaManagerPlugin extends WFMediaManager
         }
 
         if ($response === null || $response->code !== 200) {
-            return array('error' => Text::_('Unable to get oEmbed Data - Invalid response from ' . $url));
+            return array('error' => 'Unable to get oEmbed data: invalid response from provider');
         }
 
         return $response->body;

@@ -18,8 +18,8 @@ use HelixUltimate\Framework\Platform\Helper;
 use HelixUltimate\Framework\Platform\Media;
 use HelixUltimate\Framework\System\HelixCache;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\File;
-use Joomla\CMS\Filesystem\Folder;
+use Joomla\Filesystem\File;
+use Joomla\Filesystem\Folder;
 use Joomla\CMS\Http\Http;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Session\Session;
@@ -107,6 +107,15 @@ class Request
 	 */
 	public function initialize()
 	{
+		if (empty($this->action))
+		{
+			echo json_encode($this->report);
+
+			return;
+		}
+
+		Helper::guardAjaxRequest($this->action);
+
 		switch ($this->action)
 		{
 			case 'save-tmpl-style':
@@ -147,6 +156,7 @@ class Request
 
 			case 'upload-media':
 				Media::uploadMedia();
+				break;
 
 			case 'import-tmpl-style':
 				$this->importTemplateStyle();
@@ -224,15 +234,10 @@ class Request
 	 */
 	private function saveTemplateStyle()
 	{
-		$this->report['status'] = false;
-		$this->report['message'] = Text::_('JINVALID_TOKEN');
+		$inputs = $this->getPostedTemplateInputs();
 
-		Session::checkToken() or die(json_encode($this->report));
-
-		$data = $_POST;
-
-		$data['comingsoon_date'] = date('Y-m-d H:i:s', strtotime($data['comingsoon_date']));
-		$dateStatus = $this->validateDate($data['comingsoon_date'], 'Y-m-d H:i:s');
+		$inputs['comingsoon_date'] = date('Y-m-d H:i:s', strtotime($inputs['comingsoon_date'] ?? 'now'));
+		$dateStatus = $this->validateDate($inputs['comingsoon_date'], 'Y-m-d H:i:s');
 
 		if (!$dateStatus) {
 			$this->report['status'] = false;
@@ -240,8 +245,6 @@ class Request
 			$this->report['isDrafted'] = Helper::isDrafted();
 			return;
 		}
-		
-		$inputs = $this->filterInputs($data);
 
 		if (!$this->id || !is_int($this->id))
 		{
@@ -256,6 +259,8 @@ class Request
 			'status' => 'draft',
 			'id' => $this->id
 		];
+
+		Helper::saveLicenseInfo($inputs);
 
 		$key = Helper::generateKey($keyOptions);
 		$cache = new HelixCache($key);
@@ -282,13 +287,7 @@ class Request
 
 	private function draftTemplateStyle()
 	{
-		$this->report['status'] = false;
-		$this->report['message'] = Text::_('JINVALID_TOKEN');
-
-		Session::checkToken() or die(json_encode($this->report));
-
-		$data = $_POST;
-		$inputs = $this->filterInputs($data);
+		$inputs = $this->getPostedTemplateInputs();
 
 		$storeData = array();
 
@@ -395,6 +394,43 @@ class Request
 	}
 
 	/**
+	 * Template fields that must bypass Joomla's default input filter.
+	 *
+	 * @var array<int, string>
+	 * @since 2.2.8
+	 */
+	private const RAW_TEMPLATE_FIELDS = [
+		'before_head',
+		'after_body',
+		'before_body',
+		'custom_css',
+		'custom_js',
+		'copyright',
+		'comingsoon_content',
+	];
+
+	/**
+	 * Get posted template style inputs, preserving raw HTML in custom code, copyright, and coming soon content fields.
+	 *
+	 * @return	array
+	 * @since	2.2.8
+	 */
+	private function getPostedTemplateInputs()
+	{
+		$data = $this->app->input->post->getArray();
+
+		foreach (self::RAW_TEMPLATE_FIELDS as $field)
+		{
+			if ($this->app->input->post->exists($field))
+			{
+				$data[$field] = $this->app->input->post->get($field, '', 'RAW');
+			}
+		}
+
+		return $this->filterInputs($data);
+	}
+
+	/**
 	 * Filter inputs.
 	 *
 	 * @param	array	$inputs		Inputs to filter.
@@ -423,7 +459,11 @@ class Request
 	 */
 	private function copyTemplateLayout()
 	{
-		$this->setLayoutParams();
+		if (!$this->setLayoutParams())
+		{
+			return;
+		}
+
 		$content = '';
 
 		if (isset($this->data['content']))
@@ -453,7 +493,10 @@ class Request
 	 */
 	private function renderTemplateLayout()
 	{
-		$this->setLayoutParams();
+		if (!$this->setLayoutParams())
+		{
+			return;
+		}
 
 		if (file_exists($this->layout_file_path))
 		{
@@ -478,7 +521,10 @@ class Request
 	 */
 	private function removeLayoutFile()
 	{
-		$this->setLayoutParams();
+		if (!$this->setLayoutParams())
+		{
+			return;
+		}
 
 		if (file_exists($this->layout_file_path))
 		{
@@ -499,7 +545,7 @@ class Request
 	{
 		try
 		{
-			$data = $_POST;
+			$data = $this->app->input->post->getArray();
 			$inputs = $this->filterInputs($data);
 
 			if (!$this->id || !is_int($this->id))
@@ -510,7 +556,7 @@ class Request
 			$templateStyle = Helper::getTemplateStyle($this->id);
 			$cache_path    = JPATH_SITE . '/cache/com_templates/templates/' . $templateStyle->template;
 
-			if (Folder::exists($cache_path))
+			if (is_dir($cache_path))
 			{
 				$files = scandir($cache_path);
 
@@ -580,7 +626,7 @@ class Request
 
 		$template_path = JPATH_SITE . '/templates/' . $template . '/webfonts';
 
-		if (!Folder::exists($template_path))
+		if (!is_dir($template_path))
 		{
 			Folder::create($template_path, 0755);
 		}
@@ -634,7 +680,7 @@ class Request
 		$template_path = JPATH_SITE . '/templates/' . $template . '/webfonts/webfonts.json';
 		$plugin_path   = JPATH_PLUGINS . '/system/helixultimate/assets/webfonts/webfonts.json';
 
-		if (File::exists($template_path))
+		if (\file_exists($template_path))
 		{
 			// $json = File::read($template_path);
 			$json = file_get_contents($template_path);
@@ -658,13 +704,15 @@ class Request
 				// Variants
 				foreach ($item->variants as $variant)
 				{
-					$fontVariants .= '<option value="' . $variant . '">' . $variant . '</option>';
+					$safeVariant = htmlspecialchars((string) $variant, ENT_QUOTES, 'UTF-8');
+					$fontVariants .= '<option value="' . $safeVariant . '">' . $safeVariant . '</option>';
 				}
 
 				// Subsets
 				foreach ($item->subsets as $subset)
 				{
-					$fontSubsets .= '<option value="' . $subset . '">' . $subset . '</option>';
+					$safeSubset = htmlspecialchars((string) $subset, ENT_QUOTES, 'UTF-8');
+					$fontSubsets .= '<option value="' . $safeSubset . '">' . $safeSubset . '</option>';
 				}
 
 				$this->report['status']     = true;
@@ -679,7 +727,7 @@ class Request
 	/**
 	 * Set layout params.
 	 *
-	 * @return	void
+	 * @return	bool
 	 * @since	1.0.0
 	 */
 	private function setLayoutParams()
@@ -689,11 +737,33 @@ class Request
 
 		if (isset($this->data['layoutName']))
 		{
-			$this->layout_name = $this->data['layoutName'];
+			$this->layout_name = Helper::sanitizeLayoutName((string) $this->data['layoutName']);
+		}
+
+		if (empty($this->layout_name))
+		{
+			$this->report['status'] = false;
+			$this->report['message'] = 'Invalid layout name';
+
+			return false;
 		}
 
 		$this->layouts_folder_path  = JPATH_SITE . '/templates/' . $this->template . '/layout/';
 		$this->layout_file_path     = $this->layouts_folder_path . $this->layout_name;
+
+		try
+		{
+			\Joomla\Filesystem\Path::check($this->layout_file_path);
+		}
+		catch (\Exception $e)
+		{
+			$this->report['status'] = false;
+			$this->report['message'] = 'Invalid layout path';
+
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
@@ -838,7 +908,9 @@ class Request
 		{
 			foreach ($config as $key => $value)
 			{
-				$data .= ' data-' . $key . '="' . $value . '"';
+				$safeKey = preg_replace('/[^a-z0-9_-]/i', '', (string) $key);
+				$safeValue = htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+				$data .= ' data-' . $safeKey . '="' . $safeValue . '"';
 			}
 		}
 

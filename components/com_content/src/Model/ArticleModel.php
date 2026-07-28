@@ -10,6 +10,7 @@
 
 namespace Joomla\Component\Content\Site\Model;
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Language\Text;
@@ -227,13 +228,32 @@ class ArticleModel extends ItemModel
                 $registry = new Registry($data->attribs);
 
                 $data->params = clone $this->getState('params');
-                $data->params->merge($registry);
+                $globalParams = ComponentHelper::getParams('com_content', true);
+
+                $menuParamsArray = $this->getState('params')->toArray();
+                $articleArray    = [];
+
+                foreach ($menuParamsArray as $key => $value) {
+                    if ($value === 'use_article') {
+                        if ($registry->get($key) != '') {
+                            // Article has an explicit value, use it
+                            $articleArray[$key] = $registry->get($key);
+                        } else {
+                            // Article is "Use Global", fall back to global component param
+                            $articleArray[$key] = $globalParams->get($key);
+                        }
+                    }
+                }
+
+                if (\count($articleArray)) {
+                    $data->params->merge(new Registry($articleArray));
+                }
 
                 $data->metadata = new Registry($data->metadata);
 
                 // Technically guest could edit an article, but lets not check that to improve performance a little.
-                if (!$user->get('guest')) {
-                    $userId = $user->get('id');
+                if (!$user->guest) {
+                    $userId = $user->id;
                     $asset  = 'com_content.article.' . $data->id;
 
                     // Check general edit permission first.
@@ -249,7 +269,7 @@ class ArticleModel extends ItemModel
                 }
 
                 // Compute view access permissions.
-                if ($access = $this->getState('filter.access')) {
+                if ($this->getState('filter.access')) {
                     // If the access filter has been set, we already know this user can view.
                     $data->params->set('access-view', true);
                 } else {
@@ -258,9 +278,9 @@ class ArticleModel extends ItemModel
                     $groups = $user->getAuthorisedViewLevels();
 
                     if ($data->catid == 0 || $data->category_access === null) {
-                        $data->params->set('access-view', in_array($data->access, $groups));
+                        $data->params->set('access-view', \in_array($data->access, $groups));
                     } else {
-                        $data->params->set('access-view', in_array($data->access, $groups) && in_array($data->category_access, $groups));
+                        $data->params->set('access-view', \in_array($data->access, $groups) && \in_array($data->category_access, $groups));
                     }
                 }
 
@@ -269,10 +289,10 @@ class ArticleModel extends ItemModel
                 if ($e->getCode() == 404) {
                     // Need to go through the error handler to allow Redirect to work.
                     throw $e;
-                } else {
-                    $this->setError($e);
-                    $this->_item[$pk] = false;
                 }
+
+                $this->setError($e);
+                $this->_item[$pk] = false;
             }
         }
 
@@ -294,7 +314,7 @@ class ArticleModel extends ItemModel
         if ($hitcount) {
             $pk = (!empty($pk)) ? $pk : (int) $this->getState('article.id');
 
-            $table = Table::getInstance('Content', 'JTable');
+            $table = Table::getInstance('Content', '\\Joomla\\CMS\\Table\\');
             $table->hit($pk);
         }
 
@@ -425,6 +445,7 @@ class ArticleModel extends ItemModel
     protected function cleanCache($group = null, $clientId = 0)
     {
         parent::cleanCache('com_content');
+        parent::cleanCache('mod_articles');
         parent::cleanCache('mod_articles_archive');
         parent::cleanCache('mod_articles_categories');
         parent::cleanCache('mod_articles_category');

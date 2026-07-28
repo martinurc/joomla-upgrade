@@ -191,10 +191,10 @@ abstract class AbstractWebApplication extends AbstractApplication implements Web
      * @since   1.0.0
      */
     public function __construct(
-        Input $input = null,
-        Registry $config = null,
-        WebClient $client = null,
-        ResponseInterface $response = null
+        ?Input $input = null,
+        ?Registry $config = null,
+        ?WebClient $client = null,
+        ?ResponseInterface $response = null
     ) {
         $this->input  = $input ?: new Input();
         $this->client = $client ?: new WebClient();
@@ -321,7 +321,7 @@ abstract class AbstractWebApplication extends AbstractApplication implements Web
 
         // Iterate through the encodings and attempt to compress the data using any found supported encodings.
         foreach ($encodings as $encoding) {
-            if (($supported[$encoding] == 'gz') || ($supported[$encoding] == 'deflate')) {
+            if (in_array($supported[$encoding], ['gz', 'deflate'])) {
                 // Verify that the server supports gzip compression before we attempt to gzip encode the data.
                 // @codeCoverageIgnoreStart
                 if (!\extension_loaded('zlib') || \ini_get('zlib.output_compression')) {
@@ -345,7 +345,6 @@ abstract class AbstractWebApplication extends AbstractApplication implements Web
                 // Set the encoding headers.
                 $this->setHeader('Content-Encoding', $encoding);
                 $this->setHeader('Vary', 'Accept-Encoding');
-                $this->setHeader('X-Content-Encoded-By', 'Joomla');
 
                 // Replace the output with the encoded data.
                 $this->setBody($gzdata);
@@ -479,7 +478,7 @@ abstract class AbstractWebApplication extends AbstractApplication implements Web
 
             echo $html;
         } else {
-            // Check if we have a boolean for the status variable for compatability with v1 of the framework
+            // Check if we have a boolean for the status variable for compatibility with v1 of the framework
             // @deprecated 3.0
             if (\is_bool($status)) {
                 \trigger_deprecation(
@@ -818,7 +817,11 @@ abstract class AbstractWebApplication extends AbstractApplication implements Web
         } else {
             // If not in "Apache Mode" we will assume that we are in an IIS environment and proceed.
             // IIS uses the SCRIPT_NAME variable instead of a REQUEST_URI variable... thanks, MS
-            $uri       .= $this->input->server->getString('SCRIPT_NAME');
+            $scriptname = $this->input->server->getString('SCRIPT_NAME');
+            if (!str_starts_with($scriptname, '/') && !str_ends_with($uri, '/')) {
+                $uri .= '/';
+            }
+            $uri .= $scriptname;
             $queryHost = $this->input->server->getString('QUERY_STRING', '');
 
             // If the QUERY_STRING variable exists append it to the URI string.
@@ -828,7 +831,7 @@ abstract class AbstractWebApplication extends AbstractApplication implements Web
         }
 
         // Extra cleanup to remove invalid chars in the URL to prevent injections through the Host header
-        $uri = str_replace(array("'", '"', '<', '>'), array('%27', '%22', '%3C', '%3E'), $uri);
+        $uri = str_replace(["'", '"', '<', '>'], ['%27', '%22', '%3C', '%3E'], $uri);
 
         return \trim($uri);
     }

@@ -91,20 +91,34 @@ class SppagebuilderAddonPerson extends SppagebuilderAddons
 			$twitterIcon = 'fab fa-twitter';
 		}
 
-		if ($facebook || $twitter || $youtube || $linkedin || $pinterest || $flickr || $dribbble || $behance || $instagram) {
+		$custom_social = (isset($settings->custom_social) && is_array($settings->custom_social)) ? $settings->custom_social : array();
+
+		$social_list = '';
+
+		if ($facebook) 		$social_list .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $facebook . '" aria-label="Facebook"><i class="fab fa-facebook-f" aria-hidden="true" title="Facebook"></i></a></li>';
+		if ($twitter) 		$social_list .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $twitter . '" aria-label="Twitter"><i class="'. $twitterIcon . '" aria-hidden="true" title="Twitter"></i></a></li>';
+		if ($youtube) 		$social_list .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $youtube . '" aria-label="YouTube"><i class="fab fa-youtube" aria-hidden="true" title="YouTube"></i></a></li>';
+		if ($linkedin) 		$social_list .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $linkedin . '" aria-label="LinkedIn"><i class="fab fa-linkedin-in" aria-hidden="true" title="LinkedIn"></i></a></li>';
+		if ($pinterest) 		$social_list .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $pinterest . '" aria-label="Pinterest"><i class="fab fa-pinterest" aria-hidden="true" title="Pinterest"></i></a></li>';
+		if ($flickr) 		$social_list .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $flickr . '" aria-label="Flickr"><i class="fab fa-flickr" aria-hidden="true" title="Flickr"></i></a></li>';
+		if ($dribbble) 		$social_list .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $dribbble . '" aria-label="Dribble"><i class="fab fa-dribbble" aria-hidden="true" title="Dribble"></i></a></li>';
+		if ($behance) 		$social_list .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $behance . '" aria-label="Behance"><i class="fab fa-behance" aria-hidden="true" title="Behance"></i></a></li>';
+		if ($instagram) 		$social_list .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $instagram . '" aria-label="Instagram"><i class="fab fa-instagram" aria-hidden="true" title="Instagram"></i></a></li>';
+
+		foreach ($custom_social as $social_item) {
+			$social_url = (isset($social_item->url) && $social_item->url) ? $social_item->url : '';
+			if (!$social_url) {
+				continue;
+			}
+			$social_label = (isset($social_item->label) && $social_item->label) ? $social_item->label : '';
+			$social_icon = (isset($social_item->icon) && $social_item->icon) ? $social_item->icon : '';
+			$social_list .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $social_url . '" aria-label="' . $social_label . '"><i class="' . $social_icon . '" aria-hidden="true" title="' . $social_label . '"></i></a></li>';
+		}
+
+		if ($social_list) {
 			$social_icons  	.= '<div class="sppb-person-social-icons">';
 			$social_icons 	.= '<ul class="sppb-person-social">';
-
-			if ($facebook) 		$social_icons .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $facebook . '" aria-label="Facebook"><i class="fab fa-facebook-f" aria-hidden="true" title="Facebook"></i></a></li>';
-			if ($twitter) 		$social_icons .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $twitter . '" aria-label="Twitter"><i class="'. $twitterIcon . '" aria-hidden="true" title="Twitter"></i></a></li>';
-			if ($youtube) 		$social_icons .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $youtube . '" aria-label="YouTube"><i class="fab fa-youtube" aria-hidden="true" title="YouTube"></i></a></li>';
-			if ($linkedin) 		$social_icons .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $linkedin . '" aria-label="LinkedIn"><i class="fab fa-linkedin-in" aria-hidden="true" title="LinkedIn"></i></a></li>';
-			if ($pinterest) 		$social_icons .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $pinterest . '" aria-label="Pinterest"><i class="fab fa-pinterest" aria-hidden="true" title="Pinterest"></i></a></li>';
-			if ($flickr) 		$social_icons .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $flickr . '" aria-label="Flickr"><i class="fab fa-flickr" aria-hidden="true" title="Flickr"></i></a></li>';
-			if ($dribbble) 		$social_icons .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $dribbble . '" aria-label="Dribble"><i class="fab fa-dribbble" aria-hidden="true" title="Dribble"></i></a></li>';
-			if ($behance) 		$social_icons .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $behance . '" aria-label="Behance"><i class="fab fa-behance" aria-hidden="true" title="Behance"></i></a></li>';
-			if ($instagram) 		$social_icons .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $instagram . '" aria-label="Instagram"><i class="fab fa-instagram" aria-hidden="true" title="Instagram"></i></a></li>';
-
+			$social_icons 	.= $social_list;
 			$social_icons 	.= '</ul>';
 			$social_icons 	.= '</div>';
 		}
@@ -459,8 +473,15 @@ class SppagebuilderAddonPerson extends SppagebuilderAddons
 			if (!_.isEmpty(data.instagram)) {
 				social_icon_list += `<li><a target="_blank" href="${data.instagram}"><i class="fab fa-instagram"></i></a></li>`;
 			}
+			if (!_.isEmpty(data.custom_social)) {
+				_.each(data.custom_social, function (social_item) {
+					if (social_item && social_item.url) {
+						social_icon_list += `<li><a target="_blank" href="${social_item.url}"><i class="${social_item.icon}"></i></a></li>`;
+					}
+				});
+			}
 
-			// Link 			
+			// Link
 			const isMenu   = _.isObject(data.title_link) && data.title_link.type === "menu" && data.title_link?.menu;
 			const isPage   = _.isObject(data.title_link) && data.title_link.type === "page" && data.title_link?.page;
 			const isUrl    = _.isObject(data.title_link) && data.title_link.type === "url" && data.title_link?.url;
@@ -525,7 +546,7 @@ class SppagebuilderAddonPerson extends SppagebuilderAddons
 									<# } #>
 								<# } #>
 			
-								<# if ( data.facebook || data.twitter || data.youtube || data.linkedin || data.pinterest || data.flickr || data.dribbble || data.behance || data.instagram ) { #>
+								<# if ( data.facebook || data.twitter || data.youtube || data.linkedin || data.pinterest || data.flickr || data.dribbble || data.behance || data.instagram || !_.isEmpty(data.custom_social) ) { #>
 									<div class="sppb-person-social-icons">
 										<ul class="sppb-person-social">
 											{{{social_icon_list}}}
@@ -548,7 +569,7 @@ class SppagebuilderAddonPerson extends SppagebuilderAddons
 									<# if(!_.isEmpty(data.designation)) { #>
 										<span class="sppb-person-designation sp-inline-editable-element" data-id={{data.id}} data-fieldName="designation" contenteditable="true">{{ data.designation}}</span>
 									<# } #>
-									<# if ( data.facebook || data.twitter || data.youtube || data.linkedin || data.pinterest || data.flickr || data.dribbble || data.behance || data.instagram ) { #>
+									<# if ( data.facebook || data.twitter || data.youtube || data.linkedin || data.pinterest || data.flickr || data.dribbble || data.behance || data.instagram || !_.isEmpty(data.custom_social) ) { #>
 										<div class="sppb-person-social-icons">
 											<ul class="sppb-person-social">
 												{{{social_icon_list}}}
@@ -594,7 +615,7 @@ class SppagebuilderAddonPerson extends SppagebuilderAddons
 						<# } #>
 					<# } #>
 
-					<# if ( data.facebook || data.twitter || data.youtube || data.linkedin || data.pinterest || data.flickr || data.dribbble || data.behance || data.instagram ) { #>
+					<# if ( data.facebook || data.twitter || data.youtube || data.linkedin || data.pinterest || data.flickr || data.dribbble || data.behance || data.instagram || !_.isEmpty(data.custom_social) ) { #>
 						<div class="sppb-person-social-icons">
 						<ul class="sppb-person-social">
 							{{{social_icon_list}}}

@@ -10,6 +10,7 @@ class ComposerStaticInit1c526f24bb7f497b9c2a5d6863d9f7f2
         'J' => 
         array (
             'JoomShaper\\SPPageBuilder\\DynamicContent\\' => 40,
+            'JoomShaper\\SPPageBuilder\\Comment\\' => 33,
         ),
     );
 
@@ -17,6 +18,10 @@ class ComposerStaticInit1c526f24bb7f497b9c2a5d6863d9f7f2
         'JoomShaper\\SPPageBuilder\\DynamicContent\\' => 
         array (
             0 => __DIR__ . '/../..' . '/dynamic-content',
+        ),
+        'JoomShaper\\SPPageBuilder\\Comment\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/comment',
         ),
     );
 

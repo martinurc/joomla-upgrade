@@ -41,6 +41,10 @@ class SppagebuilderViewPage extends HtmlView
 		$this->canEdit = $user->authorise('core.edit', 'com_sppagebuilder') ||
 			$user->authorise('core.edit', 'com_sppagebuilder.page.' . $this->item->id) ||
 			($user->authorise('core.edit.own', 'com_sppagebuilder.page.' . $this->item->id) && $this->item->created_by == $user->id);
+
+		$enableFrontendEditing = (bool) ComponentHelper::getParams('com_sppagebuilder')->get('enable_frontend_editing', 1);
+		$this->canEdit = $this->canEdit && $enableFrontendEditing;
+
 		$this->checked_out = ($this->item->checked_out == 0 || $this->item->checked_out == $user->id);
 
 		if (count($errors = (array) $this->get('Errors')))

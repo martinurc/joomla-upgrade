@@ -12,7 +12,7 @@ defined('_JEXEC') or die;
 $jsnConfig=JComponentHelper::getParams('com_jsn');
 
 $doc = JFactory::getDocument();
-if(JFactory::getApplication()->isSite() && $jsnConfig->get('bootstrap',0)) {
+if(\Joomla\CMS\Factory::getApplication()->isClient('site') && $jsnConfig->get('bootstrap',0)) {
 	$doc->addStylesheet(JURI::root().'media/jui/css/bootstrap.min.css');
 	$dir = $doc->direction;
 	if($dir=='rtl')

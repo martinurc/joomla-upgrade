@@ -4,7 +4,7 @@
  * JCE Pro Editor
  *
  * @copyright  (C) 2011 Open Source Matters, Inc. <https://www.joomla.org>
- * @copyright  (C) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright  Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license    GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -14,7 +14,7 @@ use Joomla\CMS\Log\Log;
 use Joomla\CMS\Form\Field\PluginsField;
 
 // phpcs:disable PSR1.Files.SideEffects
-\defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
 /**

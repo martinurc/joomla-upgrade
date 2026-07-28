@@ -148,7 +148,19 @@ class RsformModelConditions extends BaseDatabaseModel
 	
 	public function save()
 	{
-		$post		= Factory::getApplication()->input->post->getArray(array(), null, 'raw');
+		$input = Factory::getApplication()->input->post;
+		$post = array(
+			'id'                    => $input->getInt('id'),
+			'form_id'               => $input->getInt('form_id'),
+			'action'                => $input->get('action'),
+			'block'                 => $input->getInt('block'),
+			'component_id'          => $input->get('component_id', array(), 'array'),
+			'condition'             => $input->get('condition'),
+			'lang_code'             => $input->getString('lang_code'),
+			'detail_component_id'   => $input->get('detail_component_id', array(), 'array'),
+			'operator'              => $input->get('operator', array(), 'array'),
+			'value'                 => $input->get('value', array(), 'array')
+		);
 		$condition 	= Table::getInstance('RSForm_Conditions', 'Table');
 
 		try

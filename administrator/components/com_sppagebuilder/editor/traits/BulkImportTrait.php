@@ -19,6 +19,7 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Uri\Uri;
 use JoomShaper\SPPageBuilder\DynamicContent\Models\Page;
+use JoomShaper\SPPageBuilder\DynamicContent\Supports\Arr;
 
 // No direct access
 defined('_JEXEC') or die('Restricted access');
@@ -28,6 +29,8 @@ defined('_JEXEC') or die('Restricted access');
  */
 trait BulkImportTrait
 {
+    use CommonTrait;
+    
     public function bulkImport()
     {
         $method = $this->getInputMethod();
@@ -36,6 +39,39 @@ trait BulkImportTrait
         if ($method === 'POST') {
             $this->importBulk();
         }
+    }
+
+    /**
+     * Update page data with latest dynamic ids.
+     * 
+     * @param mixed $pageData
+     *
+     * @return mixed
+     * @since 5.7.0
+     */
+    protected function updateDynamicContentPageData($pageData) {
+        if(isset($pageData->dynamicContentData) && !empty($pageData->dynamicContentData)) {
+            $updatedData = $this->importDynamicContentData($pageData->dynamicContentData);
+            $updatedFieldIds = $updatedData['globalFieldsMap'] ?? [];
+            $updatedCollectionIds = $updatedData['globalCollectionsIdMap'] ?? [];
+
+            $isDetailPage = isset($pageData->type) && $pageData->type === Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL;
+            $isIndexPage = isset($pageData->type) && $pageData->type === Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX;
+
+            if (($isDetailPage || $isIndexPage) && isset($pageData->view_id) && !empty($pageData->view_id)) {
+                if (isset($updatedCollectionIds[$pageData->view_id])) {
+                    $pageData->view_id = $updatedCollectionIds[$pageData->view_id];
+                }
+            }
+
+            $templateContent = !is_string($pageData->template) ? json_encode($pageData->template) : $pageData->template;
+
+            $templateContent = $this->updateDynamicIds(json_decode($templateContent), $updatedFieldIds, $updatedCollectionIds);
+
+            $pageData->template = json_encode($templateContent);
+        }
+
+        return $pageData;
     }
 
     /**
@@ -129,6 +165,8 @@ trait BulkImportTrait
                     $pageJsonFullPath = $extractPath . '/' . $pageJson;
                     $pageData = json_decode(file_get_contents($pageJsonFullPath));
 
+                    $pageData = $this->updateDynamicContentPageData($pageData);
+
                     $isSuccess =  $this->createSinglePage($pageData);
 
                     $isAllPagesImported = $isAllPagesImported && $isSuccess;
@@ -167,9 +205,58 @@ trait BulkImportTrait
         
 		$extension = 'com_sppagebuilder';
 		$extensionView = Page::PAGE_TYPE_REGULAR;
+        $view_id = 0;
 
-        if(!empty($pageData->type) === Page::PAGE_TYPE_POPUP){
-            $extensionView = Page::PAGE_TYPE_POPUP;
+        if(!empty($pageData->type)){
+            switch($pageData->type){
+                case Page::PAGE_TYPE_POPUP:
+                    $extensionView = Page::PAGE_TYPE_POPUP;
+                    break;
+
+                case Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL:
+                    $detailPageExists = false;
+                    $pages = $this->getDynamicContentPages();
+
+                    if(!empty($pages)){
+                        $pages = isset($pages[$pageData->view_id]) ? Arr::make($pages[$pageData->view_id]) : [];
+                        foreach ($pages as $item) {
+                            if ($item['extension_view'] === Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL) {
+                                $detailPageExists = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if(!$detailPageExists){
+                        $extensionView = Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL;
+                        if(isset($pageData->view_id) && !empty($pageData->view_id)) {
+                            $view_id = $pageData->view_id;
+                        }
+                    }
+                    break;
+
+                case Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX:
+                    $indexPageExists = false;
+                    $pages = $this->getDynamicContentPages();
+
+                    if(!empty($pages)){
+                        $pages = isset($pages[$pageData->view_id]) ? Arr::make($pages[$pageData->view_id]) : [];
+                        foreach ($pages as $item) {
+                            if ($item['extension_view'] === Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX) {
+                                $indexPageExists = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if(!$indexPageExists){
+                        $extensionView = Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX;
+                        if(isset($pageData->view_id) && !empty($pageData->view_id)) {
+                            $view_id = $pageData->view_id;
+                        }
+                    }
+                    break;
+            }
         }
 
 		$data = [];
@@ -197,13 +284,17 @@ trait BulkImportTrait
 			'modified' => Factory::getDate()->toSql(),
 			'version' => $version,
 		];
+
+        if($view_id) {
+            $data['view_id'] = $view_id;
+        }
         
         if($seoData) {
             $data['attribs'] = $seoData;
         }
 
-        if(!empty($pageData->type)=='popup'){
-            $data['attribs'] = $pageData->attribs;
+        if (!empty($pageData->type) && $pageData->type === 'popup') {
+            $data['attribs'] = isset($pageData->attribs) ? $pageData->attribs : null;
         }
 
 		$result = $model->createPage($data);
@@ -215,6 +306,22 @@ trait BulkImportTrait
 
         return true;
 	}
+
+    private function getDynamicContentPages (){
+        $pages = Page::where('extension', 'com_sppagebuilder')
+                        ->whereLike('extension_view', 'dynamic_content%')
+                        ->get(['extension_view', 'view_id']);
+
+        $pages = Arr::make($pages)->map(function ($item) {
+            return $item->toArray();
+        })->reduce(function ($carry, $item) {
+            $carry[$item['view_id']] ??= [];
+            $carry[$item['view_id']][] = $item;
+            return $carry;
+        }, []);
+
+        return $pages->toArray();
+    }
 
     private function bulkImportWithMedia($extractedFolders, $extractPath)
     {
@@ -304,6 +411,8 @@ trait BulkImportTrait
                     if (!empty($content))
                     {
                         $parsedContent = json_decode($content);
+
+                        $parsedContent = $this->updateDynamicContentPageData($parsedContent);
     
                         if (!isset($parsedContent->template))
                         {

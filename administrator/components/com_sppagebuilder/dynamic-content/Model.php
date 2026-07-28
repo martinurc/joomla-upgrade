@@ -217,7 +217,7 @@ class Model implements ArrayAccess, IteratorAggregate, ModelContract
      * @return string
      * @since 5.5.0
      */
-    public static function createUniqueSlug(string $title, string $alias = null)
+    public static function createUniqueSlug(string $title, ?string $alias = null)
     {
         if (empty($title)) {
             throw new Exception('Title is required to create a unique alias.');

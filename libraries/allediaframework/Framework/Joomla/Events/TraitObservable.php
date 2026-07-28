@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2022-2023 Joomlashack.com. All rights reserved
+ * @copyright 2022-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -68,7 +69,7 @@ trait TraitObservable
      *
      * @return void
      */
-    public function registerEvents($events, object $observable = null, bool $legacyListeners = true): void
+    public function registerEvents($events, ?object $observable = null, bool $legacyListeners = true): void
     {
         $observable = $observable ?: $this;
 

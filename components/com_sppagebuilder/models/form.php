@@ -15,6 +15,7 @@ use Joomla\CMS\Router\Route;
 use Joomla\CMS\Table\Table;
 use JoomShaper\SPPageBuilder\DynamicContent\Constants\FieldTypes;
 use JoomShaper\SPPageBuilder\DynamicContent\Models\CollectionField;
+use JoomShaper\SPPageBuilder\DynamicContent\Services\CollectionsService;
 use JoomShaper\SPPageBuilder\DynamicContent\Supports\Arr;
 
 //no direct access
@@ -27,6 +28,13 @@ JLoader::register('SppagebuilderModelPage', JPATH_ADMINISTRATOR . '/components/c
 
 class SppagebuilderModelForm extends SppagebuilderModelPage
 {
+	public function __construct($config = [])
+    {
+        parent::__construct($config);
+		
+        $this->setDispatcher(\Joomla\CMS\Factory::getApplication()->getDispatcher());
+    }
+
 	protected $_conText = 'com_sppagebuilder.page';
 	protected $_item = array();
 
@@ -138,6 +146,15 @@ class SppagebuilderModelForm extends SppagebuilderModelPage
 				$data->robots = (isset($attribs->robots) && $attribs->robots) ? $attribs->robots : '';
 				$data->og_type = (isset($attribs->og_type) && $attribs->og_type) ? $attribs->og_type : 'website';
 				$data->author = (isset($attribs->author) && $attribs->author) ? $attribs->author : '';
+
+				if (isset($attribs->schema))
+				{
+					$data->schema = json_decode(json_encode($attribs->schema), true);
+				}
+				else
+				{
+					$data->schema = [];
+				}
 
 				$menu = $this->getMenuByPageId($data->id);
 				$data->menuid = (isset($menu->id) && $menu->id) ? $menu->id : 0;
@@ -349,7 +366,8 @@ class SppagebuilderModelForm extends SppagebuilderModelPage
 			'robots',
 			'seo_spacer',
 			'og_type',
-			'author'
+			'author',
+			'schema',
 		];
 
 		$popupKeys = [
@@ -370,6 +388,11 @@ class SppagebuilderModelForm extends SppagebuilderModelPage
 
 		$existingData = $this->getData($id);
 
+		if (!empty($existingData->attribs))
+		{
+			$decoded = json_decode(json_encode($existingData->attribs), true);
+			$attribs = \is_array($decoded) ? $decoded : [];
+		}
 
 		if (!empty($existingData->extension_view) && $existingData->extension_view === 'popup') {
 			$popupTriggerKeys = [
@@ -444,7 +467,7 @@ class SppagebuilderModelForm extends SppagebuilderModelPage
 			$data['catid'] = 0;
 		}
 
-		$data['view_id'] = $data['view_id'] ?: 0;
+		$data['view_id'] = !empty($data['view_id']) ? $data['view_id'] : 0;
 		$data = (object) $data;
 
 		if (empty($id))
@@ -678,8 +701,10 @@ class SppagebuilderModelForm extends SppagebuilderModelPage
 
 				$result->dynamic_fields = [];
 
-				if ($result->extension_view === 'dynamic_content:detail') {
+				if ($result->extension_view === 'dynamic_content:detail' && !empty($result->view_id && $result->view_id !== -2)) {
 					$result->dynamic_fields = $this->getCollectionFields($result->view_id);
+				} else if ($result->extension_view === 'dynamic_content:detail' && !empty($result->view_id && $result->view_id == -2)) {
+					$result->dynamic_fields = $this->getArticleFields();
 				}
 			}
 			
@@ -726,6 +751,28 @@ class SppagebuilderModelForm extends SppagebuilderModelPage
 
 		return $fields->toArray();
 	}
+
+	private function getArticleFields()
+    {
+        $fields = (new CollectionsService)->fetchArticleFieldsForSeo();
+        $fields = array_filter($fields, function ($field) {
+            return $field['id'] !== 0;
+        });
+
+        $fields = Arr::make($fields)->reduce(function ($carry, $field) {
+            if ($field['type'] === FieldTypes::IMAGE) {
+                $carry['image'] ??= [];
+                $carry['image'][] = ['value' => $field['id'], 'label' => '{{' . $field['name'] . '}}', 'type' => $field['type']];
+            } else {
+                $carry['text'] ??= [];
+                $carry['text'][] = ['value' => $field['id'], 'label' => '{{' . $field['name'] . '}}', 'type' => $field['type']];
+            }
+
+            return $carry;
+        }, []);
+
+        return $fields->toArray();
+    }
 
 	public function getPageCreatorId($pageId)
 	{

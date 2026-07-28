@@ -19,6 +19,7 @@ use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
+use Joomla\Database\QueryInterface;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -34,13 +35,13 @@ class ItemsModel extends ListModel
     /**
      * Constructor.
      *
-     * @param   array                $config   An optional associative array of configuration settings.
-     * @param   MVCFactoryInterface  $factory  The factory.
+     * @param   array                 $config   An optional associative array of configuration settings.
+     * @param   ?MVCFactoryInterface  $factory  The factory.
      *
      * @see     \Joomla\CMS\MVC\Model\BaseDatabaseModel
      * @since   3.2
      */
-    public function __construct($config = [], MVCFactoryInterface $factory = null)
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         if (empty($config['filter_fields'])) {
             $config['filter_fields'] = [
@@ -102,29 +103,9 @@ class ItemsModel extends ListModel
             $this->context .= '.' . $forcedLanguage;
         }
 
-        $search = $this->getUserStateFromRequest($this->context . '.search', 'filter_search');
-        $this->setState('filter.search', $search);
-
-        $published = $this->getUserStateFromRequest($this->context . '.published', 'filter_published', '');
-        $this->setState('filter.published', $published);
-
-        $access = $this->getUserStateFromRequest($this->context . '.filter.access', 'filter_access');
-        $this->setState('filter.access', $access);
-
-        $parentId = $this->getUserStateFromRequest($this->context . '.filter.parent_id', 'filter_parent_id');
-        $this->setState('filter.parent_id', $parentId);
-
-        $level = $this->getUserStateFromRequest($this->context . '.filter.level', 'filter_level');
-        $this->setState('filter.level', $level);
-
         // Watch changes in client_id and menutype and keep sync whenever needed.
         $currentClientId = $app->getUserState($this->context . '.client_id', 0);
         $clientId        = $app->getInput()->getInt('client_id', $currentClientId);
-
-        // Load mod_menu.ini file when client is administrator
-        if ($clientId == 1) {
-            Factory::getLanguage()->load('mod_menu', JPATH_ADMINISTRATOR);
-        }
 
         $currentMenuType = $app->getUserState($this->context . '.menutype', '');
         $menuType        = $app->getInput()->getString('menutype', $currentMenuType);
@@ -183,6 +164,11 @@ class ItemsModel extends ListModel
             $this->filterFormName = 'filter_itemsadmin';
         }
 
+        // Load mod_menu.ini file when client is administrator
+        if ($clientId == 1) {
+            Factory::getLanguage()->load('mod_menu', JPATH_ADMINISTRATOR);
+        }
+
         $this->setState('filter.menutype', $menuType);
 
         $language = $this->getUserStateFromRequest($this->context . '.filter.language', 'filter_language', '');
@@ -231,7 +217,7 @@ class ItemsModel extends ListModel
     /**
      * Builds an SQL query to load the list data.
      *
-     * @return  \Joomla\Database\DatabaseQuery    A query object.
+     * @return  QueryInterface    A query object.
      *
      * @since   1.6
      */
@@ -340,7 +326,7 @@ class ItemsModel extends ListModel
             ->bind(':clientId', $clientId, ParameterType::INTEGER);
 
         // Filter on the published state.
-        $published = $this->getState('filter.published');
+        $published = $this->getState('filter.published', '');
 
         if (is_numeric($published)) {
             $published = (int) $published;
@@ -452,7 +438,7 @@ class ItemsModel extends ListModel
                     $query->where(0);
                 }
             }
-        } elseif (strlen($menuType)) {
+        } elseif (\strlen($menuType)) {
             // Default behavior => load all items from a specific menu
             $query->where($db->quoteName('a.menutype') . ' = :menuType')
                 ->bind(':menuType', $menuType);
@@ -511,7 +497,7 @@ class ItemsModel extends ListModel
         if ($name == 'com_menus.items.filter') {
             $clientId = $this->getState('filter.client_id');
             $form->setFieldAttribute('menutype', 'clientid', $clientId);
-        } elseif (false !== strpos($name, 'com_menus.items.modal.')) {
+        } elseif (str_contains($name, 'com_menus.items.modal.')) {
             $form->removeField('client_id');
 
             $clientId = $this->getState('filter.client_id');
@@ -547,7 +533,9 @@ class ItemsModel extends ListModel
                 Log::add(Text::_('COM_MENUS_ERROR_MENUTYPE_NOT_FOUND'), Log::ERROR, 'jerror');
 
                 return false;
-            } elseif (!$this->getCurrentUser()->authorise('core.manage', 'com_menus.menu.' . $cMenu->id)) {
+            }
+
+            if (!$this->getCurrentUser()->authorise('core.manage', 'com_menus.menu.' . $cMenu->id)) {
                 // Check if menu type is valid against ACL.
                 Log::add(Text::_('JERROR_ALERTNOAUTHOR'), Log::ERROR, 'jerror');
 

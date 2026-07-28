@@ -212,7 +212,7 @@ class MediaController extends ApiController
         }
 
         // Content is only required when it is a file
-        if (empty($content) && strpos($path, '.') !== false) {
+        if (empty($content) && str_contains($path, '.')) {
             $missingParameters[] = 'content';
         }
 
@@ -242,6 +242,11 @@ class MediaController extends ApiController
     protected function allowAdd($data = []): bool
     {
         $user = $this->app->getIdentity();
+
+        // In the override mode, adding a file will override and therefore edit an existing file
+        if ($this->input->json->get('override', false)) {
+            return $user->authorise('core.edit', 'com_media');
+        }
 
         return $user->authorise('core.create', 'com_media');
     }
@@ -350,9 +355,9 @@ class MediaController extends ApiController
         // Check if the size of the request body does not exceed various server imposed limits.
         if (
             ($params->get('upload_maxsize', 0) > 0 && $serverlength > ($params->get('upload_maxsize', 0) * 1024 * 1024))
-            || $serverlength > $helper->toBytes(ini_get('upload_max_filesize'))
-            || $serverlength > $helper->toBytes(ini_get('post_max_size'))
-            || $serverlength > $helper->toBytes(ini_get('memory_limit'))
+            || $serverlength > $helper->toBytes(\ini_get('upload_max_filesize'))
+            || $serverlength > $helper->toBytes(\ini_get('post_max_size'))
+            || $serverlength > $helper->toBytes(\ini_get('memory_limit'))
         ) {
             throw new \RuntimeException(Text::_('COM_MEDIA_ERROR_WARNFILETOOLARGE'), 400);
         }

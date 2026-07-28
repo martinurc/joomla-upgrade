@@ -5,11 +5,11 @@
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
@@ -107,6 +107,26 @@ class WFApplication extends CMSObject
         return $component->id;
     }
 
+    private function isFileBrowser()
+    {
+        $app = Factory::getApplication();
+        $option = $app->input->getCmd('option', '');
+
+        if ($option !== 'com_jce') {
+            return false;
+        }
+
+        if ($app->input->getCmd('view') === 'browser') {
+            return true;
+        }
+
+        if ($app->input->getCmd('plugin') === 'browser') {
+            return true;
+        }
+
+        return false;
+    }
+
     private function getProfileVars()
     {
         $app = Factory::getApplication();
@@ -133,21 +153,15 @@ class WFApplication extends CMSObject
                     $settings['option'] = $component->option;
                 }
             }
-
-            $profile_id = $app->input->getInt('profile_id');
-
-            if ($profile_id) {
-                $settings['profile_id'] = $profile_id;
-            }
         }
 
         // get the Joomla! area, default to "site"
         $settings['area'] = $app->getClientId() === 0 ? 1 : 2;
 
-        $mobile = new Wf\Detection\MobileDetect();
+        $mobile = new WFDeviceDetect();
 
         // phone
-        if ($mobile->isMobile()) {
+        if ($mobile->isPhone()) {
             $settings['device'] = 'phone';
         }
 
@@ -158,6 +172,14 @@ class WFApplication extends CMSObject
         $settings['groups'] = $user->getAuthorisedGroups();
 
         return $settings;
+    }
+
+    private function getEditorParams()
+    {
+        $editor = PluginHelper::getPlugin('editors', 'jce');
+        $params = json_decode($editor->params ?: '{}', true);
+
+        return is_array($params) ? $params : array();
     }
 
     private function isCorePlugin($plugin)
@@ -241,13 +263,8 @@ class WFApplication extends CMSObject
             $options['plugin'] = '';
         }
 
-        if (!isset($options['id'])) {
-            $options['id'] = 0;
-        }
+        $plugin = $options['plugin'];
 
-        // get the passed in options as variables
-        extract ($options);
-        
         // reset the value if it is a core plugin
         if ($this->isCorePlugin($plugin)) {
             $plugin = '';
@@ -255,6 +272,15 @@ class WFApplication extends CMSObject
 
         // get the profile variables for the current context
         $vars = $this->getProfileVars();
+
+        // block guests unless explicitly enabled in global config
+        $user = Factory::getUser();
+
+        if ($user->guest) {
+            if (!ComponentHelper::getParams('com_jce')->get('allow_profile_guests', 0)) {
+                return null;
+            }
+        }
 
         // installed plugins will have a name prefixed with "editor-", so remove to validate
         if (preg_match('/^editor[-_]/', $plugin)) {
@@ -264,21 +290,11 @@ class WFApplication extends CMSObject
         // add plugin to vars array
         $vars['plugin'] = $plugin;
 
-        // assign profile_id to simple variable
-        if (isset($vars['profile_id'])) {
-            $id = (int) $vars['profile_id'];
-        }
-
         $db = Factory::getDBO();
-        $user = Factory::getUser();
         $app = Factory::getApplication();
 
         $query = $db->getQuery(true);
         $query->select('*')->from('#__wf_profiles')->where('published = 1')->order('ordering ASC');
-
-        if ($id) {
-            $query->where('id = ' . (int) $id);
-        }
 
         $db->setQuery($query);
         $items = $db->loadObjectList();
@@ -288,11 +304,6 @@ class WFApplication extends CMSObject
             return null;
         }
 
-        // select and return a specific profile by id
-        if ($id) {
-            return $items[0];
-        }
-
         $app->triggerEvent('onWfEditorProfileOptions', array(&$vars));
 
         // create a unique signature to store
@@ -300,10 +311,19 @@ class WFApplication extends CMSObject
 
         if (!isset($cache[$signature])) {
 
+            // apply global group whitelist if configured; otherwise all user groups are eligible
+            $whitelist = array_filter((array) ComponentHelper::getParams('com_jce')->get('profile_groups_whitelist', []));
+            $effectiveGroups = !empty($whitelist) ? array_intersect($vars['groups'], $whitelist) : $vars['groups'];
+
             foreach ($items as $item) {
                 // at least one user group or user must be set
                 if (empty($item->types) && empty($item->users)) {
                     continue;
+                }
+
+                // decrypt params
+                if (!empty($item->params)) {
+                    $item->params = JceEncryptHelper::decrypt($item->params);
                 }
 
                 $app->triggerEvent('onWfBeforeEditorProfileItem', array(&$item));
@@ -314,17 +334,17 @@ class WFApplication extends CMSObject
                 }
 
                 // check user groups - a value should always be set
-                $groups = array_intersect($vars['groups'], explode(',', $item->types));
+                $groups = array_intersect($effectiveGroups, explode(',', $item->types));
 
                 // user not in the current group...
                 if (empty($groups)) {
                     // no additional users set or no user match
-                    if (empty($item->users) || in_array($user->id, explode(',', $item->users)) === false) {
+                    if (empty($item->users) || in_array($user->id, array_map('intval', explode(',', $item->users)), true) === false) {
                         continue;
                     }
                 }
 
-                // check component
+                // check component, but skip if this is the file browser
                 if (!empty($item->components)) {
                     $components = explode(',', $item->components);
 
@@ -354,11 +374,6 @@ class WFApplication extends CMSObject
                 // check against passed in plugin value
                 if ($plugin && in_array($plugin, explode(',', $item->plugins)) === false) {
                     continue;
-                }
-
-                // decrypt params
-                if (!empty($item->params)) {
-                    $item->params = JceEncryptHelper::decrypt($item->params);
                 }
 
                 $app->triggerEvent('onWfAfterEditorProfileItem', array(&$item));
@@ -432,20 +447,7 @@ class WFApplication extends CMSObject
         $signature = serialize($options);
 
         if (empty(self::$params[$signature])) {
-            // get plugin
-            $editor = PluginHelper::getPlugin('editors', 'jce');
-
-            if (empty($editor->params)) {
-                $editor->params = '{}';
-            }
-
-            // get editor params as an associative array
-            $data1 = json_decode($editor->params, true);
-
-            // if null or false, revert to array
-            if (empty($data1)) {
-                $data1 = array();
-            }
+            $data1 = $this->getEditorParams();
 
             // assign params to "editor" key
             $data1 = array('editor' => $data1);

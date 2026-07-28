@@ -6,6 +6,9 @@
  * @copyright Copyright (c) 2010 - 2025 JoomShaper
  * @license http://www.gnu.org/licenses/gpl-2.0.html GNU/GPLv2 or later
  */
+
+use Joomla\CMS\Uri\Uri;
+
 //no direct access
 defined('_JEXEC') or die('Restricted access');
 
@@ -37,6 +40,9 @@ class SppagebuilderAddonAnimated_heading extends SppagebuilderAddons
 		$animated_text = (isset($settings->animated_text) && $settings->animated_text) ? $settings->animated_text : '';
 		$text_animation_name = (isset($settings->text_animation_name) && $settings->text_animation_name) ? $settings->text_animation_name : '';
 		$animated_text_chunk = '';
+
+		$duration = (isset($settings->duration) && $settings->duration) ? ((int)$settings->duration / 1000) : '';
+		$delay = (isset($settings->delay) && $settings->delay) ? ((int)$settings->delay / 1000) : '';
 
 		if ($animated_text) {
 			$animated_text_chunk = explode("\n", $animated_text);
@@ -75,6 +81,9 @@ class SppagebuilderAddonAnimated_heading extends SppagebuilderAddons
 				case 'wave':
 					$animated_text_class .= 'letters animation-wave';
 					break;
+				case 'marquee':
+					$animated_text_class .= 'marquee animation-marquee';
+					break;
 				default:
 					$animated_text_class .= 'text-clip is-full-width';
 					break;
@@ -85,7 +94,7 @@ class SppagebuilderAddonAnimated_heading extends SppagebuilderAddons
 		$output = '';
 
 		$output .= '<div class="sppb-addon sppb-addon-animated-heading' . $class . '">';
-		$output .= '<' . $heading_selector . ' class="sppb-addon-title ' . ($heading_style !== 'highlighted' ? $animated_text_class : '') . '">';
+		$output .= '<' . $heading_selector . ' class="sppb-addon-title ' . ($heading_style !== 'highlighted' ? $animated_text_class : '') . '"'. ($animated_text_class === 'animated-heading-text text-clip is-full-width' ? ' data-reveal-duration="' . $duration . '" data-reveal-delay="' . $delay . '"' : '' ) . '>';
 		$output .= ($heading_before_part) ? '<span class="animated-heading-before-part">' . $heading_before_part . '</span>' : '';
 
 		if ($heading_style === 'highlighted') {
@@ -154,9 +163,17 @@ class SppagebuilderAddonAnimated_heading extends SppagebuilderAddons
 		} else {
 			$output .= '<span class="animated-text-words-wrapper">';
 
-			if (is_array($animated_text_chunk)) {
-				foreach ($animated_text_chunk as $key => $item) {
-					$output .= '<span class="animated-text ' . ($key == 0 ? 'is-visible' : '') . '">' . $item . '</span>';
+			if ($text_animation_name === 'marquee' && is_array($animated_text_chunk)) {
+				$output .= '<span class="marquee-' . $this->addon->id . '">';
+				foreach($animated_text_chunk as $marquee_content) {
+					$output .= '<span class="marquee__item">' . $marquee_content . '</span>';
+				}
+				$output .= '</span>';
+			} else {
+				if (is_array($animated_text_chunk)) {
+					foreach ($animated_text_chunk as $key => $item) {
+						$output .= '<span class="animated-text ' . ($key == 0 ? 'is-visible' : '') . '">' . $item . '</span>';
+					}
 				}
 			}
 
@@ -181,6 +198,10 @@ class SppagebuilderAddonAnimated_heading extends SppagebuilderAddons
 		$settings = $this->addon->settings;
 		$addon_id = '#sppb-addon-' . $this->addon->id;
 		$cssHelper = new CSSHelper($addon_id);
+		$animationDuration = (isset($settings->duration) && $settings->duration) ? ((int)$settings->duration / 1000) : '';
+		$animationDelay = (isset($settings->delay) && $settings->delay) ? ((int)$settings->delay / 1000) : '';
+		$animatedText = (isset($settings->animated_text) && $settings->animated_text) ? $settings->animated_text : '';
+		$textAnimationName = (isset($settings->text_animation_name) && $settings->text_animation_name) ? $settings->text_animation_name : '';
 
 		// Css Output Start
 		$css = '';
@@ -262,6 +283,54 @@ class SppagebuilderAddonAnimated_heading extends SppagebuilderAddons
 		$css .= $highlightedTextTypography;
 		$css .= $transformCss;
 
+		if ($animatedText && $textAnimationName) {
+			switch ($textAnimationName) {
+				case 'blinds':
+					$css .= $addon_id . ' .animated-heading-text.animation-blinds i.in {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+					$css .= $addon_id . ' .animated-heading-text.animation-blinds i.out {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+					break;
+				case 'delete-typing':
+					$css .= $addon_id . ' .animated-heading-text.type .animated-text-words-wrapper.waiting::after {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+					break;
+				case 'flip':
+					$css .= $addon_id . ' .animated-heading-text.text-animation-flip span.is-visible {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+					$css .= $addon_id . ' .animated-heading-text.text-animation-flip span.is-hidden {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+					break;
+				case 'fade-in':
+					$css .= $addon_id . ' .animated-heading-text.zoom span.is-visible {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+					$css .= $addon_id . ' .animated-heading-text.zoom span.is-hidden {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+					break;
+				case 'loading-bar':
+					$css .= $addon_id . ' .animated-heading-text.loading-bar .animated-text-words-wrapper::after {'.($animationDuration ? 'transition-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'transition-delay: ' . $animationDelay . 's; ' : '') . '}';
+					$css .= $addon_id . ' .animated-heading-text.loading-bar .animated-text-words-wrapper.is-loading::after {'.($animationDuration ? 'transition-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'transition-delay: ' . $animationDelay . 's; ' : '') . '}';
+					$css .= $addon_id . ' .animated-heading-text.loading-bar .animated-text {'.($animationDuration ? 'transition-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'transition-delay: ' . $animationDelay . 's; ' : '') . '}';
+					break;
+				case 'scale':
+					$css .= $addon_id . '.animated-heading-text.scale i.in {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+					$css .= $addon_id . ' .animated-heading-text.scale i.out {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+					break;
+				case 'slide':
+					$css .= $addon_id . ' .animated-heading-text.slide span.is-visible {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+					$css .= $addon_id . ' .animated-heading-text.slide span.is-hidden {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+					break;
+				case 'push':
+					$css .= $addon_id . '.animated-heading-text.push span.is-visible {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+					$css .= $addon_id . ' .animated-heading-text.push span.is-hidden {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+					break;
+				case 'wave':
+					$css .= $addon_id . ' .animated-heading-text.animation-wave i.in {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+					$css .= $addon_id . ' .animated-heading-text.animation-wave i.out {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+					break;
+				default:
+					break;
+			}
+		} else {
+			$css .= $addon_id . ' .animated-heading-highlighted-wrap svg path {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+			$css .= $addon_id . ' .animated-heading-text.text-animation-flip span.is-visible {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+			$css .= $addon_id . ' .animated-heading-text.text-animation-flip span.is-hidden {'.($animationDuration ? 'animation-duration: ' . $animationDuration . 's; ' : '') . ''.($animationDelay ? 'animation-delay: ' . $animationDelay . 's; ' : '') . '}';
+		}
+		
+
 		//Shape style
 		$highlighted_shape = (isset($settings->highlighted_shape) && $settings->highlighted_shape) ? $settings->highlighted_shape : '';
 
@@ -285,6 +354,71 @@ class SppagebuilderAddonAnimated_heading extends SppagebuilderAddons
 		}
 
 		return $css;
+	}
+
+	public function js(){
+		$settings = $this->addon->settings;
+
+		if((!isset($settings->heading_style) || $settings->heading_style !== 'text-animation') || (!isset($settings->text_animation_name) || $settings->text_animation_name !== 'marquee')) {
+			return '';
+		}
+
+		$addon_id = $this->addon->id;
+		$marqueeClass = '.marquee-' . $addon_id;
+		$duplicates = (isset($settings->duplicates) && $settings->duplicates) ? $settings->duplicates : 2;
+		$isFullContainer = (isset($settings->is_full_container) && $settings->is_full_container) ? true : false;
+		$fullContainerWidth = (isset($settings->full_container_width) && $settings->full_container_width) ? $settings->full_container_width : 100;
+		$gap = (isset($settings->gap) && $settings->gap) ? $settings->gap : 0;
+		$direction = (isset($settings->direction) && $settings->direction) ? $settings->direction : 'left';
+		$speed = (isset($settings->speed) && $settings->speed) ? $settings->speed : 50;
+		$pauseOnHover = (isset($settings->pause_on_hover) && $settings->pause_on_hover) ? true : false;
+
+		$js = '
+		(function() {
+			function initMarquee() {
+				const marquee = new window.Marquee({
+					element: "' . $marqueeClass . '",
+					duplicates: ' . $duplicates . ',
+					pauseOnHover: ' . ($pauseOnHover ? 'true' : 'false') . ',
+					gap: ' . $gap . ',
+					direction: "' . $direction . '",
+					speed: ' . $speed . ',
+					isFullContainer: ' . ($isFullContainer ? 'true' : 'false') . ',
+					fullContainerWidth: ' . $fullContainerWidth . '
+				});
+				marquee.init();
+			}
+
+			if (document.readyState === "loading") {
+				document.addEventListener("DOMContentLoaded", initMarquee);
+			} else {
+				initMarquee();
+			}
+		})();
+		';
+
+		return $js;
+	}
+
+	public function scripts(){
+		$addon = $this->addon;
+		$settings = null;
+
+		if (is_object($addon) && isset($addon->settings)) {
+			$settings = $addon->settings;
+		} elseif (is_array($addon) && isset($addon['settings'])) {
+			$settings = $addon['settings'];
+		}
+
+		if (!$settings) {
+			return;
+		}
+
+		if((!isset($settings->heading_style) || $settings->heading_style !== 'text-animation') || (!isset($settings->text_animation_name) || $settings->text_animation_name !== 'marquee')) {
+			return;
+		}
+
+		return [Uri::base(true) . '/components/com_sppagebuilder/assets/js/marquee.js'];
 	}
 
 	/**
@@ -356,6 +490,92 @@ class SppagebuilderAddonAnimated_heading extends SppagebuilderAddons
 		$output .= $lodash->generateTransformCss('.sppb-addon-animated-heading', 'data.transform');
 
 		$output .= '
+		<# if(data.animated_text && data.text_animation_name) { #>
+			<# if(data.text_animation_name == "blinds") { #>
+				#sppb-addon-{{ data.id }} .animated-heading-text.animation-blinds i.in {
+					<# if(data.duration) { #>animation-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>animation-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+				#sppb-addon-{{ data.id }} .animated-heading-text.animation-blinds i.out {
+					<# if(data.duration) { #>animation-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>animation-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+			<# } else if(data.text_animation_name == "delete-typing") { #>
+				#sppb-addon-{{ data.id }} .animated-heading-text.type .animated-text-words-wrapper.waiting::after {
+					<# if(data.duration) { #>animation-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>animation-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+			<# } else if(data.text_animation_name == "flip") { #>
+				#sppb-addon-{{ data.id }} .animated-heading-text.text-animation-flip span.is-visible {
+					<# if(data.duration) { #>animation-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>animation-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+				#sppb-addon-{{ data.id }} .animated-heading-text.text-animation-flip span.is-hidden {
+					<# if(data.duration) { #>animation-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>animation-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+			<# } else if(data.text_animation_name == "fade-in") { #>
+				#sppb-addon-{{ data.id }} .animated-heading-text.zoom span.is-visible {
+					<# if(data.duration) { #>animation-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>animation-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+				#sppb-addon-{{ data.id }} .animated-heading-text.zoom span.is-hidden {
+					<# if(data.duration) { #>animation-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>animation-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+			<# } else if(data.text_animation_name == "loading-bar") { #>
+				#sppb-addon-{{ data.id }} .animated-heading-text.loading-bar .animated-text-words-wrapper::after {
+					<# if(data.duration) { #>transition-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>transition-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+				#sppb-addon-{{ data.id }} .animated-heading-text.loading-bar .animated-text-words-wrapper.is-loading::after {
+					<# if(data.duration) { #>transition-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>transition-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+				#sppb-addon-{{ data.id }} .animated-heading-text.loading-bar .animated-text {
+					<# if(data.duration) { #>transition-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>transition-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+			<# } else if(data.text_animation_name == "scale") { #>
+				#sppb-addon-{{ data.id }} .animated-heading-text.scale i.in {
+					<# if(data.duration) { #>animation-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>animation-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+				#sppb-addon-{{ data.id }} .animated-heading-text.scale i.out {
+					<# if(data.duration) { #>animation-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>animation-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+			<# } else if(data.text_animation_name == "slide") { #>
+				#sppb-addon-{{ data.id }} .animated-heading-text.slide span.is-visible {
+					<# if(data.duration) { #>animation-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>animation-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+				#sppb-addon-{{ data.id }} .animated-heading-text.slide span.is-hidden {
+					<# if(data.duration) { #>animation-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>animation-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+			<# } else if(data.text_animation_name == "push") { #>
+				#sppb-addon-{{ data.id }} .animated-heading-text.push span.is-visible {
+					<# if(data.duration) { #>animation-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>animation-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+				#sppb-addon-{{ data.id }} .animated-heading-text.push span.is-hidden {
+					<# if(data.duration) { #>animation-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>animation-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+			<# } else if(data.text_animation_name == "wave") { #>
+				#sppb-addon-{{ data.id }} .animated-heading-text.animation-wave i.in {
+					<# if(data.duration) { #>animation-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>animation-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+				#sppb-addon-{{ data.id }} .animated-heading-text.animation-wave i.out {
+					<# if(data.duration) { #>animation-duration: {{ Number(data.duration) / 1000 }}s; <# } #>
+					<# if(data.delay) { #>animation-delay: {{ Number(data.delay) / 1000 }}s; <# } #>
+				}
+			<# } #>
+		<# } #>';
+
+		$output .= '
         </style>
         <# 
         let animated_text = (!_.isEmpty(data.animated_text) && data.animated_text) ? data.animated_text : "";
@@ -386,14 +606,21 @@ class SppagebuilderAddonAnimated_heading extends SppagebuilderAddons
                 animated_text_class += "push";
             } else if(data.text_animation_name == "wave") {
                 animated_text_class += "letters animation-wave";
+			} else if(data.text_animation_name == "marquee") {
+				animated_text_class += "marquee animation-marquee";
             } else {
                 animated_text_class += "text-clip is-full-width";
             }
         }
+
+		let animated_text_attributes = "";
+		if(animated_text_class == "animated-heading-text text-clip is-full-width") {
+			animated_text_attributes = " data-reveal-duration=\"" + (Number(data.duration) / 1000) + "\" data-reveal-delay=\"" + (Number(data.delay) / 1000) + "\"";
+		}
         #>
 
         <div class="sppb-addon sppb-addon-animated-heading {{data.class}}">
-        <{{data.heading_selector}} class="sppb-addon-title {{animated_text_class}}">
+		<{{data.heading_selector}} class="sppb-addon-title {{animated_text_class}}"{{animated_text_attributes}}>
         <# if(data.heading_before_part) { #>
             <span class="animated-heading-before-part sp-inline-editable-element" data-id={{data.id}} data-fieldName="heading_before_part" contenteditable="true">{{{data.heading_before_part}}}</span>
         <# }
@@ -461,18 +688,24 @@ class SppagebuilderAddonAnimated_heading extends SppagebuilderAddons
             <# }
         } else {
             #>
-            <span class="animated-text-words-wrapper">
-            <# if(_.isArray(animated_text_chunk)) {
-                _.each(animated_text_chunk, function(item, key) { 
-                    let visibleClass = "";
-                    if(key==0) {
-                        visibleClass = "is-visible";
-                    }
-            #>
-                    <span class="animated-text {{visibleClass}}">{{item}}</span>
-                <# })
-            } #>
-            </span>
+			<span class="animated-text-words-wrapper">
+			<# if(data.text_animation_name == "marquee" && _.isArray(animated_text_chunk)) { #>
+					<span class="marquee marquee-{{data.id}}" data-duplicates="{{data.duplicates || 2}}" data-gap="{{data.gap || 0}}" data-direction="{{data.direction || \'left\'}}" data-speed="{{data.speed || 50}}" data-pause-on-hover="{{data.pause_on_hover ? \'true\' : \'false\'}}" data-is-full-container="{{data.is_full_container ? \'true\' : \'false\'}}" data-full-container-width="{{data.full_container_width || 100}}">
+						<# _.each(animated_text_chunk, function(item) { #>
+							<span class="marquee__item">{{item}}</span>
+						<# }) #>
+				</span>
+			<# } else if(_.isArray(animated_text_chunk)) {
+				_.each(animated_text_chunk, function(item, key) { 
+					let visibleClass = "";
+					if(key==0) {
+						visibleClass = "is-visible";
+					}
+			#>
+					<span class="animated-text {{visibleClass}}">{{item}}</span>
+				<# })
+			} #>
+			</span>
         <# }
         if(data.heading_after_part) {
         #>

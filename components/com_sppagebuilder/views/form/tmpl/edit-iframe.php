@@ -14,6 +14,9 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Uri\Uri;
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\ArticleLayouts;
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\CollectionIds;
+use JoomShaper\SPPageBuilder\DynamicContent\Models\Page;
 
 /** @var CMSApplication */
 $app = Factory::getApplication();
@@ -29,6 +32,7 @@ if ($params->get('fontawesome', 1))
 
 SppagebuilderHelperSite::addStylesheet('dynamic-content.css');
 SppagebuilderHelperSite::addScript('dynamic-content.js');
+SppagebuilderHelperSite::addScript('marquee.js');
 
 // assets
 SppagebuilderHelperSite::loadAssets();
@@ -86,12 +90,22 @@ $doc->addScriptdeclaration('var addonsFromDB=' . json_encode(SpAddonsConfig::loa
 $doc->addScriptdeclaration('var addonCats=' . json_encode($addon_cats) . ';');
 $doc->addScriptdeclaration('var sppbVersion="' . SppagebuilderHelperSite::getVersion() . '";');
 
+$textContent = $this->item->text;
+
+if (!empty($this->item->view_id) && $this->item->view_id === CollectionIds::ARTICLES_COLLECTION_ID && !empty($this->item->extension_view) && $this->item->extension_view === Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX && empty($this->item->text)) {
+	$textContent = json_decode(ArticleLayouts::DEFAULT_LAYOUT_ARTICLE_INDEX);
+} else if (!empty($this->item->view_id) && $this->item->view_id === CollectionIds::ARTICLES_COLLECTION_ID && !empty($this->item->extension_view) && $this->item->extension_view === Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL && empty($this->item->text)) {
+	$textContent = json_decode(ArticleLayouts::DEFAULT_LAYOUT_ARTICLE_DETAILS);
+}
+
 if (!$this->item->text)
 {
-	$doc->addScriptdeclaration('var initialState=[];');
-}
-else
-{
+	if (!$textContent) {
+		$doc->addScriptdeclaration('var initialState=[];');
+	} else {
+		$doc->addScriptdeclaration('var initialState=' . json_encode($textContent) . ';');
+	}
+} else {
 	$doc->addScriptdeclaration('var initialState=' . json_encode($this->item->text) . ';');
 }
 
@@ -137,7 +151,7 @@ $doc->addScriptDeclaration('jQuery(document).ready(function($) {
 
 		const addonName = e.target?.getAttribute("data-addon") || null;
 
-		if (addonName !== "text-block") return;
+		if (addonName !== "text-block" && addonName !== "dynamic-content-text" && addonName !== "dynamic_content_text") return;
 		
 		const isTruncated = e.target?.getAttribute("data-is-truncated") || "false";
 		const fullText = e.target?.getAttribute("data-full-text") || "";
@@ -161,7 +175,7 @@ $doc->addScriptDeclaration('jQuery(document).ready(function($) {
 
 		const addonName = e.target?.getAttribute("data-addon") || null;
 
-		if (addonName !== "text-block") return;
+		if (addonName !== "text-block" && addonName !== "dynamic-content-text" && addonName !== "dynamic_content_text") return;
 		
 		const isTruncated = e.target?.getAttribute("data-is-truncated") || "false";
 		const isShowBtn = e.target?.querySelector(".sppb-btn-container");

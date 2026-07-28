@@ -389,7 +389,18 @@ trait IconsTrait
         $model = $this->getModel('Icon');
         $id = $this->getInput('id', 0);
 
-        $this->sendResponse($model->deleteCustomIcon($id));
+        $json = $this->input->get('ids', '', 'RAW');
+        $ids = json_decode($json, true);
+
+        if (!is_array($ids)) {
+            $ids = [];
+        }
+
+        if (!empty($ids)) {
+            $this->sendResponse($model->deleteCustomIcons($ids));
+        } else {
+            $this->sendResponse($model->deleteCustomIcon($id));
+        }
     }
 
     /**

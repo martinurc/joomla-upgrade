@@ -1,14 +1,15 @@
 <?php
+
 /**
  * @package     JCE
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\InputFilter;
@@ -92,7 +93,8 @@ final class WFRequest extends CMSObject
      */
     private function isRequest()
     {
-        return (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || (isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'multipart') !== false);
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+        return (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || strpos($contentType, 'multipart') !== false || strpos($contentType, 'application/json') !== false;
     }
 
     public function setRequest($request)
@@ -101,33 +103,32 @@ final class WFRequest extends CMSObject
     }
 
     /**
-     * Check a request query for bad stuff.
+     * Check a request query for bad stuff (null-byte injection).
      *
-     * @param array $query
+     * @param mixed $query
      */
     private function checkQuery($query)
     {
-        if (is_string($query)) {
+        // Normalise scalars to an array so the loop handles every case
+        if (!is_array($query) && !is_object($query)) {
             $query = array($query);
         }
 
-        // check for null byte
         foreach ($query as $key => $value) {
+            // Array keys are always int or string; guard string keys for null bytes
+            if (is_string($key) && strpos($key, "\x00") !== false) {
+                throw new InvalidArgumentException("Invalid Data", 403);
+            }
+
+            // Recurse into nested arrays/objects.
             if (is_array($value) || is_object($value)) {
-                return self::checkQuery($value);
+                $this->checkQuery($value);
+                continue;
             }
 
-            if (is_array($key)) {
-                return self::checkQuery($key);
-            }
-
-            // Check if $key or $value is null before using strpos
-            if ($key !== null && strpos($key, '\u0000') !== false) {
-                throw new InvalidArgumentException('Invalid Data', 403);
-            }
-
-            if ($value !== null && strpos($value, '\u0000') !== false) {
-                throw new InvalidArgumentException('Invalid Data', 403);
+            // Guard scalar values for null bytes
+            if ($value !== null && strpos((string) $value, "\x00") !== false) {
+                throw new InvalidArgumentException("Invalid Data", 403);
             }
         }
     }
@@ -151,13 +152,22 @@ final class WFRequest extends CMSObject
         // empty arguments
         $args = array();
 
-        $json = $app->input->getVar('json', '', 'POST', 'STRING', 2);
         $method = $app->input->getWord('method');
 
-        // get and encode json data
-        if ($json) {
-            // convert to JSON object
-            $json = json_decode($json);
+        // Read JSON body: either application/json (raw body) or urlencoded json= field
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+
+        if (stripos($contentType, 'application/json') !== false) {
+            // Reject oversized bodies up front rather than truncating (which corrupts the JSON)
+            if ((int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 65536) {
+                jexit('Invalid Content');
+            }
+
+            $raw  = file_get_contents('php://input');
+            $json = ($raw !== '' && $raw !== false) ? json_decode($raw, false, 32) : null;
+        } else {
+            $raw  = $app->input->getVar('json', '', 'POST', 'STRING', 2);
+            $json = $raw ? json_decode($raw, false, 32) : null;
         }
 
         // get current request id

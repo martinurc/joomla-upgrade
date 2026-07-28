@@ -13,6 +13,7 @@
  use Joomla\CMS\HTML\HTMLHelper;
  use Joomla\CMS\MVC\Model\ItemModel;
  use Joomla\CMS\Plugin\PluginHelper;
+ use Joomla\CMS\Uri\Uri;
  
  //no direct access
  defined('_JEXEC') or die('Restricted access');
@@ -162,8 +163,12 @@
 
 		if (!empty($popupAttribs['background_type']) && !empty($popupAttribs['bg_media']) && $popupAttribs['background_type'] === 'image')
 		{
+			$bgImageSrc = $popupAttribs['bg_media']['src'];
+			if (!preg_match('#^(https?://|//)#', $bgImageSrc) && substr($bgImageSrc, 0, 1) !== '/') {
+				$bgImageSrc = Uri::root(true) . '/' . ltrim($bgImageSrc, '/');
+			}
 			$cssOutput .= ' .page-' . $popupId . '.sp-pagebuilder-popup .builder-container {
-				background-image: url("' . $popupAttribs['bg_media']['src'] . '");
+				background-image: url("' . $bgImageSrc . '");
 				background-repeat: ' . (!empty($popupAttribs['bg_media_repeat']) ? $popupAttribs['bg_media_repeat'] : 'no-repeat') . ';
 				background-attachment: ' . (!empty($popupAttribs['bg_media_attachment']) ? $popupAttribs['bg_media_attachment'] : 'initial') . ';
 				background-position: ' . (!empty($popupAttribs['bg_media_position']) ? $popupAttribs['bg_media_position'] : 'initial') . ';
@@ -227,8 +232,12 @@
 
 			if (!empty($popupAttribs['overlay']) && !empty($popupAttribs['overlay_bg_media']) && !empty($popupAttribs['overlay_background_type']) && $popupAttribs['overlay_background_type'] === 'image')
 			{
+				$overlayBgImageSrc = $popupAttribs['overlay_bg_media']['src'];
+				if (!preg_match('#^(https?://|//)#', $overlayBgImageSrc) && substr($overlayBgImageSrc, 0, 1) !== '/') {
+					$overlayBgImageSrc = Uri::root(true) . '/' . ltrim($overlayBgImageSrc, '/');
+				}
 				$cssOutput .= ' #sp-pagebuilder-overlay-' . $popupId . ' {
-					background-image: url("' . $popupAttribs['overlay_bg_media']['src'] . '");
+					background-image: url("' . $overlayBgImageSrc . '");
 					background-repeat: ' . (!empty($popupAttribs['overlay_bg_media_repeat']) ? $popupAttribs['overlay_bg_media_repeat'] : 'no-repeat') . ';
 					background-attachment: ' . (!empty($popupAttribs['overlay_bg_media_attachment']) ? $popupAttribs['overlay_bg_media_attachment'] : 'initial') . ';
 					background-position: ' . (!empty($popupAttribs['overlay_bg_media_position']) ? $popupAttribs['overlay_bg_media_position'] : 'initial') . ';
@@ -286,7 +295,7 @@
 		}
 		else if (isset($popupAttribs['overlay']) && $popupAttribs['overlay'] === 0)
 		{
-			echo ' #sp-pagebuilder-overlay-' . $popupId . ' {
+			$cssOutput .= ' #sp-pagebuilder-overlay-' . $popupId . ' {
 				display: none;
 			} ';
 		}
@@ -748,8 +757,13 @@
 				if (clickType === "random") {
 					document.addEventListener("click", () => {
 						if (isRestricted(' . $popupId . ')) return;
-						// if (!isPermitted(' . $popupId . ')) return; 
 						if (!isWithinDateRange(' . $popupId . ')) return;
+
+						let closePopupArea = "#sp-pagebuilder-popup-close-btn-' . $popupId . '";
+						let targetNode = event.target;
+						if (targetNode.closest(closePopupArea)) {
+							return;
+						}
 
 						clicked++;
 						if (clicked >= clickCount) {
@@ -1155,10 +1169,18 @@
 				$visibilityScriptContent = $this->getVisibilityScriptContent($popupId, $popupAttribs);
 	
 				$advancedScriptContent = $this->getAdvancedScriptContent($popupId, $popupAttribs);
+
+				$responsive_class = '';
+
+				$responsive_class .= (isset($popupAttribs['hidden_xl']) && filter_var($popupAttribs['hidden_xl'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-xl ' : '';
+				$responsive_class .= (isset($popupAttribs['hidden_lg']) && filter_var($popupAttribs['hidden_lg'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-lg ' : '';
+				$responsive_class .= (isset($popupAttribs['hidden_md']) && filter_var($popupAttribs['hidden_md'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-md ' : '';
+				$responsive_class .= (isset($popupAttribs['hidden_sm']) && filter_var($popupAttribs['hidden_sm'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-sm ' : '';
+				$responsive_class .= (isset($popupAttribs['hidden_xs']) && filter_var($popupAttribs['hidden_xs'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-xs ' : '';
 	
 				$popupDiv = '
-				<div id="sp-pagebuilder-overlay-'. $popupId . '" style="position: fixed; inset: 0; z-index: 9999;"></div>
-				<div class="sp-page-builder  page-' . $popupId . '  sp-pagebuilder-popup">
+				<div class="'.$responsive_class.'" id="sp-pagebuilder-overlay-'. $popupId . '" style="position: fixed; inset: 0; z-index: 9999;"></div>
+				<div class="sp-page-builder  page-' . $popupId . '  sp-pagebuilder-popup '.$responsive_class.'">
 				<div class="sp-pagebuilder-container-popup">
 				<div class=" page-content builder-container">' . $contentString . '</div>
 				</div>

@@ -64,6 +64,10 @@ class SppagebuilderAddonIcons_group extends SppagebuilderAddons
 		{
 			foreach ($icon_items as $key => $icon_item)
 			{
+				if(isset($icon_item->item_visibility) && !$icon_item->item_visibility){
+                continue;
+            	}
+
 				$key++;
 
 				$icon_class = (isset($icon_item->icon_class) && $icon_item->icon_class !== '') ? ' ' . $icon_item->icon_class : '';
@@ -260,6 +264,9 @@ class SppagebuilderAddonIcons_group extends SppagebuilderAddons
 		$output .= '
         <#
             _.each (data.sp_icons_group_item, function(addon_item, key) {
+				if(typeof addon_item.item_visibility !== "undefined" && !addon_item.item_visibility){
+                    return;
+                }
                 key ++;
                 var icon_id = data.id + key;
         #>';
@@ -377,6 +384,9 @@ class SppagebuilderAddonIcons_group extends SppagebuilderAddons
 				<# } #>	
                 <ul class="sppb-icons-group-list">
                 <# _.each (icon_items, function(icon_item, key) {
+					if(typeof icon_item.item_visibility !== "undefined" && !icon_item.item_visibility){
+						return;
+					}
                     key ++;
                     let icon_class = (!_.isEmpty(icon_item.icon_class) && icon_item.icon_class !== "") ? icon_item.icon_class : " ";
                     let icon_id = data.id + key;

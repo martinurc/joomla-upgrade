@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   ShackInstaller
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2016-2023 Joomlashack.com. All rights reserved
+ * @copyright 2016-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of ShackInstaller.
@@ -29,8 +30,6 @@ use JFormFieldCustomFooter;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Application\CMSApplicationInterface;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\File;
-use Joomla\CMS\Filesystem\Folder;
 use Joomla\CMS\Installer\Installer;
 use Joomla\CMS\Installer\InstallerAdapter;
 use Joomla\CMS\Language\Text;
@@ -41,7 +40,10 @@ use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Version;
 use Joomla\Component\Plugins\Administrator\Model\PluginModel;
 use Joomla\Database\DatabaseDriver;
+use Joomla\Database\DatabaseInterface;
 use Joomla\Event\DispatcherInterface;
+use Joomla\Filesystem\File;
+use Joomla\Filesystem\Folder;
 use Joomla\Registry\Registry;
 use SimpleXMLElement;
 use Throwable;
@@ -54,7 +56,9 @@ require_once 'include.php';
 // phpcs:enable PSR1.Files.SideEffects
 abstract class AbstractScript
 {
-    public const VERSION = '2.4.4';
+    use TraitFramework;
+
+    public const VERSION = '2.6.4';
 
     protected const TYPE_INSTALL          = 'install';
     protected const TYPE_DISCOVER_INSTALL = 'discover_install';
@@ -64,22 +68,22 @@ abstract class AbstractScript
     /**
      * @var bool
      */
-    protected $outputAllowed = true;
+    protected bool $outputAllowed = true;
 
     /**
      * @var CMSApplication
      */
-    protected $app = null;
+    protected CMSApplication $app;
 
     /**
-     * @var DatabaseDriver
+     * @var \JDatabaseDriver|DatabaseDriver
      */
     protected $dbo = null;
 
     /**
-     * @var string
+     * @var ?string
      */
-    protected $schemaVersion = null;
+    protected ?string $schemaVersion = null;
 
     /**
      * @var JEventDispatcher|DispatcherInterface
@@ -87,34 +91,34 @@ abstract class AbstractScript
     protected $dispatcher = null;
 
     /**
-     * @var Installer
+     * @var ?Installer
      */
-    protected $installer = null;
+    protected ?Installer $installer = null;
 
     /**
-     * @var SimpleXMLElement
+     * @var ?SimpleXMLElement
      */
-    protected $manifest = null;
+    protected ?SimpleXMLElement $manifest = null;
 
     /**
-     * @var SimpleXMLElement
+     * @var ?SimpleXMLElement
      */
-    protected $previousManifest = null;
+    protected ?SimpleXMLElement $previousManifest = null;
 
     /**
-     * @var string
+     * @var ?string
      */
-    protected $mediaFolder = null;
+    protected ?string $mediaFolder = null;
 
     /**
-     * @var string
+     * @var ?string
      */
-    protected $element = null;
+    protected ?string $element = null;
 
     /**
      * @var string[]
      */
-    protected $systemExtensions = [
+    protected array $systemExtensions = [
         'library..allediaframework',
         'plugin.system.osmylicensesmanager',
     ];
@@ -122,88 +126,88 @@ abstract class AbstractScript
     /**
      * @var bool
      */
-    protected $isLicensesManagerInstalled = false;
+    protected bool $isLicensesManagerInstalled = false;
 
     /**
-     * @var Licensed
+     * @var ?Licensed
      */
-    protected $license = null;
+    protected ?Licensed $license = null;
 
     /**
-     * @var string
+     * @var ?string
      */
-    protected $licenseKey = null;
+    protected ?string $licenseKey = null;
 
     /**
-     * @var string
+     * @var ?string
      */
-    protected $footer = null;
+    protected ?string $footer = null;
 
     /**
-     * @var string
+     * @var ?string
      */
-    protected $mediaURL = null;
+    protected ?string $mediaURL = null;
 
     /**
-     * @var string
+     * @var ?string
      */
-    protected $type = null;
+    protected ?string $type = null;
 
     /**
-     * @var string
+     * @var ?string
      */
-    protected $group = null;
+    protected ?string $group = null;
 
     /**
      * List of tables and respective columns
      *
-     * @var array
+     * @var ?array
      */
-    protected $columns = null;
+    protected ?array $columns = null;
 
     /**
      * @var object[]
      */
-    protected $tableColumns = [];
+    protected array $tableColumns = [];
 
     /**
      * @var object[]
      */
-    protected $tableIndexes = [];
+    protected array $tableIndexes = [];
 
     /**
      * @var object[]
      */
-    protected $tableConstraints = [];
+    protected array $tableConstraints = [];
 
     /**
-     * @var array
+     * @var ?array
      */
-    protected $tables = null;
+    protected ?array $tables = null;
 
     /**
      * Flag to cancel the installation
      *
      * @var bool
      */
-    protected $cancelInstallation = false;
+    protected bool $cancelInstallation = false;
 
     /**
      * Feedback of the install by related extension
      *
      * @var array
      */
-    protected $relatedExtensionFeedback = [];
+    protected array $relatedExtensionFeedback = [];
 
     /**
-     * @var string
+     * @var ?string
      */
-    protected $welcomeMessage = null;
+    protected ?string $welcomeMessage = null;
 
     /**
      * @var bool
      */
-    protected $debug = false;
+    protected bool $debug = false;
 
     /**
      * @param InstallerAdapter $parent
@@ -218,6 +222,21 @@ abstract class AbstractScript
         $this->sendDebugMessage(__METHOD__);
 
         $this->initProperties($parent);
+    }
+
+    /**
+     * cross-version method for getting a new installer instance
+     *
+     * @return Installer
+     */
+    private function getNewInstaller(): Installer
+    {
+        $installer = new Installer();
+        if (Version::MAJOR_VERSION > 5) {
+            $installer->setDatabase(Factory::getContainer()->get(DatabaseInterface::class));
+        }
+
+        return $installer;
     }
 
     /**
@@ -286,7 +305,8 @@ abstract class AbstractScript
         }
 
         try {
-            $this->dbo           = Factory::getDbo();
+            $this->dbo = $this->getDatabase();
+
             $this->installer     = $parent->getParent();
             $this->manifest      = $this->installer->getManifest();
             $this->schemaVersion = $this->getSchemaVersion();
@@ -622,7 +642,7 @@ abstract class AbstractScript
      *
      * @return void
      */
-    public static function errorHandler(int $number, string $error, ?string $file = null, ?int $line = null): void
+    final public static function errorHandler(int $number, string $error, ?string $file = null, ?int $line = null): void
     {
         try {
             $codes = get_defined_constants(true);
@@ -730,7 +750,7 @@ abstract class AbstractScript
      * @return void
      * @throws \Exception
      */
-    final protected function installRelated(): void
+    private function installRelated(): void
     {
         $this->sendDebugMessage(__METHOD__);
 
@@ -752,7 +772,7 @@ abstract class AbstractScript
                     $key     = md5(join(':', [$type, $element, $group]));
 
                     $this->sendDebugMessage(
-                        sprintf('Related: %s%s/%s', $type, $group ? ($group . '/') : '', $element)
+                        sprintf('Related: %s/%s%s', $type, $group ? ($group . '/') : '', $element)
                     );
 
                     try {
@@ -777,7 +797,7 @@ abstract class AbstractScript
                         $typeName = ucwords(trim($group . ' ' . $type));
 
                         // Get data from the manifest
-                        $tmpInstaller = new Installer();
+                        $tmpInstaller = $this->getNewInstaller();
                         $tmpInstaller->setPath('source', $path);
                         $tmpInstaller->setPath('parent', $this->installer->getPath('source'));
 
@@ -870,7 +890,7 @@ abstract class AbstractScript
      * @return void
      * @throws \Exception
      */
-    final protected function uninstallRelated(): void
+    private function uninstallRelated(): void
     {
         if ($this->manifest->alledia->relatedExtensions) {
             $defaultAttributes = $this->manifest->alledia->relatedExtensions->attributes();
@@ -911,7 +931,7 @@ abstract class AbstractScript
     final protected function uninstallExtension(string $type, string $element, ?string $group = null): void
     {
         if ($extension = $this->findExtension($type, $element, $group)) {
-            $installer = new Installer();
+            $installer = $this->getNewInstaller();
 
             $success = $installer->uninstall($extension->get('type'), $extension->get('extension_id'));
             $msg     = 'LIB_SHACKINSTALLER_RELATED_UNINSTALL' . ($success ? '' : '_FAIL');
@@ -1094,7 +1114,7 @@ abstract class AbstractScript
                     $current = $this->findExtension($type, $element, $group);
                     if (empty($current) == false) {
                         // Try to uninstall
-                        $tmpInstaller = new Installer();
+                        $tmpInstaller = $this->getNewInstaller();
                         $uninstalled  = $tmpInstaller->uninstall($type, $current->get('extension_id'));
 
                         $typeName = ucfirst(trim(($group ?: '') . ' ' . $type));
@@ -1362,8 +1382,6 @@ abstract class AbstractScript
      */
     final protected function getManifestPath($type, $element, $group = ''): string
     {
-        $installer = new Installer();
-
         switch ($type) {
             case 'library':
             case 'file':
@@ -1374,6 +1392,7 @@ abstract class AbstractScript
 
                 $manifestPath = JPATH_SITE . '/administrator/manifests/' . $folders[$type] . '/' . $element . '.xml';
 
+                $installer = $this->getNewInstaller();
                 if (!file_exists($manifestPath) || !$installer->isManifest($manifestPath)) {
                     $manifestPath = false;
                 }
@@ -1382,6 +1401,7 @@ abstract class AbstractScript
             default:
                 $basePath = $this->getExtensionPath($type, $element, $group);
 
+                $installer = $this->getNewInstaller();
                 $installer->setPath('source', $basePath);
                 $installer->getManifest();
 
@@ -2014,7 +2034,8 @@ abstract class AbstractScript
             }
 
             if ($final) {
-                File::write($final, '');
+                $emptyString = '';
+                File::write($final, $emptyString);
                 $this->sendDebugMessage('Wrote blank: ' . $final);
             }
         }
@@ -2231,48 +2252,6 @@ abstract class AbstractScript
         if (is_file($path)) {
             include $path;
         }
-    }
-
-    /**
-     * WARNIMG! This is duplicated from the Joomlashack Framework
-     *
-     * @param string  $name
-     * @param string  $prefix
-     * @param string  $component
-     * @param ?string $appName
-     * @param ?array  $options
-     *
-     * @return mixed
-     * @throws \Exception
-     */
-    protected function getJoomlaModel(
-        string $name,
-        string $prefix,
-        string $component,
-        ?string $appName = null,
-        ?array $options = []
-    ) {
-        $defaultApp = 'Site';
-        $appNames   = [$defaultApp, 'Administrator'];
-
-        $appName = ucfirst($appName ?: $defaultApp);
-        $appName = in_array($appName, $appNames) ? $appName : $defaultApp;
-
-        if (Version::MAJOR_VERSION < 4) {
-            $basePath = $appName == 'Administrator' ? JPATH_ADMINISTRATOR : JPATH_SITE;
-
-            $path = $basePath . '/components/' . $component;
-            BaseDatabaseModel::addIncludePath($path . '/models');
-            Table::addIncludePath($path . '/tables');
-
-            $model = BaseDatabaseModel::getInstance($name, $prefix, $options);
-
-        } else {
-            $model = Factory::getApplication()->bootComponent($component)
-                ->getMVCFactory()->createModel($name, $appName, $options);
-        }
-
-        return $model;
     }
 
     /**

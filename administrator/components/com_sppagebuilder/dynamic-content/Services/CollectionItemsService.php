@@ -9,9 +9,11 @@
 namespace JoomShaper\SPPageBuilder\DynamicContent\Services;
 
 use Exception;
+use Joomla\CMS\Factory;
 use Throwable;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Uri\Uri;
+use Joomla\CMS\Language\Associations;
 use JoomShaper\SPPageBuilder\DynamicContent\Concerns\Validator;
 use JoomShaper\SPPageBuilder\DynamicContent\Constants\DateRange;
 use JoomShaper\SPPageBuilder\DynamicContent\Constants\FieldTypes;
@@ -92,6 +94,16 @@ class CollectionItemsService
             'required' => false,
             'options' => 'getCreatedByOptions',
             'default_value' => null,
+        ],
+        'association' => [
+            'name' => 'COM_SPPAGEBUILDER_DYNAMIC_CONTENT_COLLECTION_ITEM_ASSOCIATION',
+            'description' => 'COM_SPPAGEBUILDER_DYNAMIC_CONTENT_COLLECTION_ITEM_ASSOCIATION_DESCRIPTION',
+            'placeholder' => 'COM_SPPAGEBUILDER_DYNAMIC_CONTENT_COLLECTION_ITEM_ASSOCIATION_PLACEHOLDER',
+            'type' => 'association',
+            'key' => 'association',
+            'required' => false,
+            'options' => 'getAssociationOptions',
+            'default_value' => null,
         ]
     ];
 
@@ -107,6 +119,7 @@ class CollectionItemsService
         'language'    => 'COM_SPPAGEBUILDER_DYNAMIC_CONTENT_COLLECTION_ITEM_LANGUAGE',
         'created'     => 'COM_SPPAGEBUILDER_DYNAMIC_CONTENT_COLLECTION_ITEM_CREATED',
         'created_by'  => 'COM_SPPAGEBUILDER_DYNAMIC_CONTENT_COLLECTION_ITEM_CREATED_BY',
+        'association' => 'COM_SPPAGEBUILDER_DYNAMIC_CONTENT_COLLECTION_ITEM_ASSOCIATION',
     ];
 
     /**
@@ -116,6 +129,22 @@ class CollectionItemsService
      * @since 5.5.0
      */
     public const BATCH_UPDATE_KEYS = ['published', 'access', 'language', 'delete'];
+
+    /**
+     * Cache for primary field IDs by reference field ID.
+     * 
+     * @var array
+     * @since 6.2.0
+     */
+    protected $primaryFieldCache = [];
+
+    /**
+     * Cache for reference values by serialized parameters.
+     * 
+     * @var array
+     * @since 6.2.0
+     */
+    protected $referenceValuesCache = [];
 
     /**
      * The field key prefix. This prefix will be used for collection item object properties.
@@ -156,6 +185,76 @@ class CollectionItemsService
     ];
 
     /**
+     * Clear all caches to ensure fresh data.
+     * 
+     * @return void
+     * @since 6.2.0
+     */
+    public function clearCaches()
+    {
+        $this->primaryFieldCache = [];
+        $this->referenceValuesCache = [];
+    }
+
+    /**
+     * Pre-load primary field IDs for all reference fields to optimize batch processing.
+     * This method analyzes all items and pre-fetches primary field IDs for reference fields.
+     * 
+     * @param array $items The collection items.
+     * 
+     * @return void
+     * @since 6.2.0
+     */
+    protected function preloadPrimaryFieldIds(array $items)
+    {
+        $referenceFieldIds = [];
+        
+        foreach ($items as $item) {
+	            if (empty($item->values)) {
+	                continue;
+	            }
+	
+	            foreach ($item->values as $value) {
+	                    if ($value->field_type === FieldTypes::REFERENCE) {
+	                        $referenceFieldIds[] = $value->field_id;
+	                    }
+	                }
+	        }
+        
+        $referenceFieldIds = array_unique($referenceFieldIds);
+        
+        if (!empty($referenceFieldIds)) {
+            $referenceFields = CollectionField::whereIn('id', $referenceFieldIds)
+                ->whereNotNull('reference_collection_id')
+                ->get(['id', 'reference_collection_id']);
+            
+            $collectionIds = [];
+            $fieldMap = [];
+            
+            foreach ($referenceFields as $field) {
+                $collectionIds[] = $field->reference_collection_id;
+                $fieldMap[$field->reference_collection_id][] = $field->id;
+            }
+            
+            if (!empty($collectionIds)) {
+                $titleFields = CollectionField::whereIn('collection_id', array_unique($collectionIds))
+                    ->where('type', static::PRIMARY_FIELD_TYPE)
+                    ->get(['id', 'collection_id']);
+                
+                foreach ($titleFields as $titleField) {
+                    if (!isset($fieldMap[$titleField->collection_id])) {
+                        continue;
+                    }
+                    
+                    foreach ($fieldMap[$titleField->collection_id] as $referenceFieldId) {
+                            $this->primaryFieldCache[$referenceFieldId] = $titleField->id;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Create the collection item record
      * 
      * @param array $data The data
@@ -170,6 +269,9 @@ class CollectionItemsService
         if ($this->hasErrors()) {
             throw new ValidatorException($this->getErrors(), Response::HTTP_BAD_REQUEST);
         }
+
+        $associationValue = $data['association'];
+        unset($data['association']);
 
         $values = Str::toArray($data['values']);
         $values = Arr::make($values);
@@ -188,6 +290,10 @@ class CollectionItemsService
             $itemId = CollectionItem::create($data);
             $values = $this->populateValuesWithAlias($values, $data['collection_id'], $itemId);
             $this->createItemValues($values, $itemId);
+
+            if (isset($associationValue) && !empty($associationValue)) {
+                $this->handleAssociations($itemId, $associationValue, $data);
+            }
 
             QueryBuilder::commit();
 
@@ -216,6 +322,9 @@ class CollectionItemsService
             return response()->json($this->getErrors(), Response::HTTP_BAD_REQUEST);
         }
 
+        $associationValue = $payload['association'] ?? null;
+        unset($payload['association']);
+
         $values = Str::toArray($payload['values']);
         $values = Arr::make($values);
         $values = $this->sanitizeValues($values);
@@ -232,6 +341,10 @@ class CollectionItemsService
 
             $this->deleteItemValues($itemId);
             $this->createItemValues($values, $itemId);
+
+            if (isset($associationValue) && !empty($associationValue)) {
+                $this->handleAssociations($itemId, $associationValue, $payload);
+            }
 
             QueryBuilder::commit();
 
@@ -266,6 +379,39 @@ class CollectionItemsService
                 $carry[$property] = $item[$property] ?? null;
                 return $carry;
             }, [])->toArray();
+
+        $db = Factory::getDbo();
+        $query = $db->getQuery(true)
+            ->select('`key`')
+            ->from('#__associations')
+            ->where('context = ' . $db->quote('com_sppagebuilder.collection_item'))
+            ->where('id = ' . (int) $itemId);
+
+        $db->setQuery($query);
+        $associationKey = $db->loadResult();
+
+        $queryAgain = $db->getQuery(true)
+            ->select('id')
+            ->from('#__associations')
+            ->where('context = ' . $db->quote('com_sppagebuilder.collection_item'))
+            ->where('`key` = ' . $db->quote($associationKey))
+            ->where('id != ' . (int) $itemId);
+
+        $db->setQuery($queryAgain);
+        $associationValue = $db->loadColumn() ?? [];
+
+        $associationValues = [];
+
+        foreach ($associationValue as $itemId) {
+            $item = CollectionItem::where('id', $itemId)->first();
+            if ($item) {
+                $language = $item->language;
+                $languageTitle = Language::where('lang_code', $language)->first()->title ?? $language;
+                $associationValues[$languageTitle][] = $itemId;
+            }
+        }
+
+        $commonValues['association'] = $associationValues;
 
         $data = array_merge(['id' => $item->id], $dynamicValues, $commonValues);
 
@@ -425,12 +571,22 @@ class CollectionItemsService
 
         $items = $items->orderBy('ordering', 'ASC')->paginate($perPage, $currentPage);
 
+        $isTrashItem = CollectionItem::where('collection_id', $collectionId)
+            ->where('published', Status::TRASHED)
+            ->exists();
+
+        $isUnpublishItem = CollectionItem::where('collection_id', $collectionId)
+            ->where('published', Status::UNPUBLISHED)
+            ->exists();
+
         $response = [
-            'results'     => [],
-            'totalItems'  => $items['total'],
-            'totalPages'  => $items['total_pages'], 
-            'perPage'     => $items['per_page'],
-            'currentPage' => $items['current_page'],
+            'results'           => [],
+            'totalItems'        => $items['total'],
+            'totalPages'        => $items['total_pages'],
+            'perPage'           => $items['per_page'],
+            'currentPage'       => $items['current_page'],
+            'isTrashItem'       => $isTrashItem,
+            'isUnpublishItem'   => $isUnpublishItem,
         ];
 
         foreach ($items['data'] as $item) {
@@ -472,6 +628,8 @@ class CollectionItemsService
                     'user' => 'user.name',
                 ]);
             })->get();
+
+        $this->preloadPrimaryFieldIds($items);
         
         $items = Arr::make($items)->map(function ($item) {
             return $this->processSingleCollectionItem($item);
@@ -479,7 +637,7 @@ class CollectionItemsService
 
         return $items;
     }
-
+    
     /**
      * Sanitize the values.
      * 
@@ -792,6 +950,10 @@ class CollectionItemsService
 
                     unset($item['field_type']);
                 } else {
+                    if ($item['field_type'] === FieldTypes::LOCATION && is_array($item['value'])) {
+                        $item['value'] = json_encode($item['value']);
+                    }
+
                     unset($item['field_type']);
                     $result[] = $item;
                 }
@@ -988,6 +1150,126 @@ class CollectionItemsService
     }
 
     /**
+     * Get the association options.
+     *
+     * Auto-detects current item and collection from request context.
+     *
+     * @return array
+     * @since 6.1.0
+     */
+    protected function getAssociationOptions()
+    {
+        $currentItemId = Factory::getApplication()->input->getInt('item_id');
+        if (empty($currentItemId)) {
+            return [];
+        }
+		$collectionId = CollectionItem::where('id', $currentItemId)->first(['collection_id'])->collection_id ?? null;
+
+        $currentItem = null;
+        if ($currentItemId) {
+            $currentItem = CollectionItem::find($currentItemId);
+        }
+
+        if ($currentItem && $currentItem->language === '*') {
+            return [];
+        }
+
+        $query = CollectionItem::orderBy('language', 'ASC')->orderBy('id', 'DESC');
+
+        if ($collectionId) {
+            $query->where('collection_id', $collectionId);
+        }
+
+        $query->where('language', '!=', '*');
+
+        if ($currentItemId) {
+            $query->where('id', '!=', $currentItemId);
+            $query->where('language', '!=', $currentItem->language);
+        }
+
+        $query->where('published', 1);
+
+        $items = $query->get(['id', 'collection_id', 'language', 'published']);
+
+        $options = [];
+        $currentLanguage = $currentItem ? $currentItem->language : null;
+
+        foreach ($items as $item) {
+            $titleField = CollectionField::where('collection_id', $item->collection_id)
+                ->where('type', 'title')
+                ->first();
+
+            if ($titleField) {
+                $valueRecord = CollectionItemValue::where('item_id', $item->id)
+                    ->where('field_id', $titleField->id)
+                    ->first();
+
+                $displayTitle = $valueRecord ? $valueRecord->value : 'Item #' . $item->id;
+            } else {
+                $displayTitle = 'Item #' . $item->id;
+            }
+
+            $languageInfo = $this->getLanguageInfo($item->language);
+
+            $languageDisplayTitle = $languageInfo['displayTitle'] ?? $languageInfo['title'];
+            
+            if (!isset($options[$languageDisplayTitle])) {
+                $options[$languageDisplayTitle] = [];
+            }
+            
+            $options[$languageDisplayTitle][] = [
+                'label' => $displayTitle,
+                'value' => $item->id,
+                'language' => $item->language,
+                'flag' => $languageInfo['flag'],
+                'languageTitle' => $languageInfo['title'],
+                'isCurrentLanguage' => $currentLanguage === $item->language
+            ];
+        }
+
+        return $options;
+    }
+
+    /**
+     * Get language information including title and flag.
+     *
+     * @param string $languageCode The language code
+     *
+     * @return array
+     */
+    protected function getLanguageInfo($languageCode)
+    {
+        static $languages = null;
+
+        if ($languages === null) {
+            $languages = \Joomla\CMS\Language\LanguageHelper::getLanguages();
+        }
+
+        if (isset($languages) && count($languages) > 0) {
+            $lang = Arr::make($languages)->find(function ($item) use ($languageCode) {
+                return $item->lang_code === $languageCode;
+            }) ?? null;
+
+            if ($lang) {
+                return [
+                    'code' => $lang->lang_code,
+                    'title' => $lang->title_native,
+                    'displayTitle' => $lang->title,
+                    'flag' => $lang->image
+                ];
+            }
+
+        }
+
+        return [
+            'code' => $languageCode,
+            'title' => ucfirst($languageCode),
+            'displayTitle' => ucfirst($languageCode),
+            'flag' => ''
+        ];
+    }
+
+    /**
      * Prepare the common fields for the collection item form.
      * 
      * @param int $collectionId The collection ID.
@@ -1111,10 +1393,15 @@ class CollectionItemsService
      */
     protected function getPrimaryFieldForReferenceCollection(int $fieldId)
     {
+        if (isset($this->primaryFieldCache[$fieldId])) {
+            return $this->primaryFieldCache[$fieldId];
+        }
+
         $field                  = CollectionField::find($fieldId);
         $referenceCollectionId  = intval($field->reference_collection_id ?? 0);
 
         if (empty($field) || empty($referenceCollectionId)) {
+            $this->primaryFieldCache[$fieldId] = 0;
             return 0;
         }
 
@@ -1122,7 +1409,11 @@ class CollectionItemsService
             ->where('type', static::PRIMARY_FIELD_TYPE)
             ->first(['id']);
 
-        return $titleField->id ?? 0;
+        $primaryFieldId = $titleField->id ?? 0;
+        
+        $this->primaryFieldCache[$fieldId] = $primaryFieldId;
+
+        return $primaryFieldId;
     }
 
     /**
@@ -1136,6 +1427,13 @@ class CollectionItemsService
      */
     protected function getReferenceValues(array $itemIds, int $primaryFieldId)
     {
+        sort($itemIds);
+        $cacheKey = implode(',', $itemIds) . '_' . $primaryFieldId;
+        
+        if (isset($this->referenceValuesCache[$cacheKey])) {
+            return $this->referenceValuesCache[$cacheKey];
+        }
+
         $values = CollectionItemValue::whereIn('item_id', $itemIds)
             ->where('field_id', $primaryFieldId)
             ->get(['value']);
@@ -1145,6 +1443,8 @@ class CollectionItemsService
         foreach ($values as $value) {
             $valuesArray[] = $value->value;
         }
+
+        $this->referenceValuesCache[$cacheKey] = $valuesArray;
 
         return $valuesArray;
     }
@@ -1172,7 +1472,16 @@ class CollectionItemsService
             }
 
             if ($value->field_type === FieldTypes::IMAGE) {
-                $value->value = CollectionHelper::getImageUrl($value->value);
+                $imageValue = $value->value;
+            
+                if (is_string($imageValue) && strpos(trim($imageValue), '{') === 0) {
+                    $decodedData = json_decode($imageValue, true);
+                    if (is_array($decodedData) && isset($decodedData['src'])) {
+                        $imageValue = $decodedData['src'];
+                    }
+                }
+            
+                $value->value = CollectionHelper::getImageUrl($imageValue);
             }
         }
 
@@ -1228,6 +1537,26 @@ class CollectionItemsService
     }
 
     /**
+     * Check if an alias exists in a Joomla table.
+     * 
+     * @param string $table The table name.
+     * @param string $alias The alias to check.
+     *
+     * @return bool
+     * @since 6.1.3
+     */
+    protected function aliasExistsInTable(string $table, string $alias)
+    {
+        $db = Factory::getDbo();
+        $query = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName($table))
+            ->where('alias = ' . $db->quote($alias));
+        $db->setQuery($query);
+        return (int) $db->loadResult() > 0;
+    }
+
+    /**
      * Create a unique alias.
      * 
      * @param int $aliasId The alias ID.
@@ -1237,12 +1566,19 @@ class CollectionItemsService
      * @return string
      * @since 5.5.0
      */
-    protected function createUniqueAlias(int $aliasId, string $title, string $alias = null, int $itemId = null)
+    protected function createUniqueAlias(int $aliasId, string $title, ?string $alias = null, ?int $itemId = null)
     {
         if (!empty($alias)) {
             $alias = Str::safeUrl($alias);
         } else {
             $alias = Str::safeUrl($title);
+        }
+
+        $joomlaTables = ['#__content', '#__tags', '#__menu'];
+        foreach ($joomlaTables as $table) {
+            if ($this->aliasExistsInTable($table, $alias)) {
+                $alias = Str::increment($alias, 'dash');
+            }
         }
 
         if (!CollectionItemValue::where('field_id', $aliasId)->where('value', $alias)->where('item_id', '!=', $itemId)->first()->isEmpty()) {
@@ -1266,7 +1602,7 @@ class CollectionItemsService
      * @return Arr
      * @since 5.5.0
      */
-    protected function populateValuesWithAlias(Arr $values, int $collectionId, int $itemId = null)
+    protected function populateValuesWithAlias(Arr $values, int $collectionId, ?int $itemId = null)
     {
         [$titleFieldId, $aliasFieldId] = $this->getBasicFieldIDs($collectionId);
 
@@ -1288,5 +1624,372 @@ class CollectionItemsService
             $value['value'] = $value['field_id'] === $aliasFieldId ? $alias : $value['value'];
             return $value;
         });
+    }
+
+    /**
+     * Handle associations for collection items
+     * 
+     * @param int $itemId The item ID
+     * @param int $associatedItemId The associated item ID
+     * @param array $data The item data
+     * 
+     * @return void
+     * @since 6.1.0
+     */
+    protected function handleAssociations($itemId, $associations, $data)
+    {
+        try {
+            $currentItem = CollectionItem::where('id', $itemId)->first();
+            if (!$currentItem) {
+                return;
+            }
+
+            $currentLanguage = $currentItem->language;
+
+            if ($currentLanguage === '*') {
+                $this->removeAllAssociationsForItem($itemId);
+                return;
+            }
+
+            $associations = Str::toArray($associations);
+            
+            $allAssociatedItemIds = [];
+            
+            if (is_array($associations)) {
+                foreach ($associations as $language => $itemIds) {
+                    if (is_array($itemIds)) {
+                        $allAssociatedItemIds = array_merge($allAssociatedItemIds, $itemIds);
+                    }
+                }
+            }
+
+            $this->removeAssociationsForLanguages($itemId, array_keys($associations));
+
+            foreach ($allAssociatedItemIds as $associatedId) {
+                $associatedItem = CollectionItem::where('id', $associatedId)->first();
+                if ($associatedItem && $associatedItem->language === $currentLanguage) {
+                    $this->removeAssociationBetweenItems($itemId, $associatedId);
+                }
+            }
+
+            $filteredAssociatedItemIds = [];
+            foreach ($allAssociatedItemIds as $associatedId) {
+                $associatedItem = CollectionItem::where('id', $associatedId)->first();
+                if ($associatedItem && $associatedItem->language !== $currentLanguage) {
+                    $filteredAssociatedItemIds[] = $associatedId;
+                }
+            }
+
+            $allItemIds = array_merge([$itemId], $filteredAssociatedItemIds);
+            
+            $allItemIds = array_unique(array_filter($allItemIds));
+
+            if (count($allItemIds) <= 1) {
+                return;
+            }
+
+            $minId = min($allItemIds);
+            $maxId = max($allItemIds);
+            $associationKey = 'sppb_assoc_' . $minId . '_' . $maxId;
+
+            $existingKey = $this->getAssociationKeyFromItem($itemId);
+            if ($existingKey) {
+                $this->removeAssociation($existingKey);
+            }
+
+            foreach ($allItemIds as $id) {
+                $this->storeAssociation($id, $associationKey);
+            }
+
+        } catch (Exception $e) {
+            error_log('Association error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Remove association from Joomla's association table
+     * 
+     * @param int $itemId The item ID
+     * @param string $associationKey The association key
+     * 
+     * @return void
+     * @since 6.1.0
+     */
+    protected function removeAssociation($associationKey)
+    {
+        $db = Factory::getDbo();
+        $query = $db->getQuery(true)
+            ->delete('#__associations')
+            ->where('context = ' . $db->quote('com_sppagebuilder.collection_item'))
+            ->where('`key` = ' . $db->quote($associationKey));
+
+        $db->setQuery($query);
+        $db->execute();
+    }
+
+    /**
+     * Get association key from an existing item
+     * 
+     * @param int $itemId The item ID
+     * 
+     * @return string|null
+     * @since 6.1.0
+     */
+    protected function getAssociationKeyFromItem($itemId)
+    {
+        $db = Factory::getDbo();
+        
+        $query = $db->getQuery(true)
+            ->select('`key`')
+            ->from('#__associations')
+            ->where('context = ' . $db->quote('com_sppagebuilder.collection_item'))
+            ->where('id = ' . (int) $itemId);
+        
+        $db->setQuery($query);
+        return $db->loadResult();
+    }
+
+    /**
+     * Create a new association key
+     * 
+     * @param int $itemId1 The first item ID
+     * @param int $itemId2 The second item ID
+     * 
+     * @return string
+     * @since 6.1.0
+     */
+    protected function createAssociationKey($itemId1, $itemId2)
+    {
+        return 'sppb_assoc_' . min($itemId1, $itemId2) . '_' . max($itemId1, $itemId2);
+    }
+
+    /**
+     * Store association in Joomla's association table
+     * 
+     * @param int $itemId The item ID
+     * @param string $associationKey The association key
+     * 
+     * @return void
+     * @since 6.1.0
+     */
+    protected function storeAssociation($itemId, $associationKey)
+    {
+        $db = Factory::getDbo();
+        
+        $query = $db->getQuery(true)
+            ->select('id')
+            ->from('#__associations')
+            ->where('context = ' . $db->quote('com_sppagebuilder.collection_item'))
+            ->where('id = ' . (int) $itemId);
+        
+        $db->setQuery($query);
+        $existing = $db->loadResult();
+        
+        if ($existing) {
+            $query = $db->getQuery(true)
+                ->update('#__associations')
+                ->set('`key` = ' . $db->quote($associationKey))
+                ->where('id = ' . (int) $itemId)
+                ->where('context = ' . $db->quote('com_sppagebuilder.collection_item'));
+        } else {
+            $query = $db->getQuery(true)
+                ->insert('#__associations')
+                ->set('id = ' . (int) $itemId)
+                ->set('context = ' . $db->quote('com_sppagebuilder.collection_item'))
+                ->set('`key` = ' . $db->quote($associationKey));
+        }
+        
+        $db->setQuery($query);
+        $db->execute();
+    }
+
+    /**
+     * Remove all associations for a specific item
+     * 
+     * @param int $itemId The item ID
+     * 
+     * @return void
+     * @since 6.1.0
+     */
+    protected function removeAllAssociationsForItem($itemId)
+    {
+        $db = Factory::getDbo();
+        
+        $associationKey = $this->getAssociationKeyFromItem($itemId);
+        
+        if ($associationKey) {
+            $query = $db->getQuery(true)
+                ->select('id')
+                ->from('#__associations')
+                ->where('context = ' . $db->quote('com_sppagebuilder.collection_item'))
+                ->where('`key` = ' . $db->quote($associationKey));
+            
+            $db->setQuery($query);
+            $associatedItemIds = $db->loadColumn() ?? [];
+            
+            $remainingCount = count($associatedItemIds) - 1;
+            
+            $query = $db->getQuery(true)
+                ->delete('#__associations')
+                ->where('context = ' . $db->quote('com_sppagebuilder.collection_item'))
+                ->where('id = ' . (int) $itemId);
+            
+            $db->setQuery($query);
+            $db->execute();
+            
+            if ($remainingCount <= 1) {
+                foreach ($associatedItemIds as $id) {
+                    if ($id != $itemId) {
+                        $query = $db->getQuery(true)
+                            ->delete('#__associations')
+                            ->where('context = ' . $db->quote('com_sppagebuilder.collection_item'))
+                            ->where('id = ' . (int) $id);
+                        
+                        $db->setQuery($query);
+                        $db->execute();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Remove associations for specific languages
+     * 
+     * @param int $itemId The item ID
+     * @param array $languages Array of language display titles
+     * 
+     * @return void
+     * @since 6.1.0
+     */
+    protected function removeAssociationsForLanguages($itemId, $languages)
+    {
+        $db = Factory::getDbo();
+        
+        $associationKey = $this->getAssociationKeyFromItem($itemId);
+        
+        if (!$associationKey) {
+            return;
+        }
+        
+        $query = $db->getQuery(true)
+            ->select('id')
+            ->from('#__associations')
+            ->where('context = ' . $db->quote('com_sppagebuilder.collection_item'))
+            ->where('`key` = ' . $db->quote($associationKey));
+        
+        $db->setQuery($query);
+        $associatedItemIds = $db->loadColumn() ?? [];
+        
+        $languageMap = [];
+        foreach (Language::where('published', 1)->get(['lang_code', 'title']) as $lang) {
+            $languageMap[$lang->title] = $lang->lang_code;
+        }
+        
+        $itemsToRemove = [];
+        foreach ($associatedItemIds as $associatedId) {
+            if ($associatedId == $itemId) {
+                continue;
+            }
+            
+            $associatedItem = CollectionItem::where('id', $associatedId)->first();
+            if ($associatedItem) {
+                $langTitle = Language::where('lang_code', $associatedItem->language)->first();
+                if ($langTitle && in_array($langTitle->title, $languages)) {
+                    $itemsToRemove[] = $associatedId;
+                }
+            }
+        }
+        
+        foreach ($itemsToRemove as $id) {
+            $query = $db->getQuery(true)
+                ->delete('#__associations')
+                ->where('context = ' . $db->quote('com_sppagebuilder.collection_item'))
+                ->where('id = ' . (int) $id);
+            
+            $db->setQuery($query);
+            $db->execute();
+        }
+        
+        $remainingQuery = $db->getQuery(true)
+            ->select('id')
+            ->from('#__associations')
+            ->where('context = ' . $db->quote('com_sppagebuilder.collection_item'))
+            ->where('`key` = ' . $db->quote($associationKey));
+        
+        $db->setQuery($remainingQuery);
+        $remainingItems = $db->loadColumn() ?? [];
+        
+        if (count($remainingItems) <= 1) {
+            foreach ($remainingItems as $id) {
+                $query = $db->getQuery(true)
+                    ->delete('#__associations')
+                    ->where('context = ' . $db->quote('com_sppagebuilder.collection_item'))
+                    ->where('id = ' . (int) $id);
+                
+                $db->setQuery($query);
+                $db->execute();
+            }
+        }
+    }
+
+    /**
+     * Remove association between two specific items
+     * 
+     * @param int $itemId1 The first item ID
+     * @param int $itemId2 The second item ID
+     * 
+     * @return void
+     * @since 6.1.0
+     */
+    protected function removeAssociationBetweenItems($itemId1, $itemId2)
+    {
+        $db = Factory::getDbo();
+        
+        $key1 = $this->getAssociationKeyFromItem($itemId1);
+        $key2 = $this->getAssociationKeyFromItem($itemId2);
+        
+        if ($key1 && $key1 === $key2) {
+            $query = $db->getQuery(true)
+                ->select('id')
+                ->from('#__associations')
+                ->where('context = ' . $db->quote('com_sppagebuilder.collection_item'))
+                ->where('`key` = ' . $db->quote($key1));
+            
+            $db->setQuery($query);
+            $associatedItemIds = $db->loadColumn() ?? [];
+            
+            $remainingCount = count($associatedItemIds) - 1;
+            
+            $query = $db->getQuery(true)
+                ->delete('#__associations')
+                ->where('context = ' . $db->quote('com_sppagebuilder.collection_item'))
+                ->where('id = ' . (int) $itemId2);
+            
+            $db->setQuery($query);
+            $db->execute();
+            
+            if ($remainingCount <= 1) {
+                foreach ($associatedItemIds as $id) {
+                    if ($id != $itemId2) {
+                        $query = $db->getQuery(true)
+                            ->delete('#__associations')
+                            ->where('context = ' . $db->quote('com_sppagebuilder.collection_item'))
+                            ->where('id = ' . (int) $id);
+                        
+                        $db->setQuery($query);
+                        $db->execute();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    public static function fetchItemIdsByCollectionId($collectionId)
+    {
+        $items = CollectionItem::where('collection_id', $collectionId)->get(['id']);
+        return Arr::make($items)->pluck('id')->toArray();
     }
 }

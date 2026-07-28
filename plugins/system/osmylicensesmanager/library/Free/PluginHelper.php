@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   ShackExtensionSupport
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2016-2024 Joomlashack.com. All rights reserved
+ * @copyright 2016-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of ShackExtensionSupport.
@@ -37,7 +38,7 @@ abstract class PluginHelper
     /**
      * @var string
      */
-    protected static $downloadBaseURL = 'https://deploy.ostraining.com/client/download/';
+    protected static string $downloadBaseURL = 'https://deploy.ostraining.com/client/download/';
 
     /**
      * Update the license key on the plugin params

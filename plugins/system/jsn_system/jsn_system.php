@@ -30,7 +30,13 @@ class plgSystemJsn_System extends JPlugin
 
 	public function onAfterRoute()
 	{
-		$app=JFactory::getApplication();
+		//$app=JFactory::getApplication();
+		$app = \Joomla\CMS\Factory::getApplication();
+
+    // Si estamos en la administración, salimos para no tocar la vista de usuarios nativa de Joomla
+    if ($app->isClient('administrator')) {
+        return;
+    }
 		
 		// Load Config
 		$config = JComponentHelper::getParams('com_jsn');

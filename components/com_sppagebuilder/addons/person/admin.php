@@ -354,6 +354,39 @@ SpAddonsConfig::addonConfig([
 					'desc'  => Text::_('COM_SPPAGEBUILDER_ADDON_PERSON_INSTAGRAM_DESC'),
 				],
 
+				'custom_social_separator' => [
+					'type' => 'separator',
+				],
+
+				'custom_social' => [
+					'type'  => 'repeatable',
+					'title' => Text::_('COM_SPPAGEBUILDER_ADDON_PERSON_CUSTOM_SOCIAL'),
+					'desc'  => Text::_('COM_SPPAGEBUILDER_ADDON_PERSON_CUSTOM_SOCIAL_DESC'),
+					'attr'  => [
+						'custom_social_item' => [
+							'title'  => Text::_('COM_SPPAGEBUILDER_GLOBAL_SOCIAL'),
+							'fields' => [
+								'label' => [
+									'type'  => 'text',
+									'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_LABEL'),
+								],
+
+								'url' => [
+									'type'        => 'text',
+									'title'       => Text::_('COM_SPPAGEBUILDER_GLOBAL_LINK'),
+									'placeholder' => 'https://',
+								],
+
+								'icon' => [
+									'type'  => 'icon',
+									'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_ICON'),
+									'std'   => 'fab fa-facebook-f',
+								],
+							],
+						],
+					],
+				],
+
 				'social_icon_color_separator' => [
 					'type' => 'separator',
 				],

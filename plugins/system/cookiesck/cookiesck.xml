@@ -7,7 +7,7 @@
 	<license>http://www.gnu.org/licenses/gpl.html</license>
 	<authorEmail>ced1870@gmail.com</authorEmail>
 	<authorUrl>http://www.joomlack.fr</authorUrl>
-	<version>3.7.4</version>
+	<version>3.8.5</version>
 	<description>COOKIESCK_PLUG_DESC</description>
 	<files>
 		<filename plugin="cookiesck">cookiesck.php</filename>

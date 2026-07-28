@@ -20,6 +20,8 @@ class SppagebuilderAddonTeam_carousel extends SppagebuilderAddons
 		$class = (isset($settings->class) && $settings->class) ? ' ' . $settings->class : '';
 		$team_carousel_layout = (isset($settings->team_carousel_layout) && $settings->team_carousel_layout) ? $settings->team_carousel_layout : 'layout1';
 		$carousel_autoplay = (isset($settings->carousel_autoplay) && $settings->carousel_autoplay) ? $settings->carousel_autoplay : 0;
+		$loop = !isset($settings->loop) ? 1 : (int) $settings->loop;
+		$carousel_pause_on_hover = (isset($settings->carousel_pause_on_hover) && $settings->carousel_pause_on_hover) ? 1 : 0;
 		$carousel_speed = (isset($settings->carousel_speed) && $settings->carousel_speed) ? $settings->carousel_speed : 2500;
 		$carousel_interval = (isset($settings->carousel_interval) && $settings->carousel_interval) ? $settings->carousel_interval : 4500;
 		$carousel_margin = (isset($settings->carousel_margin) && $settings->carousel_margin) ? $settings->carousel_margin : 0;
@@ -47,7 +49,7 @@ class SppagebuilderAddonTeam_carousel extends SppagebuilderAddons
 		}
 
 
-		$output  = '<div class="sppb-addon sppb-carousel-extended' . $class . ' sppb-team-carousel-' . $team_carousel_layout . '" data-left-arrow="' . $left_arrow . '" data-right-arrow="' . $right_arrow . '" data-arrow="' . $carousel_arrow . '" data-dots="' . $carousel_bullet . '" data-team-layout="' . $team_carousel_layout . '" data-autoplay="' . $carousel_autoplay . '" data-speed="' . $carousel_speed . '" data-interval="' . $carousel_interval . '" data-margin="' . $carousel_margin . '" data-item-number-xl="' . $carousel_item_number_xl . '" data-item-number-lg="' . $carousel_item_number_lg . '" data-item-number-md="' . $carousel_item_number_md . '" data-item-number-sm="' . $carousel_item_number_sm . '" data-item-number-xs="' . $carousel_item_number_xs . '">';
+		$output  = '<div class="sppb-addon sppb-carousel-extended' . $class . ' sppb-team-carousel-' . $team_carousel_layout . '" data-left-arrow="' . $left_arrow . '" data-right-arrow="' . $right_arrow . '" data-arrow="' . $carousel_arrow . '" data-dots="' . $carousel_bullet . '" data-team-layout="' . $team_carousel_layout . '" data-loop="' . ($loop ? 'true' : 'false') . '" data-autoplay="' . $carousel_autoplay . '" data-pause-on-hover="' . $carousel_pause_on_hover . '" data-speed="' . $carousel_speed . '" data-interval="' . $carousel_interval . '" data-margin="' . $carousel_margin . '" data-item-number-xl="' . $carousel_item_number_xl . '" data-item-number-lg="' . $carousel_item_number_lg . '" data-item-number-md="' . $carousel_item_number_md . '" data-item-number-sm="' . $carousel_item_number_sm . '" data-item-number-xs="' . $carousel_item_number_xs . '">';
 
 		if (isset($settings->sp_team_carousel_item) && is_array($settings->sp_team_carousel_item))
 		{
@@ -58,6 +60,10 @@ class SppagebuilderAddonTeam_carousel extends SppagebuilderAddons
 
 			foreach ($settings->sp_team_carousel_item as $item_key => $carousel_item)
 			{
+				if (isset($carousel_item->item_visibility) && $carousel_item->item_visibility === false)
+				{
+					continue;
+				}
 				$carousel_img = isset($carousel_item->team_carousel_img) && $carousel_item->team_carousel_img ? $carousel_item->team_carousel_img : '';
 				$carousel_img_src = isset($carousel_img->src) ? $carousel_img->src : $carousel_img;
 				$person_name = isset($carousel_item->person_name) ? $carousel_item->person_name : '';
@@ -110,6 +116,10 @@ class SppagebuilderAddonTeam_carousel extends SppagebuilderAddons
 
 					foreach ($carousel_item->team_carousel_item as $inner_item_key => $inner_item_value)
 					{
+						if (isset($inner_item_value->item_visibility) && $inner_item_value->item_visibility === false)
+						{
+							continue;
+						}
 						$socialUrl = EditorUtils::stringifyLinkItem($inner_item_value->social_url);
 						$innerItemTitle = $inner_item_value->title ?? '';
 						$content .= '<li>';
@@ -439,13 +449,16 @@ class SppagebuilderAddonTeam_carousel extends SppagebuilderAddons
             carousel_item_number_xs = data.carousel_item_number.xs
         }
         #>
-            <div class="sppb-addon sppb-carousel-extended {{data.class}} sppb-team-carousel-{{data.team_carousel_layout}}" data-left-arrow="{{left_arrow}}" data-right-arrow="{{right_arrow}}" data-arrow="{{data.carousel_arrow}}" data-dots="{{data.carousel_bullet}}" data-team-layout="{{data.team_carousel_layout}}" data-autoplay="{{data.carousel_autoplay}}" data-speed="{{data.carousel_speed}}" data-interval="{{data.carousel_interval}}" data-margin="{{data.carousel_margin}}" data-item-number-xl="{{carousel_item_number_xl || 3}}" data-item-number-lg="{{carousel_item_number_lg || 3}}" data-item-number-md="{{carousel_item_number_md || 3}}" data-item-number-sm="{{carousel_item_number_sm || 2}}" data-item-number-xs="{{carousel_item_number_xs || 1}}">
+            <div class="sppb-addon sppb-carousel-extended {{data.class}} sppb-team-carousel-{{data.team_carousel_layout}}" data-left-arrow="{{left_arrow}}" data-right-arrow="{{right_arrow}}" data-arrow="{{data.carousel_arrow}}" data-dots="{{data.carousel_bullet}}" data-team-layout="{{data.team_carousel_layout}}" data-autoplay="{{data.carousel_autoplay}}" data-pause-on-hover="{{data.carousel_pause_on_hover}}" data-speed="{{data.carousel_speed}}" data-interval="{{data.carousel_interval}}" data-margin="{{data.carousel_margin}}" data-item-number-xl="{{carousel_item_number_xl || 3}}" data-item-number-lg="{{carousel_item_number_lg || 3}}" data-item-number-md="{{carousel_item_number_md || 3}}" data-item-number-sm="{{carousel_item_number_sm || 2}}" data-item-number-xs="{{carousel_item_number_xs || 1}}">
                 <# if(_.isArray(data.sp_team_carousel_item)){
 
 					if(data.randomize_carousel){
 						data.sp_team_carousel_item = _.shuffle(data.sp_team_carousel_item);
 					}
                     _.each(data.sp_team_carousel_item, function(carousel_item){
+						if(carousel_item.item_visibility !== undefined && carousel_item.item_visibility === false){
+							return;
+						}
 						const profileLink = carousel_item.person_profile_link;
 						const isUrlObject = _.isObject(profileLink) && ( !!profileLink?.url || !!profileLink?.page || !!profileLink?.menu);
 						const isUrlString = _.isString(profileLink) && profileLink !== "";
@@ -502,6 +515,9 @@ class SppagebuilderAddonTeam_carousel extends SppagebuilderAddons
                             if( _.isArray(carousel_item.team_carousel_item)){
                                 content += `<ul class="sppb-carousel-extended-team-social-icon">`;
                                     _.each(carousel_item.team_carousel_item, function(inner_item_value){
+										if(inner_item_value.item_visibility !== undefined && inner_item_value.item_visibility === false){
+											return;
+										}
 										const socialUrl = inner_item_value.social_url;
 										const isUrlObject = _.isObject(socialUrl) && ( !!socialUrl?.url || !!socialUrl?.page || !!socialUrl?.menu);
 										const isUrlString = _.isString(socialUrl) && socialUrl !== "";

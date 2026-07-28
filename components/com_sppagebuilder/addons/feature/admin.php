@@ -243,6 +243,16 @@ SpAddonsConfig::addonConfig([
                     'std' => 0,
                 ],
 
+				'preserve_border_radius' => [
+					'type'    => 'checkbox',
+					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_FEATURE_BOX_IMAGE_ZOOM_PRESERVE_BORDER_RADIUS'),
+					'desc' => Text::_('COM_SPPAGEBUILDER_ADDON_FEATURE_BOX_IMAGE_ZOOM_PRESERVE_BORDER_RADIUS_DESC'),
+					'std' => 0,
+					'depends' => [
+						['is_zoom_enabled', '=', 1]
+					]
+				],
+
                 'zoom_scale' => [
                     'type' => 'slider',
                     'title' => Text::_('COM_SPPAGEBUILDER_ADDON_IMAGE_SCALE'),
@@ -408,6 +418,7 @@ SpAddonsConfig::addonConfig([
 
 				'btn_url' => [
 					'type'  => 'link',
+					'link_popup' => true,
 					'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_LINK'),
 				],
 
@@ -719,6 +730,7 @@ SpAddonsConfig::addonConfig([
 
 				'second_btn_url' => [
 					'type'  => 'link',
+					'link_popup' => true,
 					'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_LINK'),
 				],
 

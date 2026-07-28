@@ -43,7 +43,7 @@ if (empty($this->mappings))
 					<?php
 					try
 					{
-						echo wordwrap($this->escape(RSFormProHelper::getMappingQuery($row)), 150, '<br />', true);
+						echo wordwrap($this->escape(RSFormProHelper::getMappingQuery($row, array('remote' => false))), 150, '<br />', true);
 					}
 					catch (Exception $e)
 					{
@@ -52,7 +52,7 @@ if (empty($this->mappings))
 					?>
 				</td>
 				<td align="center" width="20%" nowrap="nowrap">
-					<button type="button" class="btn btn-secondary" onclick="openRSModal('<?php echo Route::_('index.php?option=com_rsform&view=mappings&cid='.$row->id.'&tmpl=component&formId='.$this->formId); ?>', 'Mappings', '1000x800')"><?php echo Text::_('RSFP_EDIT'); ?></button>
+					<button type="button" class="btn btn-secondary" onclick="openRSModal('<?php echo Route::_('index.php?option=com_rsform&view=mappings&cid='.$row->id.'&tmpl=component&formId='.$this->formId); ?>', 'Mappings')"><?php echo Text::_('RSFP_EDIT'); ?></button>
 					<button type="button" class="btn btn-danger" onclick="if (confirm(Joomla.JText._('RSFP_ARE_YOU_SURE_DELETE'))) mappingDelete(<?php echo $row->id; ?>);"><?php echo Text::_('RSFP_DELETE'); ?></button>
 				</td>
 			</tr>

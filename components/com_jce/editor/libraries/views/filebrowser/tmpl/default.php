@@ -4,11 +4,11 @@
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Session\Session;
@@ -120,18 +120,22 @@ use Joomla\CMS\Session\Session;
               </li>
             </ul>
             <div class="limit-text uk-navbar-content uk-width-2-4">
-              <label for="browser-list-limit-select" class="uk-margin-small-right">
-                <?php echo Text::_('WF_LABEL_SHOW'); ?>
-              </label>
-              <select id="browser-list-limit-select">
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="0">
-                  <?php echo Text::_('WF_OPTION_ALL'); ?>
-                </option>
+
+              <?php if (count((array) $this->list_limit_options)) : ?>
+                <label for="browser-list-limit-select" class="uk-margin-small-right">
+                  <?php echo Text::_('WF_LABEL_SHOW'); ?>
+                </label>
+                <select id="browser-list-limit-select">
+
+                <?php foreach ($this->list_limit_options as $value) : ?>
+                  <option value="<?php echo $value; ?>" <?php echo $value == $this->list_limit ? 'selected="selected"' : ''; ?>>
+                    <?php echo $value ? $value : Text::_('WF_OPTION_ALL'); ?>
+                  </option>
+                <?php endforeach; ?>
+
               </select>
+
+              <?php endif; ?>
             </div>
             <ul class="limit-right uk-pagination uk-pagination-right uk-width-1-4">
               <li class="limit-right uk-invisible" role="button">

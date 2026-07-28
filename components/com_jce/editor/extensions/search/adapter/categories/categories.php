@@ -4,11 +4,11 @@
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\RouteHelper;
@@ -66,7 +66,7 @@ class PlgWfSearchCategories extends CMSPlugin
         $db = Factory::getDbo();
         $user = Factory::getUser();
         $app = Factory::getApplication();
-        $groups = implode(',', $user->getAuthorisedViewLevels());
+        $groups = implode(',', array_map('intval', $user->getAuthorisedViewLevels()));
         $searchText = $text;
 
         if (is_array($areas) && !array_intersect($areas, array_keys($this->onContentSearchAreas()))) {
@@ -100,7 +100,14 @@ class PlgWfSearchCategories extends CMSPlugin
         $case_when = ' CASE WHEN ';
         $case_when .= $query->charLength('a.alias', '!=', '0');
         $case_when .= ' THEN ';
-        $a_id = $query->castAsChar('a.id');
+
+        // Joomla 3 compatibility
+        if (method_exists($query, 'castAsChar')) {
+            $a_id = $query->castAsChar('a.id');
+        } else {
+            $a_id = $query->castAs('CHAR', 'a.id');
+        }
+        
         $case_when .= $query->concatenate(array($a_id, 'a.alias'), ':');
         $case_when .= ' ELSE ';
         $case_when .= $a_id . ' END as slug';
@@ -109,7 +116,7 @@ class PlgWfSearchCategories extends CMSPlugin
         $query->from('#__categories AS a');
         $query->where(
             '(a.title LIKE ' . $text . ' OR a.description LIKE ' . $text . ') AND a.published = 1 AND a.extension = '
-            . $db->quote('com_content') . 'AND a.access IN (' . $groups . ')'
+            . $db->quote('com_content') . ' AND a.access IN (' . $groups . ')'
         );
 
         $query->group('a.id, a.title, a.description, a.alias, a.created_time');

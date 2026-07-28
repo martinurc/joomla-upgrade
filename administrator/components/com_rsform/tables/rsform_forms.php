@@ -79,7 +79,7 @@ class TableRSForm_Forms extends Table
 	public $MetaDesc = '';
 	public $MetaKeywords = '';
 	public $Required = '(*)';
-	public $ErrorMessage = '<p class="formRed">Please complete all required fields!</p>';
+	public $ErrorMessage = '<div class="rsform-error-message">There are <span class="rsform-error-message-count">{error_count}</span> field errors on this form. Please complete all required fields before submitting.</div>';
 	public $MultipleSeparator = '\n';
 	public $TextareaNewLines = 1;
 	public $CSSClass = '';

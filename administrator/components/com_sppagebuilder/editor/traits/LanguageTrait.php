@@ -23,11 +23,13 @@ defined('_JEXEC') or die('Restricted access');
 trait LanguageTrait
 {
     public static $languageListPath = JPATH_ROOT . '/administrator/components/com_sppagebuilder/assets/data/languages.json';
+    public static $cacheDuration = 86400; // 1 day
+    public static $remoteLanguageUrl = 'https://www.joomshaper.com/resources/sppagebuilder/languages.json';
 
     public function language()
     {
         $method = $this->getInputMethod();
-        $this->checkNotAllowedMethods(['POST', 'DELETE', 'PATCH'], $method);
+        $this->checkNotAllowedMethods(['POST', 'PATCH'], $method);
 
         switch ($method)
         {
@@ -37,18 +39,63 @@ trait LanguageTrait
             case 'PUT':
                 $this->installLanguage();
                 break;
+            case 'DELETE':
+                $this->uninstallLanguage();
+                break;
         }
+    }
+
+    /**
+     * Get languages data with caching mechanism
+     *
+     * @return string JSON data
+     */
+    private function getLanguagesData()
+    {
+        $shouldRefresh = true;
+
+        if (file_exists(self::$languageListPath))
+        {
+            $fileTime = filemtime(self::$languageListPath);
+            $shouldRefresh = (time() - $fileTime) > self::$cacheDuration;
+        }
+
+        if ($shouldRefresh)
+        {
+            try
+            {
+                $http = new Http();
+                $response = $http->get(self::$remoteLanguageUrl);
+
+                if ($response->code === 200)
+                {
+                    $data = $response->body;
+                    file_put_contents(self::$languageListPath, $data);
+                    return $data;
+                }
+            }
+            catch (Exception $e)
+            {
+                // If remote fetch fails and we have a local file, use it as fallback
+                if (file_exists(self::$languageListPath))
+                {
+                    return file_get_contents(self::$languageListPath);
+                }
+                throw $e;
+            }
+        }
+
+        return file_get_contents(self::$languageListPath);
     }
 
     private function getLanguageList()
     {
         $model = $this->getModel();
-
         $response = new stdClass();
 
         try
         {
-            $languagesData = file_get_contents(self::$languageListPath);
+            $languagesData = $this->getLanguagesData();
 
             if (empty($languagesData))
             {
@@ -70,7 +117,8 @@ trait LanguageTrait
             foreach ($languages as $key => $item)
             {
                 $item->thumbnail = Uri::root() . 'media/mod_languages/images/' . strtolower(str_ireplace('-', '_', $item->lang_tag)) . '.gif';
-                $installed = $model->checkLanguageIsInstalled($item->lang_tag);
+                // Use getLanguageStatus() to sync with Joomla's extensions table
+                $installed = $model->getLanguageStatus($item->lang_tag);
                 $item->state = -1;
                 $item->status = Text::_("COM_SPPAGEBUILDER_DASHBOARD_PAGES_LANGUAGE_STATUS_NOT_INSTALLED");
                 $item->updatable = false;
@@ -85,7 +133,7 @@ trait LanguageTrait
                     }
                     else
                     {
-                        $item->status = Text::_("COM_SPPAGEBUILDER_DASHBOARD_PAGES_LANGUAGE_STATUS_INSTALLED");;
+                        $item->status = Text::_("COM_SPPAGEBUILDER_DASHBOARD_PAGES_LANGUAGE_STATUS_DEACTIVATED");
                     }
 
                     if ($item->version > $installed->version)
@@ -169,5 +217,40 @@ trait LanguageTrait
 
         $response->message = Text::_('COM_SPPAGEBUILDER_ERROR_MSG_FOR_FAILED_LANGUAGE_INSTALL');
         $this->sendResponse($response, 500);
+    }
+
+    public function uninstallLanguage()
+    {
+        $user = Factory::getUser();
+        $model = $this->getModel();
+
+        $rawData = file_get_contents('php://input');
+        $jsonData = json_decode($rawData, true);
+        $lang = $jsonData['languageCode'] ?? null;
+
+        $response = new stdClass();
+
+        if (empty($lang))
+        {
+            $response->message = Text::_("COM_SPPAGEBUILDER_ERROR_MSG_FOR_LANGUAGE_CODE");
+            $this->sendResponse($response, 404);
+        }
+
+        $authorised = $user->authorise('core.admin', 'com_sppagebuilder') || $user->authorise('core.manage', 'com_sppagebuilder');
+
+        if (!$authorised)
+        {
+            $response->message = Text::_('JERROR_ALERTNOAUTHOR');
+            $this->sendResponse($response, 403);
+        }
+
+        if ($model->uninstallLanguage($lang))
+        {
+            $response->message = Text::_('COM_SPPAGEBUILDER_SUCCESS_MSG_FOR_LANGUAGE_UNINSTALL');
+            return $this->sendResponse($response, 200);
+        }
+
+        $response->message = Text::_('COM_SPPAGEBUILDER_ERROR_MSG_FOR_FAILED_LANGUAGE_UNINSTALL');
+        return $this->sendResponse($response, 500);
     }
 }

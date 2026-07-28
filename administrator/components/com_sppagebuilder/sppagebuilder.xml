@@ -7,7 +7,7 @@
 	<authorUrl>https://www.joomshaper.com</authorUrl>
 	<copyright>Copyright @ 2010 - 2025 JoomShaper. All rights reserved.</copyright>
 	<license>GNU General Public License version 2 or later</license>
-	<version>5.5.7</version>
+	<version>6.7.0</version>
 	<scriptfile>installer.script.php</scriptfile>
 	<variant>pro</variant>
 
@@ -56,6 +56,7 @@
         <plugin name="sppagebuilder" group="system" activate="true" />
 		<plugin name="sppagebuilderproupdater" group="system" activate="true" />
 		<plugin name="sppagebuilderloadmodule" group="content" activate="true" />
+		<plugin name="profileimage" group="user" activate="false" />
         <plugin name="sppagebuilder" group="search" activate="false" />
 		<plugin name="sppagebuilder" group="finder" activate="false" />
 		<plugin name="sppagebuilder" group="content" activate="false" />
@@ -100,6 +101,8 @@
 			<filename>controller.php</filename>
 			<folder>assets</folder>
 			<folder>controllers</folder>
+			<folder>comment</folder>
+			<folder>config</folder>
 			<folder>dynamic-content</folder>
 			<folder>editor</folder>
 			<folder>models</folder>

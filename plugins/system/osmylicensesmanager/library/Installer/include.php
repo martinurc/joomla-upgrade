@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   ShackInstaller
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2016-2023 Joomlashack.com. All rights reserved
+ * @copyright 2016-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of ShackInstaller.
@@ -36,7 +37,7 @@ if (defined('SHACK_INSTALLER_BASE') == false) {
 AutoLoader::register('Alledia\\Installer', __DIR__, true);
 
 if (defined('SHACK_INSTALLER_VERSION') == false) {
-    define('SHACK_INSTALLER_VERSION', '2.5.0');
+    define('SHACK_INSTALLER_VERSION', '2.6.4');
     define('SHACK_INSTALLER_COMPATIBLE', '2.4.0');
 
     if (isset($reportErrors) == false) {

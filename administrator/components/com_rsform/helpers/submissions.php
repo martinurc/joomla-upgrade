@@ -8,7 +8,7 @@
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\File;
+use Joomla\Filesystem\File;
 
 require_once JPATH_ADMINISTRATOR . '/components/com_rsform/helpers/rsform.php';
 
@@ -195,7 +195,14 @@ abstract class RSFormProSubmissionsHelper
 								{
 									if (file_exists($actualFile) && is_file($actualFile))
 									{
-										File::delete($actualFile);
+										try
+										{
+											File::delete($actualFile);
+										}
+										catch (Exception $e)
+										{
+
+										}
 									}
 								}
                             }
@@ -266,7 +273,14 @@ abstract class RSFormProSubmissionsHelper
                     {
                         if (file_exists($file) && is_file($file))
                         {
-                            File::delete($file);
+							try
+							{
+								File::delete($file);
+							}
+							catch (Exception $e)
+							{
+
+							}
                         }
                     }
                 }

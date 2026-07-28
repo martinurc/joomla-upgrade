@@ -23,7 +23,7 @@ class SppagebuilderAddonHeading extends SppagebuilderAddons
 		$settings = $this->addon->settings;
 		$class = (isset($settings->class) && $settings->class) ? ' ' . $settings->class : '';
 
-		$title = (isset($settings->title) && $settings->title) ? $settings->title : '';
+		$title = (isset($settings->title) && strlen($settings->title)) ? $settings->title : '';
 		$heading_selector = (isset($settings->heading_selector) && $settings->heading_selector) ? $settings->heading_selector : 'h2';
 		$title_icon = (isset($settings->title_icon) && $settings->title_icon) ? $settings->title_icon : '';
 		$title_icon_position = (isset($settings->title_icon_position) && $settings->title_icon_position) ? $settings->title_icon_position : 'before';
@@ -35,7 +35,7 @@ class SppagebuilderAddonHeading extends SppagebuilderAddons
 			'new_tab' => 'link_new_tab'
 		]);
 
-		if ($title)
+		if (strlen($title))
 		{
 			$output .= '<div class="sppb-addon sppb-addon-header' . $class . '">';
 			$output .= !empty($link) ? '<a ' . $target . ' href="' . $link . '">' : '';

@@ -61,11 +61,15 @@ class RsformControllerMappings extends RsformController
 	public function save()
 	{
 		$app    = Factory::getApplication();
-		$data   = $app->input->post->getArray(array(), null, 'raw');
-		$config	= $app->input->get('jform', array(), 'array');
-		$data   = array_merge($data, $config);
-
-		unset($data['jform']);
+		$data   = array(
+			'f' => $app->input->post->get('f', array(), 'array'),
+			'o' => $app->input->post->get('o', array(), 'array'),
+			'w' => $app->input->post->get('w', array(), 'array'),
+			'c' => $app->input->post->get('c', array(), 'array'),
+			'formId' => $app->input->getInt('formId'),
+			'id' => $app->input->getInt('id')
+		);
+		$data = array_merge($data, $app->input->get('jform', array(), 'array'));
 
 		$model = $this->getModel('mappings');
 		$model->save($data);

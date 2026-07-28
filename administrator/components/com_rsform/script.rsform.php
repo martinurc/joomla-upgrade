@@ -1394,11 +1394,9 @@ class com_rsformInstallerScript
             <?php
         }
         ?>
-		<h2>Changelog v3.4.2</h2>
+		<h2>Changelog v3.4.9</h2>
 		<ul class="version-history">
-            <li><span class="version-upgraded">Upg</span> Replaced instances of legacy 'Chosen' dropdowns with 'Joomla! Fancy Select' on Joomla! 4 and 5.</li>
-            <li><span class="version-fixed">Fix</span> 'Birthday Field' no longer generates a label for better accessibility compliance.</li>
-            <li><span class="version-fixed">Fix</span> Pico CSS 'Checkbox Group' and 'Radio Group' fields were not showing up correctly if they contained longer text.</li>
+            <li><span class="version-fixed">Fix</span> The "Add another file" button would not work on Uikit 3 layouts.</li>
 		</ul>
 		<a class="btn btn-large btn-lg btn-primary text-white" href="index.php?option=com_rsform">Start using RSForm! Pro</a>
 		<a class="btn btn-secondary text-white" href="https://www.rsjoomla.com/support/documentation/rsform-pro.html" target="_blank">Read the RSForm! Pro User Guide</a>

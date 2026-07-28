@@ -823,6 +823,12 @@ gtag('consent', 'default', {";
 
 	private function replaceIframe($matches) {
 		$iframe = $matches[0];
+		// check if it's a local url, then don't block it
+		preg_match('/<iframe.*src=\"(.*)\".*>/isU', $iframe, $srcmatches);
+		if (strpos($srcmatches[1], 'http') === false) {
+			return $iframe;
+		}
+
 		$iframeText = $this->params->get('blockiframes_textimage', 'image') === 'text' ? '<div class="cookiesck-iframe-wrap-text">' . Text::_($this->params->get('blockiframes_text', 'COOKIESCK_IFRAME_TEXT')) . '</div>' : '';
 		$iframe = '<div class="cookiesck-iframe-wrap">' . $iframeText . str_replace('src=', 'data-cookiesck-src=', $iframe) . '</div>';
 

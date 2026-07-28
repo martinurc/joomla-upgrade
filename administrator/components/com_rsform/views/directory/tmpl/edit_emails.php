@@ -30,7 +30,7 @@ if (empty($this->emails))
 		{
 			foreach ($this->emails as $row)
 			{
-				$onclick = "openRSModal('" . Route::_('index.php?option=com_rsform&task=emails.edit&type=directory&tmpl=component&formId=' . $row->formId . '&cid=' . $row->id) . "', 'Emails', '800x750'); return false;";
+				$onclick = "openRSModal('" . Route::_('index.php?option=com_rsform&task=emails.edit&type=directory&tmpl=component&formId=' . $row->formId . '&cid=' . $row->id) . "', 'Emails'); return false;";
 				?>
 				<tr>
 					<td>

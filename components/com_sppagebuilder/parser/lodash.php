@@ -122,84 +122,76 @@ final class Lodash extends HelperBase
 
 		$css = [];
 		$transformFunctions = [];
-
 		$transformOriginFunctions = [];
 
 		if (isset($selector) && isset($data))
 		{
-			$transformFunctions[] = '<# if(_.isObject(' . $data . ') && !_.isEmpty(' . $data . ')) { #>';
+			$buildTransformFunctions = function ($valueVar) {
+				$functions = [];
+				$functions[] = '<# if(_.isObject(' . $valueVar . ') && !_.isEmpty(' . $valueVar . ')) { #>';
+				$functions[] = '<# if(!_.isEmpty(' . $valueVar . '.move)) { #>';
+				$functions[] = '<# if(!_.isEmpty(' . $valueVar . '.move) && !_.isEmpty(' . $valueVar . '.move.x) && !_.isEmpty(' . $valueVar . '.move.x.value) && !_.isEmpty(' . $valueVar . '.move.x.unit)) { #>';
+				$functions[] = 'translateX(' . $this->inlineBlock($valueVar . '.move.x.value') . $this->inlineBlock($valueVar . '.move.x.unit') . ')';
+				$functions[] = '<# } #>';
+				$functions[] = '<# if(!_.isEmpty(' . $valueVar . '.move) && !_.isEmpty(' . $valueVar . '.move.y) && !_.isEmpty(' . $valueVar . '.move.y.value) && !_.isEmpty(' . $valueVar . '.move.y.unit)) { #>';
+				$functions[] = 'translateY(' . $this->inlineBlock($valueVar . '.move.y.value') . $this->inlineBlock($valueVar . '.move.y.unit') . ')';
+				$functions[] = '<# } #>';
+				$functions[] = '<# } #>';
+				$functions[] = '<# if(!_.isEmpty(' . $valueVar . '.rotate)) { #>';
+				$functions[] = '<# if(!_.isEmpty(' . $valueVar . '.rotate) && !_.isEmpty(' . $valueVar . '.rotate.x) && !_.isEmpty(' . $valueVar . '.rotate.x.value) && !_.isEmpty(' . $valueVar . '.rotate.x.unit)) { #>';
+				$functions[] = 'rotateX(' . $this->inlineBlock($valueVar . '.rotate.x.value') . $this->inlineBlock($valueVar . '.rotate.x.unit') . ')';
+				$functions[] = '<# } #>';
+				$functions[] = '<# if(!_.isEmpty(' . $valueVar . '.rotate) && !_.isEmpty(' . $valueVar . '.rotate.y) && !_.isEmpty(' . $valueVar . '.rotate.y.value) && !_.isEmpty(' . $valueVar . '.rotate.y.unit)) { #>';
+				$functions[] = 'rotateY(' . $this->inlineBlock($valueVar . '.rotate.y.value') . $this->inlineBlock($valueVar . '.rotate.y.unit') . ')';
+				$functions[] = '<# } #>';
+				$functions[] = '<# if(!_.isEmpty(' . $valueVar . '.rotate) && !_.isEmpty(' . $valueVar . '.rotate.z) && !_.isEmpty(' . $valueVar . '.rotate.z.value) && !_.isEmpty(' . $valueVar . '.rotate.z.unit)) { #>';
+				$functions[] = 'rotateZ(' . $this->inlineBlock($valueVar . '.rotate.z.value') . $this->inlineBlock($valueVar . '.rotate.z.unit') . ')';
+				$functions[] = '<# } #>';
+				$functions[] = '<# } #>';
+				$functions[] = '<# if(!_.isEmpty(' . $valueVar . '.scale)) { #>';
+				$functions[] = '<# if(!_.isEmpty(' . $valueVar . '.scale) && !_.isEmpty(' . $valueVar . '.scale.x)) { #>';
+				$functions[] = 'scaleX(' . $this->inlineBlock($valueVar . '.scale.x') . ')';
+				$functions[] = '<# } #>';
+				$functions[] = '<# if(!_.isEmpty(' . $valueVar . '.scale) && !_.isEmpty(' . $valueVar . '.scale.y)) { #>';
+				$functions[] = 'scaleY(' . $this->inlineBlock($valueVar . '.scale.y') . ')';
+				$functions[] = '<# } #>';
+				$functions[] = '<# } #>';
+				$functions[] = '<# if(!_.isEmpty(' . $valueVar . '.skew)) { #>';
+				$functions[] = '<# if(!_.isEmpty(' . $valueVar . '.skew) && !_.isEmpty(' . $valueVar . '.skew.x) && !_.isEmpty(' . $valueVar . '.skew.x.value) && !_.isEmpty(' . $valueVar . '.skew.x.unit)) { #>';
+				$functions[] = 'skewX(' . $this->inlineBlock($valueVar . '.skew.x.value') . $this->inlineBlock($valueVar . '.skew.x.unit') . ')';
+				$functions[] = '<# } #>';
+				$functions[] = '<# if(!_.isEmpty(' . $valueVar . '.skew) && !_.isEmpty(' . $valueVar . '.skew.y) && !_.isEmpty(' . $valueVar . '.skew.y.value) && !_.isEmpty(' . $valueVar . '.skew.y.unit)) { #>';
+				$functions[] = 'skewY(' . $this->inlineBlock($valueVar . '.skew.y.value') . $this->inlineBlock($valueVar . '.skew.y.unit') . ')';
+				$functions[] = '<# } #>';
+				$functions[] = '<# } #>';
+				$functions[] = '<# } #>';
 
-			$transformFunctions[] = '<# if(!_.isEmpty(' . $data . '.move)) { #>';
+				return $functions;
+			};
 
-			$transformFunctions[] = '<# if(!_.isEmpty(' . $data . '.move) && !_.isEmpty(' . $data . '.move.x) && !_.isEmpty(' . $data . '.move.x.value) && !_.isEmpty(' . $data . '.move.x.unit)) { #>';
-			$transformFunctions[] = 'translateX(' . $this->inlineBlock($data . '.move.x.value') . $this->inlineBlock($data . '.move.x.unit') . ')';
-			$transformFunctions[] = '<# } #>';
+			$buildTransformOriginFunctions = function ($valueVar) {
+				$functions = [];
+				$functions[] = '<# if(_.isObject(' . $valueVar . ') && !_.isEmpty(' . $valueVar . ')) { #>';
+				$functions[] = '<# if(!_.isEmpty(' . $valueVar . '.transform_origin)) { #>';
+				$functions[] = '<# if(!_.isEmpty(' . $valueVar . '.transform_origin) && !_.isEmpty(' . $valueVar . '.transform_origin.left) && !_.isEmpty(' . $valueVar . '.transform_origin.left.value) && !_.isEmpty(' . $valueVar . '.transform_origin.left.unit)) { #>';
+				$functions[] = $this->inlineBlock($valueVar . '.transform_origin.left.value') . $this->inlineBlock($valueVar . '.transform_origin.left.unit');
+				$functions[] = '<# } #>';
+				$functions[] = '<# if(!_.isEmpty(' . $valueVar . '.transform_origin) && !_.isEmpty(' . $valueVar . '.transform_origin.top) && !_.isEmpty(' . $valueVar . '.transform_origin.top.value) && !_.isEmpty(' . $valueVar . '.transform_origin.top.unit)) { #>';
+				$functions[] = $this->inlineBlock($valueVar . '.transform_origin.top.value') . $this->inlineBlock($valueVar . '.transform_origin.top.unit');
+				$functions[] = '<# } #>';
+				$functions[] = '<# } #>';
+				$functions[] = '<# } #>';
 
-			$transformFunctions[] = '<# if(!_.isEmpty(' . $data . '.move) && !_.isEmpty(' . $data . '.move.y) && !_.isEmpty(' . $data . '.move.y.value) && !_.isEmpty(' . $data . '.move.y.unit)) { #>';
-			$transformFunctions[] = 'translateY(' . $this->inlineBlock($data . '.move.y.value') . $this->inlineBlock($data . '.move.y.unit') . ')';
-			$transformFunctions[] = '<# } #>';
+				return $functions;
+			};
 
-			$transformFunctions[] = '<# } #>';
+			$css[] = '<# var _transformValue = ' . $data . '; #>';
+			$css[] = '<# if(_.isObject(_transformValue) && !_.isEmpty(_transformValue) && (_.has(_transformValue, "xl") || _.has(_transformValue, "md"))) { #>';
+			$css[] = '<# _transformValue = _transformValue?.[window.builderDefaultDevice] || _transformValue?.xl || _transformValue?.lg || _transformValue?.md || _transformValue?.sm || _transformValue?.xs; #>';
+			$css[] = '<# } #>';
 
-			$transformFunctions[] = '<# if(!_.isEmpty(' . $data . '.rotate)) { #>';
-
-			$transformFunctions[] = '<# if(!_.isEmpty(' . $data . '.rotate) && !_.isEmpty(' . $data . '.rotate.x) && !_.isEmpty(' . $data . '.rotate.x.value) && !_.isEmpty(' . $data . '.rotate.x.unit)) { #>';
-			$transformFunctions[] = 'rotateX(' . $this->inlineBlock($data . '.rotate.x.value') . $this->inlineBlock($data . '.rotate.x.unit') . ')';
-			$transformFunctions[] = '<# } #>';
-
-			$transformFunctions[] = '<# if(!_.isEmpty(' . $data . '.rotate) && !_.isEmpty(' . $data . '.rotate.y) && !_.isEmpty(' . $data . '.rotate.y.value) && !_.isEmpty(' . $data . '.rotate.y.unit)) { #>';
-			$transformFunctions[] = 'rotateY(' . $this->inlineBlock($data . '.rotate.y.value') . $this->inlineBlock($data . '.rotate.y.unit') . ')';
-			$transformFunctions[] = '<# } #>';
-
-			$transformFunctions[] = '<# if(!_.isEmpty(' . $data . '.rotate) && !_.isEmpty(' . $data . '.rotate.z) && !_.isEmpty(' . $data . '.rotate.z.value) && !_.isEmpty(' . $data . '.rotate.z.unit)) { #>';
-			$transformFunctions[] = 'rotateZ(' . $this->inlineBlock($data . '.rotate.z.value') . $this->inlineBlock($data . '.rotate.z.unit') . ')';
-			$transformFunctions[] = '<# } #>';
-
-			$transformFunctions[] = '<# } #>';
-
-			$transformFunctions[] = '<# if(!_.isEmpty(' . $data . '.scale)) { #>';
-				
-			$transformFunctions[] = '<# if(!_.isEmpty(' . $data . '.scale) && !_.isEmpty(' . $data . '.scale.x)) { #>';
-			$transformFunctions[] = 'scaleX(' . $this->inlineBlock($data . '.scale.x') . ')';
-			$transformFunctions[] = '<# } #>';
-
-			$transformFunctions[] = '<# if(!_.isEmpty(' . $data . '.scale) && !_.isEmpty(' . $data . '.scale.y)) { #>';
-			$transformFunctions[] = 'scaleY(' . $this->inlineBlock($data . '.scale.y') . ')';
-			$transformFunctions[] = '<# } #>';
-
-			$transformFunctions[] = '<# } #>';
-
-			$transformFunctions[] = '<# if(!_.isEmpty(' . $data . '.skew)) { #>';
-
-			$transformFunctions[] = '<# if(!_.isEmpty(' . $data . '.skew) && !_.isEmpty(' . $data . '.skew.x) && !_.isEmpty(' . $data . '.skew.x.value) && !_.isEmpty(' . $data . '.skew.x.unit)) { #>';
-			$transformFunctions[] = 'skewX(' . $this->inlineBlock($data . '.skew.x.value') . $this->inlineBlock($data . '.skew.x.unit') . ')';
-			$transformFunctions[] = '<# } #>';
-
-			$transformFunctions[] = '<# if(!_.isEmpty(' . $data . '.skew) && !_.isEmpty(' . $data . '.skew.y) && !_.isEmpty(' . $data . '.skew.y.value) && !_.isEmpty(' . $data . '.skew.y.unit)) { #>';
-			$transformFunctions[] = 'skewY(' . $this->inlineBlock($data . '.skew.y.value') . $this->inlineBlock($data . '.skew.y.unit') . ')';
-			$transformFunctions[] = '<# } #>';
-
-			$transformFunctions[] = '<# } #>';
-
-			$transformFunctions[] = '<# } #>';
-
-
-			// transform origin styles
-			$transformOriginFunctions[] = '<# if(_.isObject(' . $data . ') && !_.isEmpty(' . $data . ')) { #>';
-
-			$transformOriginFunctions[] = '<# if(!_.isEmpty(' . $data . '.transform_origin)) { #>';
-
-			$transformOriginFunctions[] = '<# if(!_.isEmpty(' . $data . '.transform_origin) && !_.isEmpty(' . $data . '.transform_origin.left) && !_.isEmpty(' . $data . '.transform_origin.left.value) && !_.isEmpty(' . $data . '.transform_origin.left.unit)) { #>';
-			$transformOriginFunctions[] = $this->inlineBlock($data . '.transform_origin.left.value') . $this->inlineBlock($data . '.transform_origin.left.unit');
-			$transformOriginFunctions[] = '<# } #>';
-
-			$transformOriginFunctions[] = '<# if(!_.isEmpty(' . $data . '.transform_origin) && !_.isEmpty(' . $data . '.transform_origin.top) && !_.isEmpty(' . $data . '.transform_origin.top.value) && !_.isEmpty(' . $data . '.transform_origin.top.unit)) { #>';
-			$transformOriginFunctions[] = $this->inlineBlock($data . '.transform_origin.top.value') . $this->inlineBlock($data . '.transform_origin.top.unit');
-			$transformOriginFunctions[] = '<# } #>';
-
-			$transformOriginFunctions[] = '<# } #>';
-
-			$transformOriginFunctions[] = '<# } #>';
+			$transformFunctions = $buildTransformFunctions('_transformValue');
+			$transformOriginFunctions = $buildTransformOriginFunctions('_transformValue');
 		}
 	
 		// If there are transform functions, construct the CSS rule
@@ -215,6 +207,19 @@ final class Lodash extends HelperBase
 			}
 			$css[] = '}';
 		}
+
+		$css[] = '<# if(_.isObject(' . $data . ') && !_.isEmpty(' . $data . ') && (_.has(' . $data . ', "xl") || _.has(' . $data . ', "md"))) { #>';
+		foreach ($this->sizes as $size)
+		{
+			$css[] = $this->mediaQueryDevice($size);
+			$css[] = $selector . ' {';
+			$css[] = '<# var _transformDeviceValue = ' . $data . '?.' . $size . '; #>';
+			$css[] = '    transform: ' . implode(' ', $buildTransformFunctions('_transformDeviceValue')) . ';';
+			$css[] = '    transform-origin: ' . implode(' ', $buildTransformOriginFunctions('_transformDeviceValue')) . ';';
+			$css[] = '}';
+			$css[] = '}';
+		}
+		$css[] = '<# } #>';
 
 		return implode("\n", $css);
 	}
@@ -537,6 +542,80 @@ final class Lodash extends HelperBase
 		return implode("\n", $css);
 	}
 
+
+	/**
+	 * Generate CSS for a given selector and properties
+	 * 
+	 * @param 	string 	$selector 		The CSS selector.
+	 * @param 	array 	$cssProperties 	An associative array of CSS properties and their values.
+	 * @param 	array 	$cssUnits 		An associative array of CSS units for each property.
+	 * @param 	array 	$defaultValues 	Default values for the properties.
+	 * @param 	bool 	$responsive 		Whether to generate responsive CSS.
+	 * @param 	string 	$static 			Static CSS value to be included.
+	 * 
+	 * @return 	string 	The generated CSS string.
+	 */
+	public function generateStyle(string $selector, array $cssProperties, array $cssUnits = ['default' => 'px'], bool $responsive = true, array $defaultValues = [], string $static = '')
+	{
+		$css = '';
+
+		// call unit function for each property
+		foreach ($cssProperties as $property => $value)
+		{
+			// if css property is color then call color function
+			if ($property === 'color' || $property === 'background-color' || $property === 'background')
+			{
+				$css .= $this->color($property, $selector, 'data.' . $value, $defaultValues);
+				continue;
+			}
+
+			// if css property is box shadow then call box shadow function
+			if ($property === 'box-shadow')
+			{
+				$css .= $this->boxShadow($property, $selector, 'data.' . $value, $defaultValues);
+				continue;
+			}
+			// if css property is text shadow then call text shadow function
+			if ($property === 'text-shadow')
+			{
+				$css .= $this->textShadow($property, $selector, 'data.' . $value, $defaultValues);
+				continue;
+			}
+			// if css property is alignment then call alignment function
+			if ($property === 'text-align')
+			{
+				$css .= $this->alignment($property, $selector, 'data.' . $value);
+				continue;
+			}
+			// if css property is border then call border function
+			if ($property === 'border')
+			{
+				$css .= $this->border($property, $selector, 'data.' . $value, $static);
+				continue;
+			}
+			// if css property is spacing then call spacing function
+			if ($property === 'margin' || $property === 'padding')
+			{
+				$css .= $this->spacing($property, $selector, 'data.' . $value);
+				continue;
+			}
+
+			$unit = isset($cssUnits[$value]) ? $cssUnits[$value] : $cssUnits['default'];
+			$css .= $this->unit($property, $selector, 'data.' . $value, $unit, $responsive, '', $static);
+		}
+
+		if(!empty($static))
+		{
+			$selector = $this->generateSelector($selector);
+			$css .= $selector . ' {';
+			$css .= $static;
+			$css .= '}';
+		}
+
+		return $css;
+
+	}
+
 	/**
 	 * manage color
 	 *
@@ -723,6 +802,18 @@ final class Lodash extends HelperBase
 		$italic         = (!empty($fallbacks) && array_key_exists('italic', $fallbacks)) ? $fallbacks['italic'] : "undefined";
 		$underline      = (!empty($fallbacks) && array_key_exists('underline', $fallbacks)) ? $fallbacks['underline'] : "undefined";
 		$weight         = (!empty($fallbacks) && array_key_exists('weight', $fallbacks)) ? $fallbacks['weight'] : "undefined";
+
+		$css[] = '
+		<# 
+		var typography = ' . $data . ';
+		var typographyPreset = typography?.preset;
+		if (typographyPreset && globalTypographies && typeof typographyPreset === "string" && typographyPreset.includes(".")) {
+			var typographyPresetGroup = typographyPreset.split(".")[0];
+			var typographyPresetIndex = typographyPreset.split(".")[1];
+
+			var typographyPresetValues = globalTypographies[typographyPresetGroup]?.typography?.[typographyPresetIndex];
+			' . $data  . '= typographyPresetValues ?? ' . $data . ';
+		} #>';
 
 		$css[] = '<# if (!_.isEmpty(' . $data . ') && _.isObject(' . $data . ') ) { #>';
 

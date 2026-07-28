@@ -32,7 +32,7 @@ extract($displayData, EXTR_OVERWRITE);
  * @var   string  $toggleSplit
  */
 
-$direction = Factory::getLanguage()->isRtl() ? 'dropdown-menu-end' : '';
+$direction = '';
 
 /**
  * The dropdown class is also injected on the button from \Joomla\CMS\Toolbar\ToolbarButton::prepareOptions() and therefore we need the dropdown script whether we
@@ -46,8 +46,6 @@ $wa->useScript('bootstrap.dropdown');
 <?php if ($hasButtons && trim($button) !== '') : ?>
     <?php // If there is a toggle split then render the items. Else render the parent button which has the items in the custom element.  ?>
     <?php if ($toggleSplit ?? true) : ?>
-        <?php // @todo use a class instead of the inline style.
-             //  Reverse order solves a console err for dropdown ?>
         <div id="<?php echo $id; ?>" class="btn-group dropdown-<?php echo $name ?? ''; ?>" role="group">
             <button type="button" class="<?php echo $caretClass ?? ''; ?> dropdown-toggle-split"
                 data-bs-toggle="dropdown" data-bs-target=".dropdown-menu" data-bs-display="static" aria-haspopup="true" aria-expanded="false">

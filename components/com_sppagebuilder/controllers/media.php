@@ -38,6 +38,21 @@ class SppagebuilderControllerMedia extends FormController
 	{
 		parent::__construct($config);
 
+		if (!Session::checkToken('post'))
+		{
+			$app = Factory::getApplication();
+
+			$app->setHeader('status', 403, true);
+			$app->sendHeaders();
+
+			echo new JsonResponse([
+				'status'  => false,
+				'message' => Text::_('JINVALID_TOKEN'),
+			]);
+
+			$app->close();
+		}
+
 		// check have access
 		$user = Factory::getUser();
 		$authorised = $user->authorise('core.admin', 'com_sppagebuilder') || $user->authorise('core.manage', 'com_sppagebuilder') || $user->authorise('core.create', 'com_sppagebuilder') || $user->authorise('core.edit', 'com_sppagebuilder') || $user->authorise('core.edit.own', 'com_sppagebuilder') || $user->authorise('core.delete', 'com_sppagebuilder');
@@ -106,6 +121,8 @@ class SppagebuilderControllerMedia extends FormController
 		$title = $input->json->get('title', '', 'STR');
 		$path = $input->json->get('path', '', 'STR');
 		$thumb = $input->json->get('thumb', '', 'STR');
+
+		$title = $this->sanitizeTitle($title);
 
 		if(!$this->pathExistsInDB($path))
 		{
@@ -284,14 +301,14 @@ class SppagebuilderControllerMedia extends FormController
 		$model  = $this->getModel();
 		$user 	= Factory::getUser();
 		$input  = Factory::getApplication()->input;
+		$report = array();
+		$uploadedItems = array();
 
 		if (isset($_FILES['file']) && $_FILES['file'])
 		{
 			$files = $this->getFilesInput('file', null);
 
 			$dir  = $input->post->get('folder', '', 'PATH');
-			$report = array();
-			$uploadedItems = array();
 
 			$authorised = $user->authorise('core.edit', 'com_sppagebuilder') || $user->authorise('core.edit.own', 'com_sppagebuilder');
 
@@ -343,7 +360,7 @@ class SppagebuilderControllerMedia extends FormController
 						'image' => array('jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'avif'),
 						'video' => array('mp4', 'mov', 'wmv', 'avi', 'mpg', 'ogv', '3gp', '3g2'),
 						'audio' => array('mp3', 'm4a', 'ogg', 'wav'),
-						'attachment' => array('pdf', 'doc', 'docx', 'key', 'ppt', 'pptx', 'pps', 'ppsx', 'odt', 'xls', 'xlsx', 'zip', 'json'),
+						'attachment' => array('pdf', 'doc', 'docx', 'key', 'ppt', 'pptx', 'pps', 'ppsx', 'odt', 'xls', 'xlsx', 'zip', 'json', 'srt', 'vtt'),
 					);
 
 					// Upload if no error found
@@ -626,7 +643,7 @@ class SppagebuilderControllerMedia extends FormController
 			$app->setHeader('status', 500, true);
 			$app->sendHeaders();
 			$response = [
-				'data' => Text::_("COM_SPPAGEBUILDER_MEDIA_MANAGER_MEDIA_RENAME_ERROR"),
+				'data' => Text::_("COM_SPPAGEBUILDER_MEDIA_MANAGER_MEDIA_DELETE_ERROR"),
 				'status' => false,
 				'code' => 500
 			];
@@ -1156,5 +1173,12 @@ class SppagebuilderControllerMedia extends FormController
 		}
 		echo json_encode($report);
 		die;
+	}
+
+	private function sanitizeTitle($title)
+	{
+		$title = File::makeSafe($title);
+		$title = preg_replace('/[^a-zA-Z0-9-_\.]/', '', $title);
+		return $title;
 	}
 }

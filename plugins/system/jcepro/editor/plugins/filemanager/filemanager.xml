@@ -1,22 +1,25 @@
 <?xml version="1.0" ?>
-<extension version="3.4" type="plugin" group="jce" method="upgrade">
+<extension type="plugin" group="jce" method="upgrade">
     <name>WF_FILEMANAGER_TITLE</name>
-    <version>2.9.89</version>
-    <creationDate>16-07-2025</creationDate>
+    <version>2.9.99.9</version>
+    <creationDate>08-07-2026</creationDate>
     <author>Ryan Demmer</author>
     <authorEmail>info@joomlacontenteditor.net</authorEmail>
     <authorUrl>https://www.joomlacontenteditor.net/</authorUrl>
-    <copyright>Copyright (C) 2006 - 2025 Ryan Demmer. All rights reserved</copyright>
-    <license>GNU/GPL Version 2 or later - http://www.gnu.org/licenses/gpl-2.0.html</license>
+    <copyright>Copyright (C) 2006 - 2026 Ryan Demmer. All rights reserved</copyright>
+    <license>GNU/GPL Version 2 or later - http://www.gnu.org/licenses/gpl-2.0.html; see LICENSE.txt</license>
     <description>WF_FILEMANAGER_DESC</description>
     <icon>filemanager</icon>
     <files></files>
     <fields name="filemanager">
         <fieldset name="config">
 
-            <field name="dir" type="directorypath" default="" size="50" label="WF_PARAM_DIRECTORY" description="WF_PARAM_DIRECTORY_DESC"/>
+            <field name="dir" type="keyvalue" default="" size="50" label="WF_PARAM_DIRECTORY" description="WF_PARAM_DIRECTORY_DESC" sortable="true">
+                <field name="path" type="text" placeholder="images" size="50" label="WF_PARAM_DIRECTORY_PATH" />
+                <field name="label" type="text" size="50" label="WF_PARAM_DIRECTORY_LABEL" />
+            </field>
 
-            <field name="max_size" class="input-small" hint="1024" max="" type="uploadmaxsize" step="128" label="WF_PARAM_UPLOAD_SIZE" description="WF_PARAM_UPLOAD_SIZE_DESC" />
+            <field name="max_size" class="input-small" hint="10240" max="" type="uploadmaxsize" step="128" label="WF_PARAM_UPLOAD_SIZE" description="WF_PARAM_UPLOAD_SIZE_DESC" />
 
             <field name="extensions" type="filetype" class="extensions create" default="acrobat=pdf;office=doc,docx,dot,dotx,ppt,pptx,xls,xlsx;image=gif,jpeg,jpg,png,apng,webp,avif;archive=zip,tar,gz;video=swf,mov,wmv,avi,flv,mp4,ogv,ogg,webm,mpeg,mpg;audio=wav,mp3,ogg,webm,aiff;openoffice=odt,odg,odp,ods,odf;text=txt,rtf,md" label="WF_PARAM_EXTENSIONS" description="WF_PARAM_EXTENSIONS_DESC">
                 <group label="acrobat">
@@ -201,6 +204,11 @@
             <field type="heading" label="WF_PROFILES_PLUGINS_ACCESS" />
 
             <field name="inline_upload" type="yesno" default="1" label="WF_PARAM_INLINE_UPLOAD" description="WF_PARAM_INLINE_UPLOAD_DESC">
+                <option value="1">JYES</option>
+                <option value="0">JNO</option>
+            </field>
+
+            <field name="help_button" type="yesno" default="1" label="WF_PARAM_HELP_BUTTON" description="WF_PARAM_HELP_BUTTON_DESC">
                 <option value="1">JYES</option>
                 <option value="0">JNO</option>
             </field>

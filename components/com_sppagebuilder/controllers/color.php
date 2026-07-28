@@ -9,6 +9,7 @@
 // No direct access
 defined('_JEXEC') or die('Restricted access');
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\FormController;
@@ -21,10 +22,16 @@ use Joomla\CMS\Response\JsonResponse;
  */
 class SppagebuilderControllerColor extends FormController
 {
-
+	/**
+	 * Get the default colors from the template style (Helix)
+	 * 
+	 * @return mixed
+	 * @since 5.7.0
+	 */
 	private function getDefaultColors()
 	{
-		$colorPrefix = 'sppb-';
+		$colorPrefix = 'sppb';
+
 		$keysToExtract = [
 			"topbar_bg_color",
 			"topbar_text_color",
@@ -67,6 +74,12 @@ class SppagebuilderControllerColor extends FormController
 
 			$styleObjDecoded = \json_decode($styleObj);
 
+			$isCustomTemplateStyle = isset($styleObjDecoded->custom_style) && $styleObjDecoded->custom_style == 1;
+
+			if(!$isCustomTemplateStyle && isset($styleObjDecoded->preset) && !empty($styleObjDecoded->preset)) {
+				$styleObjDecoded = json_decode($styleObjDecoded->preset);
+			}
+
 			$newStyleObj = new \stdClass();
 
 			foreach ($keysToExtract as $key) {
@@ -86,9 +99,10 @@ class SppagebuilderControllerColor extends FormController
 			foreach ($styleObjDecoded as $key => $value) {
 				if (is_string($value) && !empty($value)) {
 					array_push($colorValues, [
-						'id' => uniqid(),
+						'path' => [$colorPrefix . '-'  . str_replace('_', '-', strtolower
+						($key)), ''],
 						'value' => $value,
-						'name' => $colorPrefix . str_replace('_', '-', strtolower($key))
+						'isTemplateColor' => true,
 					]);
 				}
 			}
@@ -99,66 +113,36 @@ class SppagebuilderControllerColor extends FormController
 		}
 	}
 
+	/**
+	 * Get color variables
+	 *
+	 * @return mixed
+	 *
+	 * @since 5.7.0
+	 */
+	private function getColorVariables()
+	{
+		$params = ComponentHelper::getParams('com_sppagebuilder');
+
+		if ($params->exists('sppb_color_variables'))
+		{
+			return $params->get('sppb_color_variables');
+		}
+
+		return [];
+
+	}
+
     /**
      * Get global colors
      */
 	public function globalColors()
 	{
-		$colorPrefix = 'sppb-';
-		$db = Factory::getDbo();
-		$query = $db->getQuery(true);
-		$query->select(['id', 'name', 'colors'])
-			->from($db->quoteName('#__sppagebuilder_colors'))
-			->where($db->quoteName('published') . ' = 1');
-		$db->setQuery($query);
+		$colorVariables = $this->getColorVariables();
+		$themeColors = $this->getDefaultColors();
+		$colorVariables = array_merge($colorVariables, json_decode($themeColors, true));
 
-		$colors = [];
-		$ext = "{}";
-
-		try
-		{
-			$colors = $db->loadObjectList();
-			$ext = $this->getDefaultColors();
-		}
-		catch (\Exception $e)
-		{
-			return [];
-		}
-
-		if (!empty($colors))
-		{
-			foreach ($colors as &$color)
-			{
-				$color->colors = \json_decode($color->colors);
-
-				if (isset($color->name) && !empty($color->name))
-				{
-					$color->name = str_replace(' ', '-', trim($color->name));
-				}
-
-				if (isset($color->colors) && !empty($color->colors))
-				{
-					foreach ($color->colors as &$colorValue)
-					{
-						if (isset($colorValue->name))
-						{
-							$colorValue->name = str_replace(' ', '-', trim($colorValue->name));
-							$colorValue->name = str_replace('_', '-', $colorValue->name);
-							$colorValue->name = strtolower($colorPrefix . $color->name . '-' . $colorValue->name);
-						}
-					}
-				}
-			}
-
-			unset($color);
-
-		}
-
-		if ($ext !== '[]' && $ext !== '{}') {
-			array_push($colors, \json_decode('{ "id": -1, "name": "' . Text::_("COM_SPPAGEBUILDER_EDITOR_SETTINGS_PAGE_DEFAULT_GLOBAL_THEME_COLOR_TITLE") . '", "colors": ' . $ext . ' }'));
-		}
-
-		$this->sendResponse($colors);
+		$this->sendResponse($colorVariables);
 	}
 
 	/**

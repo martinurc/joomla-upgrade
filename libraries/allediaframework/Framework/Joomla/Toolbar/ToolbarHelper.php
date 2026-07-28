@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2022-2023 Joomlashack.com. All rights reserved
+ * @copyright 2022-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -24,19 +25,47 @@
 namespace Alledia\Framework\Joomla\Toolbar;
 
 use Alledia\Framework\Factory;
+use Joomla\CMS\Document\Document;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Toolbar\Toolbar;
+use Joomla\CMS\Toolbar\ToolbarHelper as JoomlaToolbarHelper;
 use Joomla\CMS\Utility\Utility;
 use Joomla\CMS\Version;
 
 defined('_JEXEC') or die();
 
-abstract class ToolbarHelper extends \Joomla\CMS\Toolbar\ToolbarHelper
+abstract class ToolbarHelper extends JoomlaToolbarHelper
 {
+    /**
+     * @var Toolbar
+     */
+    protected static Toolbar $toolbar;
+
     /**
      * @var bool
      */
-    protected static $exportLoaded = false;
+    protected static bool $exportLoaded = false;
+
+    /**
+     * @param ?Document $document
+     *
+     * @return Toolbar
+     * @throws \Exception
+     */
+    public static function getToolbar(?Document $document = null): Toolbar
+    {
+        if (empty(static::$toolbar)) {
+            if (Version::MAJOR_VERSION < 5) {
+                static::$toolbar = Toolbar::getInstance();
+
+            } else {
+                $document        = $document ?: Factory::getApplication()->getDocument();
+                static::$toolbar = $document->getToolbar();
+            }
+        }
+
+        return static::$toolbar;
+    }
 
     /**
      * Create a button that links to an external page
@@ -63,7 +92,7 @@ abstract class ToolbarHelper extends \Joomla\CMS\Toolbar\ToolbarHelper
                     explode(' ', $attributes['class'] ?? ''),
                     [
                         'btn',
-                        'btn-small'
+                        'btn-small',
                     ]
                 )
             )
@@ -80,8 +109,7 @@ abstract class ToolbarHelper extends \Joomla\CMS\Toolbar\ToolbarHelper
             $button = sprintf('<joomla-toolbar-button>%s</joomla-toolbar-button>', $button);
         }
 
-        $bar = Toolbar::getInstance();
-        $bar->appendButton('Custom', $button, $icon);
+        static::getToolbar()->appendButton('Custom', $button, $icon);
     }
 
     /**

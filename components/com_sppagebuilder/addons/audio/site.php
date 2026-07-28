@@ -31,6 +31,8 @@ class SppagebuilderAddonAudio extends SppagebuilderAddons
 		$ogg_link = (isset($this->addon->settings->ogg_link) && $this->addon->settings->ogg_link) ? $this->addon->settings->ogg_link : '';
 		$autoplay = (isset($this->addon->settings->autoplay) && $this->addon->settings->autoplay) ? $this->addon->settings->autoplay : 0;
 		$repeat = (isset($this->addon->settings->repeat) && $this->addon->settings->repeat) ? $this->addon->settings->repeat : 0;
+		$aria_label = (isset($this->addon->settings->aria_label) && $this->addon->settings->aria_label) ? $this->addon->settings->aria_label : '';
+		$preload = (isset($this->addon->settings->preload) && $this->addon->settings->preload) ? $this->addon->settings->preload : 'none';
 
 		$output  = '<div class="sppb-addon sppb-addon-audio ' . $class . '">';
 
@@ -40,7 +42,7 @@ class SppagebuilderAddonAudio extends SppagebuilderAddons
 		}
 
 		$output .= '<div class="sppb-addon-content">';
-		$output .= '<audio controls ' . $autoplay . ' ' . $repeat . '>';
+		$output .= '<audio controls' . ($autoplay ? ' autoplay' : '') . ($repeat ? ' loop' : '') . ' preload="' . $preload . '" aria-label="' . htmlspecialchars($aria_label, ENT_QUOTES, 'UTF-8') . '">';
 		$output .= '<source src="' . EditorUtils::stringifyMediaItem($mp3_link) . '" type="audio/mp3">';
 		$output .= '<source src="' . EditorUtils::stringifyMediaItem($ogg_link) . '" type="audio/ogg">';
 		$output .= 'Your browser does not support the audio element.';
@@ -102,7 +104,7 @@ class SppagebuilderAddonAudio extends SppagebuilderAddons
 		<div class="sppb-addon sppb-addon-audio {{ data.class }}">
 			<# if( !_.isEmpty( data.title ) ){ #><{{ data.heading_selector }} class="sppb-addon-title sp-inline-editable-element" data-id={{data.id}} data-fieldName="title" contenteditable="true">{{ data.title }}</{{ data.heading_selector }}><# } #>
 			<div class="sppb-addon-content">
-				<audio controls {{ data.autoplay }} {{ data.repeat }}>
+				<audio controls<# if(data.autoplay) { #> autoplay<# } #><# if(data.repeat) { #> loop<# } #>>
 					<source src=\'{{ (data.mp3_link && data.mp3_link.src) ? data.mp3_link.src : data.mp3_link }}\' type="audio/mp3">
 					<source src=\'{{ (data.ogg_link && data.ogg_link.src) ? data.ogg_link.src : data.ogg_link }}\' type="audio/ogg">
 				</audio>

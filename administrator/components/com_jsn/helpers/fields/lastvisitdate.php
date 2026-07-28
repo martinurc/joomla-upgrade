@@ -28,7 +28,7 @@ class JsnLastvisitdateFieldHelper
 		$xml='';
 		$hideTitle= ($item->params->get('hidetitle',0) && JFactory::getApplication()->input->get('view','profile')=='profile' && JFactory::getApplication()->input->get('option','')=='com_jsn') || ($item->params->get('hidetitleedit',0) && (JFactory::getApplication()->input->get('layout','')=='edit' || JFactory::getApplication()->input->get('view','')=='registration'));
 		if(JFactory::getApplication()->input->get('view','profile')=='profile' && JFactory::getApplication()->input->get('option','')=='com_jsn' && $item->params->get('titleprofile','')!='') $item->title=$item->params->get('titleprofile','');
-		if(JFactory::getApplication()->isSite())
+		if(JFactory::getApplication()->isClient('site'))
 			$xml='
 				<field
 					name="lastvisitdate"

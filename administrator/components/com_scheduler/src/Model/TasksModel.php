@@ -19,7 +19,6 @@ use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\CMS\Object\CMSObject;
 use Joomla\Component\Scheduler\Administrator\Helper\SchedulerHelper;
 use Joomla\Component\Scheduler\Administrator\Task\TaskOption;
-use Joomla\Database\DatabaseQuery;
 use Joomla\Database\ParameterType;
 use Joomla\Database\QueryInterface;
 use Joomla\Utilities\ArrayHelper;
@@ -41,14 +40,14 @@ class TasksModel extends ListModel
     /**
      * Constructor.
      *
-     * @param   array                     $config   An optional associative array of configuration settings.
-     * @param   MVCFactoryInterface|null  $factory  The factory.
+     * @param   array                 $config   An optional associative array of configuration settings.
+     * @param   ?MVCFactoryInterface  $factory  The factory.
      *
      * @since   4.1.0
      * @throws  \Exception
      * @see     \JControllerLegacy
      */
-    public function __construct($config = [], MVCFactoryInterface $factory = null)
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         if (empty($config['filter_fields'])) {
             $config['filter_fields'] = [
@@ -105,7 +104,7 @@ class TasksModel extends ListModel
     /**
      * Method to create a query for a list of items.
      *
-     * @return  DatabaseQuery
+     * @return  QueryInterface
      *
      * @since  4.1.0
      * @throws \Exception
@@ -140,6 +139,7 @@ class TasksModel extends ListModel
                     $db->quoteName('a.priority'),
                     $db->quoteName('a.ordering'),
                     $db->quoteName('a.note'),
+                    $db->quoteName('a.created_by'),
                     $db->quoteName('a.checked_out'),
                     $db->quoteName('a.checked_out_time'),
                 ]
@@ -273,7 +273,7 @@ class TasksModel extends ListModel
         if (is_numeric($locked) && $locked != 0) {
             $now              = Factory::getDate('now', 'GMT');
             $timeout          = ComponentHelper::getParams('com_scheduler')->get('timeout', 300);
-            $timeout          = new \DateInterval(sprintf('PT%dS', $timeout));
+            $timeout          = new \DateInterval(\sprintf('PT%dS', $timeout));
             $timeoutThreshold = (clone $now)->sub($timeout)->toSql();
             $now              = $now->toSql();
 
@@ -331,7 +331,7 @@ class TasksModel extends ListModel
         $multiOrdering = $this->state->get('list.multi_ordering');
 
         if (!$multiOrdering || !\is_array($multiOrdering)) {
-            $orderCol = $this->state->get('list.ordering', 'a.title');
+            $orderCol = $this->state->get('list.ordering', 'a.next_execution');
             $orderDir = $this->state->get('list.direction', 'asc');
 
             // Type title ordering is handled exceptionally in _getList()
@@ -355,7 +355,7 @@ class TasksModel extends ListModel
             }
 
             // At least one correct order clause
-            if (count($orderClauses) > 0) {
+            if (\count($orderClauses) > 0) {
                 $query->order($orderClauses);
             }
         }
@@ -367,9 +367,9 @@ class TasksModel extends ListModel
      * Overloads the parent _getList() method.
      * Takes care of attaching TaskOption objects and sorting by type titles.
      *
-     * @param   DatabaseQuery  $query       The database query to get the list with
-     * @param   int            $limitstart  The list offset
-     * @param   int            $limit       Number of list items to fetch
+     * @param   QueryInterface  $query       The database query to get the list with
+     * @param   int             $limitstart  The list offset
+     * @param   int             $limit       Number of list items to fetch
      *
      * @return object[]
      *
@@ -379,7 +379,7 @@ class TasksModel extends ListModel
     protected function _getList($query, $limitstart = 0, $limit = 0): array
     {
         // Get stuff from the model state
-        $listOrder      = $this->getState('list.ordering', 'a.title');
+        $listOrder      = $this->getState('list.ordering', 'a.next_execution');
         $listDirectionN = strtolower($this->getState('list.direction', 'asc')) === 'desc' ? -1 : 1;
 
         // Set limit parameters and get object list
@@ -446,7 +446,7 @@ class TasksModel extends ListModel
      * @return void
      * @since  4.1.0
      */
-    protected function populateState($ordering = 'a.title', $direction = 'ASC'): void
+    protected function populateState($ordering = 'a.next_execution', $direction = 'ASC'): void
     {
         $app = Factory::getApplication();
 
@@ -461,13 +461,13 @@ class TasksModel extends ListModel
                     $multiOrderingParts = explode(' ', $multiOrdering, 2);
 
                     // Check that at least the column is present
-                    if (count($multiOrderingParts) < 1) {
+                    if (\count($multiOrderingParts) < 1) {
                         continue;
                     }
 
                     // Assign variables
                     $multiOrderingColumn = $multiOrderingParts[0];
-                    $multiOrderingDir    = count($multiOrderingParts) === 2 ? $multiOrderingParts[1] : 'asc';
+                    $multiOrderingDir    = \count($multiOrderingParts) === 2 ? $multiOrderingParts[1] : 'asc';
 
                     // Validate provided column
                     if (!\in_array($multiOrderingColumn, $this->filter_fields)) {
@@ -503,14 +503,23 @@ class TasksModel extends ListModel
         $db  = $this->getDatabase();
         $now = $time->toSql();
 
+        $timeout   = ComponentHelper::getParams('com_scheduler')->get('timeout', 300);
+        $threshold = (clone $time)->modify("-$timeout seconds")->toSql();
+
         $query = $db->getQuery(true)
             // Count due tasks
             ->select('SUM(CASE WHEN ' . $db->quoteName('a.next_execution') . ' <= :now THEN 1 ELSE 0 END) AS due_count')
             // Count locked tasks
-            ->select('SUM(CASE WHEN ' . $db->quoteName('a.locked') . ' IS NULL THEN 0 ELSE 1 END) AS locked_count')
+            ->select(
+                'SUM(CASE WHEN ' .
+                $db->quoteName('a.locked') . ' IS NOT NULL AND ' .
+                $db->quoteName('a.locked') . ' > :threshold ' .
+                'THEN 1 ELSE 0 END) AS locked_count'
+            )
             ->from($db->quoteName('#__scheduler_tasks', 'a'))
             ->where($db->quoteName('a.state') . ' = 1')
-            ->bind(':now', $now);
+            ->bind(':now', $now)
+            ->bind(':threshold', $threshold);
 
         $db->setQuery($query);
 
@@ -518,5 +527,16 @@ class TasksModel extends ListModel
 
         // False if we don't have due tasks, or we have locked tasks
         return $taskDetails && $taskDetails->due_count && !$taskDetails->locked_count;
+    }
+
+    /**
+     * Check if we have right now any enabled due tasks and no locked tasks.
+     *
+     * @return boolean
+     * @since  5.2.0
+     */
+    public function getHasDueTasks()
+    {
+        return $this->hasDueTasks(Factory::getDate('now', 'UTC'));
     }
 }

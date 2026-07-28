@@ -356,7 +356,11 @@ if (isset($options->show_top_shape) && $options->show_top_shape && isset($option
 		$shape_invert = isset($options->shape_invert) && $options->shape_invert ? 1 : 0;
 	}
 
-	if (class_exists('SppagebuilderHelperSite'))
+	if ($options->shape_name === 'custom')
+	{
+		$shape_code = (isset($options->shape_custom_svg) && $options->shape_custom_svg) ? $options->shape_custom_svg : '';
+	}
+	elseif (class_exists('SppagebuilderHelperSite'))
 	{
 		$shape_code = SppagebuilderHelperSite::getSvgShapeCode($options->shape_name, $shape_invert);
 	}
@@ -409,7 +413,11 @@ if (isset($options->show_bottom_shape) && $options->show_bottom_shape && isset($
 		$bottom_shape_invert = isset($options->bottom_shape_invert) && $options->bottom_shape_invert ? 1 : 0;
 	}
 
-	if (class_exists('SppagebuilderHelperSite') && isset($options->bottom_shape_name))
+	if ($options->bottom_shape_name === 'custom')
+	{
+		$bottom_shape_code = (isset($options->bottom_shape_custom_svg) && $options->bottom_shape_custom_svg) ? $options->bottom_shape_custom_svg : '';
+	}
+	elseif (class_exists('SppagebuilderHelperSite') && isset($options->bottom_shape_name))
 	{
 		$bottom_shape_code = SppagebuilderHelperSite::getSvgShapeCode($options->bottom_shape_name, $bottom_shape_invert);
 	}
@@ -449,7 +457,7 @@ if (!$fluid_row)
 	if ($mp4_url || $ogv_url)
 	{
 		$html .= '<div class="sppb-section-background-video">';
-		$html .= '<video class="section-bg-video" autoplay muted playsinline ' . $video_loop . '' . $video_params . '' . ($lazyload ? ' data-poster="' . $video_poster . '"' : ' poster="' . $video_poster . '"') . '>';
+		$html .= '<video class="section-bg-video" autoplay muted playsinline ' . $video_loop . '' . $video_params . '' . ($lazyload ? ($video_poster ? ' data-poster="' . $video_poster . '"' : '')  : ($video_poster ? ' poster="' . $video_poster . '"' : '')) . '>';
 
 		if ($mp4_url)
 		{
@@ -499,7 +507,7 @@ else
 	if ($mp4_url || $ogv_url)
 	{
 		$html .= '<div class="sppb-section-background-video">';
-		$html .= '<video class="section-bg-video" autoplay muted playsinline ' . $video_loop . '' . $video_params . '' . ($lazyload ? ' data-poster="' . $video_poster . '"' : ' poster="' . $video_poster . '"') . '>';
+		$html .= '<video class="section-bg-video" autoplay muted playsinline ' . $video_loop . '' . $video_params . '' . ($lazyload ? ($video_poster ? ' data-poster="' . $video_poster . '"' : '') : ($video_poster ? ' poster="' . $video_poster . '"' : '')) . '>';
 
 		if ($mp4_url)
 		{
@@ -584,3 +592,4 @@ if ((isset($options->title) && $options->title) || (isset($options->subtitle) &&
 $html .= '<div class="sppb-row' . $row_class . '">';
 
 echo $html;
+

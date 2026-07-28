@@ -29,7 +29,6 @@ SpAddonsConfig::addonConfig([
 						'mailchimp'  => Text::_('COM_SPPAGEBUILDER_ADDON_OPTIN_PLATFORM_MAILCHIMP'),
 						'sendgrid'   => Text::_('COM_SPPAGEBUILDER_ADDON_OPTIN_PLATFORM_SENDGRID'),
 						'sendinblue' => Text::_('COM_SPPAGEBUILDER_ADDON_OPTIN_PLATFORM_SENDINBLUE'),
-						'madmimi'    => Text::_('COM_SPPAGEBUILDER_ADDON_OPTIN_PLATFORM_MADMIMI'),
 						'acymailing' => Text::_('COM_SPPAGEBUILDER_ADDON_OPTIN_PLATFORM_ACYMAILING'),
 					],
 					'std' => 'mailchimp',

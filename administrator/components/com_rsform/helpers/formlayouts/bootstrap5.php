@@ -42,7 +42,7 @@ class RSFormProFormLayoutBootstrap5 extends RSFormProFormLayout
 		}
 		else
 		{
-			// Joomla! 4 has Bootstrap 5.0 built-in
+			// Joomla! 4+ has Bootstrap 5.0 built-in
 			try
 			{
 				$this->addjQuery();
@@ -53,8 +53,7 @@ class RSFormProFormLayoutBootstrap5 extends RSFormProFormLayout
 			catch (Exception $e)
 			{
 				// @TODO don't like hardcoded stuff keep an eye on this
-				$this->addStyleSheet('vendor/bootstrap/bootstrap.min.css');
-				$this->addScript('vendor/bootstrap/bootstrap.min.js');
+				$this->addStyleSheet('vendor/bootstrap/bootstrap.css');
 			}
 		}
 

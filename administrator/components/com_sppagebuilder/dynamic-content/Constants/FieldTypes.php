@@ -33,12 +33,16 @@ final class FieldTypes
     public const EMAIL            = 'email';
     public const PHONE            = 'phone';
     public const NUMBER           = 'number';
+    public const LOCATION         = 'location';
+    public const ICON             = 'icon';
+    public const RATING           = 'rating';
     public const SWITCH           = 'switch';
     public const COLOR            = 'color';
     public const OPTION           = 'option';
     public const FILE             = 'file';
     public const REFERENCE        = 'reference';
     public const MULTI_REFERENCE  = 'multi-reference';
+    public const LAYOUT           = 'SPPB Layout';
 
     /**
      * Get all the field types
@@ -61,12 +65,16 @@ final class FieldTypes
             self::DATETIME,
             self::LINK,
             self::NUMBER,
+            self::LOCATION,
+            self::ICON,
+            self::RATING,
             self::SWITCH,
             self::COLOR,
             self::OPTION,
             self::FILE,
             self::REFERENCE,
             self::MULTI_REFERENCE,
+            self::LAYOUT,
         ];
     }
 

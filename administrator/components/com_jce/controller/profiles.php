@@ -5,10 +5,10 @@
  * @subpackage  Admin
  *
  * @copyright   Copyright (C) 2005 - 2023 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -27,7 +27,13 @@ class JceControllerProfiles extends AdminController
     public function import()
     {
         // Check for request forgeries
-        Session::checkToken() or jexit(JText::_('JINVALID_TOKEN'));
+        Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
+
+        $user = Factory::getUser();
+
+        if (!$user->authorise('jce.profiles', 'com_jce')) {
+            throw new Exception(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+        }
 
         $app = Factory::getApplication();
 
@@ -54,6 +60,12 @@ class JceControllerProfiles extends AdminController
         // Check for request forgeries
         Session::checkToken('get') or jexit(Text::_('JINVALID_TOKEN'));
 
+        $user = Factory::getUser();
+
+        if (!$user->authorise('jce.profiles', 'com_jce')) {
+            throw new Exception(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+        }
+
         $model = $this->getModel('profiles');
 
         try {
@@ -71,12 +83,12 @@ class JceControllerProfiles extends AdminController
         Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
 
         $user = Factory::getUser();
-        $cid = (array) $this->input->get('cid', array(), 'int');
 
-        // Access checks.
-        if (!$user->authorise('core.create', 'com_jce')) {
-            throw new Exception(Text::_('JLIB_APPLICATION_ERROR_CREATE_NOT_PERMITTED'));
+        if (!$user->authorise('jce.profiles', 'com_jce')) {
+            throw new Exception(Text::_('JERROR_ALERTNOAUTHOR'), 403);
         }
+
+        $cid = (array) $this->input->get('cid', array(), 'int');
 
         if (empty($cid)) {
             throw new Exception(Text::_('No Item Selected'));
@@ -100,13 +112,13 @@ class JceControllerProfiles extends AdminController
         // Check for request forgeries
         Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
 
-        $user = JFactory::getUser();
-        $ids = (array) $this->input->get('cid', array(), 'int');
+        $user = Factory::getUser();
 
-        // Access checks.
-        if (!$user->authorise('core.create', 'com_jce')) {
-            throw new Exception(Text::_('JLIB_APPLICATION_ERROR_CREATE_NOT_PERMITTED'));
+        if (!$user->authorise('jce.profiles', 'com_jce')) {
+            throw new Exception(Text::_('JERROR_ALERTNOAUTHOR'), 403);
         }
+        
+        $ids = (array) $this->input->get('cid', array(), 'int');
 
         if (empty($ids)) {
             throw new Exception(Text::_('No Item Selected'));

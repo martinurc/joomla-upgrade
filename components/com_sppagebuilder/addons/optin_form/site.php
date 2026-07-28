@@ -10,6 +10,10 @@
 //no direct access
 defined('_JEXEC') or die('restricted access');
 
+require_once JPATH_ROOT . '/components/com_sppagebuilder/models/dynamic.php';
+require_once JPATH_ROOT . '/components/com_sppagebuilder/helpers/addon-helper.php';
+
+use Joomla\CMS\Captcha\Captcha;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Language\Text;
@@ -31,6 +35,12 @@ class SppagebuilderAddonOptin_form extends SppagebuilderAddons
 		// get pageid
 		$input 		= Factory::getApplication()->input;
 		$page_id 	= $input->get('id', 0, 'INT');
+		$view 		= $input->get('view', 'page', 'STRING');
+
+		if ($view === 'dynamic') {
+            $page_id = (new SppagebuilderModelDynamic())->getPageIdFromCollectionItemId();
+        }
+		
 		$settings = $this->addon->settings;
 		if (is_array($page_id))
 		{
@@ -63,7 +73,13 @@ class SppagebuilderAddonOptin_form extends SppagebuilderAddons
 		$captcha_type       = (isset($settings->captcha_type)) ? $settings->captcha_type : 'recaptcha';
 		$captcha_question   = (isset($settings->captcha_question) && $settings->captcha_question) ? $settings->captcha_question : '';
 		$captcha_answer     = (isset($settings->captcha_answer) && $settings->captcha_answer) ? $settings->captcha_answer : '';
-		$captcha_selector = $captcha_type === 'turnstile' ? 'cf-turnstile-response' : '';
+		if ($captcha_type === 'turnstile') {
+			$captcha_selector = 'cf-turnstile-response';
+		} elseif ($captcha_type === 'powcaptcha') {
+			$captcha_selector = 'altcha';
+		} else {
+			$captcha_selector = '';
+		}
 		$checkbox_title     = (isset($settings->checkbox_title) && $settings->checkbox_title) ? $settings->checkbox_title : '';
 
 		$platform = (isset($settings->platform) && $settings->platform) ? $settings->platform : 'mailchimp';
@@ -82,6 +98,25 @@ class SppagebuilderAddonOptin_form extends SppagebuilderAddons
 
 		$button_text 		= (isset($settings->button_text) && $settings->button_text) ? $settings->button_text : '';
 		$button_text_aria 		= (isset($settings->button_text) && $settings->button_text) ? $settings->button_text : '';
+
+		list($optinSuccessRedirectUrl,) = AddonHelper::parseLink($settings, 'button_url', ['url' => 'button_url', 'new_tab' => 'button_target']);
+		$optinSuccessRedirectUrl = \is_string($optinSuccessRedirectUrl) ? $optinSuccessRedirectUrl : '';
+
+		$redirectInNewTab = false;
+		if (!empty($settings->button_url) && \is_object($settings->button_url))
+		{
+			$redirectInNewTab = !empty($settings->button_url->new_tab);
+		}
+
+		$form_redirect_attrs = '';
+		if ($optinSuccessRedirectUrl !== '')
+		{
+			$form_redirect_attrs = ' data-redirect="yes" data-redirect-url="' . htmlspecialchars($optinSuccessRedirectUrl, ENT_QUOTES, 'UTF-8') . '"';
+			if ($redirectInNewTab)
+			{
+				$form_redirect_attrs .= ' data-redirect-new-tab="1"';
+			}
+		}
 
 		$button_class .= (isset($settings->button_size) && $settings->button_size) ? ' sppb-btn-' . $settings->button_size : '';
 		$button_class .= (isset($settings->button_shape) && $settings->button_shape) ? ' sppb-btn-' . $settings->button_shape : ' sppb-btn-rounded';
@@ -261,7 +296,7 @@ class SppagebuilderAddonOptin_form extends SppagebuilderAddons
 			$new_grid 	  =  "<div class='sppb-row has-grid'>";
 			$forminline   = '';
 		}
-		$output .= '<form class="sppb-optin-form ' . $forminline . ' ' . $button_inside . '">';				
+		$output .= '<form class="sppb-optin-form ' . $forminline . ' ' . $button_inside . '"' . $form_redirect_attrs . '>';				
 
 		$output .= $new_grid;
 		
@@ -311,11 +346,17 @@ class SppagebuilderAddonOptin_form extends SppagebuilderAddons
 			$output .= '</div>'; //.sppb-form-group
 		} else if ($recaptcha && $captcha_type != 'default') {
 			$output .= '<div class="sppb-form-group recaptcha-wrap ' .$col_wrap_recp_chckbpx. '">';
-			PluginHelper::importPlugin('captcha', $captcha_type);
-			Factory::getApplication()->triggerEvent('onInit', ['custom_captcha_' . $this->addon->id]);
-			$recaptcha = Factory::getApplication()->triggerEvent('onDisplay', array(null, 'custom_captcha_' . $this->addon->id, 'sppb-dynamic-recaptcha'));
 			$output .= '<input type="hidden" name="captcha_selector" value="' . $captcha_selector . '">';
-			$output .= (isset($recaptcha[0])) ? $recaptcha[0] : '<p class="sppb-text-danger">' . Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_CUSTOM_CAPTCHA_NOT_INSTALLED') . '</p>';
+			if ($captcha_type === 'powcaptcha') {
+				$captcha = Captcha::getInstance('powcaptcha');
+				$captcha_markup = $captcha ? $captcha->display($captcha_selector, 'custom_captcha_' . $this->addon->id, 'sppb-dynamic-recaptcha') : '';
+				$output .= !empty($captcha_markup) ? $captcha_markup : '<p class="sppb-text-danger">' . Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_CUSTOM_CAPTCHA_NOT_INSTALLED') . '</p>';
+			} else {
+				PluginHelper::importPlugin('captcha', $captcha_type);
+				Factory::getApplication()->triggerEvent('onInit', ['custom_captcha_' . $this->addon->id]);
+				$recaptcha = Factory::getApplication()->triggerEvent('onDisplay', array(null, 'custom_captcha_' . $this->addon->id, 'sppb-dynamic-recaptcha'));
+				$output .= (isset($recaptcha[0])) ? $recaptcha[0] : '<p class="sppb-text-danger">' . Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_CUSTOM_CAPTCHA_NOT_INSTALLED') . '</p>';
+			}
 			$output .= '</div>';
 		}
 
@@ -378,6 +419,7 @@ class SppagebuilderAddonOptin_form extends SppagebuilderAddons
 		$input = Factory::getApplication()->input;
 		//inputs
 		$inputs = $input->get('data', array(), 'ARRAY');
+		$view   = $input->get('view', 'page', 'STRING');
 
 		$captchaSelector = '';
 
@@ -520,13 +562,23 @@ class SppagebuilderAddonOptin_form extends SppagebuilderAddons
 						return json_encode($output);
 					}
 				} else {
-					PluginHelper::importPlugin('captcha', $captcha_type);
+					if ($captcha_type === 'powcaptcha') {
+						$captcha = Captcha::getInstance('powcaptcha');
+						$res = $captcha ? $captcha->checkAnswer($recaptcha) : false;
+						if (empty($res)) {
+							$output['content'] = '<span class="sppb-text-danger">' . Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_INVALID_CAPTCHA') . '</span>';
 	
-					$res = Factory::getApplication()->triggerEvent('onCheckAnswer', [$recaptcha]);
-					if (empty($res[0])) {
-						$output['content'] = '<span class="sppb-text-danger">' . Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_INVALID_CAPTCHA') . '</span>';
+							return json_encode($output);
+						}
+					} else {
+						PluginHelper::importPlugin('captcha', $captcha_type);
 	
-						return json_encode($output);
+						$res = Factory::getApplication()->triggerEvent('onCheckAnswer', [$recaptcha]);
+						if (empty($res[0])) {
+							$output['content'] = '<span class="sppb-text-danger">' . Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_INVALID_CAPTCHA') . '</span>';
+	
+							return json_encode($output);
+						}
 					}
 					$output['gcaptchaId'] = 'custom_recaptcha_' . $addonId;
 					$output['gcaptchaType'] = 'custom';

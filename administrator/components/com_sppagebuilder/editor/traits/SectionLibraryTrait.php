@@ -58,7 +58,7 @@ trait SectionLibraryTrait
 		}
 		else
 		{
-			$args = '&email=' . $cParams->get('joomshaper_email') . '&api_key=' . $cParams->get('joomshaper_license_key');
+			$args = '&email=' . urlencode($cParams->get('joomshaper_email')) . '&api_key=' . $cParams->get('joomshaper_license_key');
 			$sectionApi = 'https://www.joomshaper.com/index.php?option=com_layouts&task=block.list&support=4beyond' . $args;
 
 			$sectionResponse = $http->get($sectionApi);

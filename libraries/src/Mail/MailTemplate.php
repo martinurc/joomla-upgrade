@@ -10,17 +10,21 @@
 namespace Joomla\CMS\Mail;
 
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Event\Mail\BeforeRenderingMailTemplateEvent;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\File;
-use Joomla\CMS\Filesystem\Path;
-use Joomla\CMS\Language\Text;
+use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Language\LanguageFactoryInterface;
+use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Mail\Exception\MailDisabledException;
+use Joomla\Component\Mails\Administrator\Helper\MailsHelper;
 use Joomla\Database\ParameterType;
+use Joomla\Filesystem\File;
+use Joomla\Filesystem\Path;
 use Joomla\Registry\Registry;
 use PHPMailer\PHPMailer\Exception as phpmailerException;
 
 // phpcs:disable PSR1.Files.SideEffects
-\defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
 /**
@@ -63,13 +67,20 @@ class MailTemplate
     /**
      *
      * @var    string[]
-     * @since  4.4.7
+     * @since  5.1.0
+     */
+    protected $plain_data = [];
+
+    /**
+     *
+     * @var    string[]
+     * @since  5.1.3
      */
     protected $unsafe_tags = [];
 
     /**
      *
-     * @var    string[]
+     * @var    \stdClass[]
      * @since  4.0.0
      */
     protected $attachments = [];
@@ -91,15 +102,31 @@ class MailTemplate
     protected $replyto;
 
     /**
+     * Layout mailtemplate options of the email
+     *
+     * @var    string[]
+     * @since  5.2.0
+     */
+    protected $layoutTemplateData = [];
+
+    /**
+     * The language factory
+     *
+     * @var    LanguageFactoryInterface
+     * @since  5.4.7
+     */
+    protected LanguageFactoryInterface $languageFactory;
+
+    /**
      * Constructor for the mail templating class
      *
-     * @param   string  $templateId  Id of the mail template.
-     * @param   string  $language    Language of the template to use.
-     * @param   Mail    $mailer      Mail object to send the mail with.
+     * @param   string   $templateId  Id of the mail template.
+     * @param   string   $language    Language of the template to use.
+     * @param   ?Mail    $mailer      Mail object to send the mail with.
      *
      * @since   4.0.0
      */
-    public function __construct($templateId, $language, Mail $mailer = null)
+    public function __construct($templateId, $language, ?Mail $mailer = null, ?LanguageFactoryInterface $languageFactory = null)
     {
         $this->template_id = $templateId;
         $this->language    = $language;
@@ -108,6 +135,12 @@ class MailTemplate
             $this->mailer = $mailer;
         } else {
             $this->mailer = Factory::getMailer();
+        }
+
+        if ($languageFactory) {
+            $this->languageFactory = $languageFactory;
+        } else {
+            $this->languageFactory = Factory::getContainer()->get(LanguageFactoryInterface::class);
         }
     }
 
@@ -168,17 +201,36 @@ class MailTemplate
     }
 
     /**
+     * Add data to the html layout template
+     *
+     * @param   array  $data  Associative array of strings for the layout
+     *
+     * @return  void
+     *
+     * @since   5.2.0
+     */
+    public function addLayoutTemplateData($data)
+    {
+        $this->layoutTemplateData = array_merge($this->layoutTemplateData, $data);
+    }
+
+    /**
      * Add data to replace in the template
      *
      * @param   array  $data  Associative array of strings to replace
+     * @param   bool   $plain Only use the data for plain-text emails.
      *
      * @return  void
      *
      * @since   4.0.0
      */
-    public function addTemplateData($data)
+    public function addTemplateData($data, $plain = false)
     {
-        $this->data = array_merge($this->data, $data);
+        if (!$plain) {
+            $this->data = array_merge($this->data, $data);
+        } else {
+            $this->plain_data = array_merge($this->plain_data, $data);
+        }
     }
 
     /**
@@ -188,7 +240,7 @@ class MailTemplate
      *
      * @return  void
      *
-     * @since   4.4.7
+     * @since   5.1.3
      */
     public function addUnsafeTags($tags)
     {
@@ -209,7 +261,7 @@ class MailTemplate
     {
         $config = ComponentHelper::getParams('com_mails');
 
-        $mail = self::getTemplate($this->template_id, $this->language);
+        $mail = static::getTemplate($this->template_id, $this->language);
 
         // If the Mail Template was not found in the db, we cannot send an email.
         if ($mail === null) {
@@ -221,6 +273,12 @@ class MailTemplate
         $app         = Factory::getApplication();
         $replyTo     = $app->get('replyto', '');
         $replyToName = $app->get('replytoname', '');
+
+        $language = $app->getLanguage();
+        if ($this->language && $this->language !== $language->getTag()) {
+            $language = $this->languageFactory->createLanguage($this->language, $app->get('debug_lang'));
+            MailsHelper::loadTranslationFiles($mail->extension, $language);
+        }
 
         if ((int) $config->get('alternative_mailconfig', 0) === 1 && (int) $params->get('alternative_mailconfig', 0) === 1) {
             if ($this->mailer->Mailer === 'smtp' || $params->get('mailer') === 'smtp') {
@@ -248,19 +306,31 @@ class MailTemplate
             $replyToName = $params->get('replytoname', $replyToName);
         }
 
-        $app->triggerEvent('onMailBeforeRendering', [$this->template_id, &$this]);
+        $useLayout   = $config->get('disable_htmllayout', '1');
 
-        $subject = $this->replaceTags(Text::_($mail->subject), $this->data);
+        if ((int) $config->get('alternative_mailconfig', 0) === 1) {
+            $useLayout   = $params->get('disable_htmllayout', $useLayout);
+        }
+
+        $app->getDispatcher()->dispatch('onMailBeforeRendering', new BeforeRenderingMailTemplateEvent(
+            'onMailBeforeRendering',
+            ['templateId' => $this->template_id, 'subject' => $this]
+        ));
+
+        $subject = $this->replaceTags($language->_($mail->subject), $this->data);
         $this->mailer->setSubject($subject);
 
         $mailStyle = $config->get('mail_style', 'plaintext');
-        $plainBody = $this->replaceTags(Text::_($mail->body), $this->data);
-        $htmlBody  = $this->replaceTags(Text::_($mail->htmlbody), $this->data, true);
+
+        // Use the plain-text replacement data, if specified.
+        $plainData = $this->plain_data ?: $this->data;
+        $plainBody = $this->replaceTags($language->_($mail->body), $plainData);
+        $htmlBody  = $useLayout ? $language->_($mail->htmlbody) : $this->replaceTags($language->_($mail->htmlbody), $this->data, true);
 
         if ($mailStyle === 'plaintext' || $mailStyle === 'both') {
             // If the Plain template is empty try to convert the HTML template to a Plain text
             if (!$plainBody) {
-                $plainBody = strip_tags(str_replace(['<br>', '<br />', '<br/>'], "\n", $htmlBody));
+                $plainBody = strip_tags(str_replace(['<br>', '<br />', '<br/>'], "\n", $this->replaceTags($htmlBody, $plainData)));
             }
 
             $this->mailer->setBody($plainBody);
@@ -276,7 +346,59 @@ class MailTemplate
 
             // If HTML body is empty try to convert the Plain template to html
             if (!$htmlBody) {
-                $htmlBody = nl2br($this->replaceTags(Text::_($mail->body), $this->data, true), false);
+                $htmlBody = nl2br($this->replaceTags($language->_($mail->body), $plainData, true), false);
+            }
+
+            if ($useLayout) {
+                // Add additional data to the layout template
+                $this->addLayoutTemplateData([
+                    'siteName' => $app->get('sitename'),
+                    'lang'     => substr($this->language, 0, 2),
+                    'mail'     => $mail,
+                ]);
+
+                $layout = $config->get('mail_htmllayout', 'mailtemplate');
+                $logo   = (string) $config->get('mail_logofile', '');
+
+                // Check alternative mailconfig
+                if ((int) $config->get('alternative_mailconfig', 0) === 1) {
+                    $layout = $params->get('htmllayout', $layout);
+                    $logo   = $params->get('disable_logofile', 1) ? $logo : '' ;
+                }
+
+                // Add the logo to the mail as inline attachment
+                if ($logo) {
+                    $logo = Path::check(JPATH_ROOT . '/' . HTMLHelper::_('cleanImageURL', $logo)->url);
+                    if (is_file(urldecode($logo))) {
+                        # Attach the logo as inline attachment
+                        $this->mailer->addAttachment($logo, 'site-logo', 'base64', mime_content_type($logo), 'inline');
+
+                        // We need only the cid for attached logo file
+                        $this->addLayoutTemplateData(['logo' => 'site-logo']);
+                    }
+                }
+
+                // Check if layout is a template override
+                $layoutParts = explode(':', $layout);
+
+                if (\count($layoutParts) === 2) {
+                    $layout = $layoutParts[1];
+                }
+
+                // Wrap the default Joomla mail template around the HTML body
+                $layoutFile = new FileLayout('joomla.mail.' . $layout, null, ['client' => 'site']);
+
+                // Set the template layout path if needed
+                if (\count($layoutParts) === 2) {
+                    $layoutFile->addIncludePaths([
+                        JPATH_SITE . '/templates/' . $layoutParts[0] . '/html/layouts',
+                        JPATH_SITE . '/templates/' . $layoutParts[0] . '/html/layouts/com_mails',
+                    ]);
+                }
+
+                $htmlBody = $layoutFile->render(['mail' => $htmlBody, 'extra' => $this->layoutTemplateData], null);
+
+                $htmlBody = $this->replaceTags($language->_($htmlBody), $this->data);
             }
 
             $htmlBody = MailHelper::convertRelativeToAbsoluteUrls($htmlBody);

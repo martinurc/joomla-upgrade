@@ -30,4 +30,7 @@ INSERT IGNORE INTO `#__rsform_config` (`SettingName`, `SettingValue`) VALUES
 ('log_mappings', '0'),
 ('log_silentpost', '0'),
 ('access_login', '0'),
-('multipart_mails', '1');
+('multipart_mails', '1'),
+('global.scroll_page', '0'),
+('global.scroll_page_offset', '50'),
+('global.trigger_thankyou_content_plugins', '0');

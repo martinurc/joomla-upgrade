@@ -1,4 +1,14 @@
 <?php 
+
+/**
+ * @package Helix Ultimate Framework
+ * @author JoomShaper https://www.joomshaper.com
+ * @copyright Copyright (c) 2010 - 2025 JoomShaper
+ * @license http://www.gnu.org/licenses/gpl-2.0.html GNU/GPLv2 or Later
+*/
+
+defined('_JEXEC') or die;
+
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
@@ -11,6 +21,8 @@ $info = $params->get('info_block_position', 0);
 $attribs = json_decode($item->attribs ?? "");
 HTMLHelper::addIncludePath(JPATH_COMPONENT . '/helpers/html');
 $article_format = (isset($attribs->helix_ultimate_article_format) && $attribs->helix_ultimate_article_format) ? $attribs->helix_ultimate_article_format : 'standard';
+
+$item->heading = 'h4';
 
 $version = new Version();
 $JoomlaVersion = $version->getShortVersion();

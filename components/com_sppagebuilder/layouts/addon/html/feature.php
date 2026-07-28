@@ -33,32 +33,12 @@ $cssHelper = new CSSHelper($addon_id);
 
 $output = '';
 
-
-if (!is_string($icon_image_position) && is_object($icon_image_position)) {
-    if (!isset($icon_image_position->xl) || empty($icon_image_position->xl)) {
-        $icon_image_position->xl = 'after';
-    }
-    if (!isset($icon_image_position->lg) || empty($icon_image_position->lg)) {
-        $icon_image_position->lg = 'after';
-    }
-    if (!isset($icon_image_position->md) || empty($icon_image_position->md)) {
-        $icon_image_position->md = 'after';
-    }
-    if (!isset($icon_image_position->sm) || empty($icon_image_position->sm)) {
-        $icon_image_position->sm = 'after';
-    }
-    if (!isset($icon_image_position->xs) || empty($icon_image_position->xs)) {
-        $icon_image_position->xs = 'after';
-    }
-}
-
-
 if (!is_string($icon_image_position)) {
     $icon_image_position_lg = (isset($icon_image_position) && $icon_image_position->xl) ? $icon_image_position->xl : 'after';
-    $icon_image_position_md = (isset($icon_image_position->lg) && $icon_image_position->lg) ? $icon_image_position->lg : 'after';
-    $icon_image_position_sm = (isset($icon_image_position->md) && $icon_image_position->md) ? $icon_image_position->md : 'after';
-    $icon_image_position_xs = (isset($icon_image_position->sm) && $icon_image_position->sm) ? $icon_image_position->sm : 'after';
-    $icon_image_position_nano = (isset($icon_image_position->xs) && $icon_image_position->xs) ? $icon_image_position->xs : 'after';
+    $icon_image_position_md = (isset($icon_image_position->lg) && $icon_image_position->lg) ? $icon_image_position->lg : null;
+    $icon_image_position_sm = (isset($icon_image_position->md) && $icon_image_position->md) ? $icon_image_position->md : null;
+    $icon_image_position_xs = (isset($icon_image_position->sm) && $icon_image_position->sm) ? $icon_image_position->sm : null;
+    $icon_image_position_nano = (isset($icon_image_position->xs) && $icon_image_position->xs) ? $icon_image_position->xs : null;
 
     $output .= '<style>';
     $output .= $cssHelper->generate_layout_position_css($icon_image_position_lg, $addon_id, $settings, $imageProps, $imageUnits);

@@ -12,6 +12,7 @@ defined('_JEXEC') or die('Restricted access');
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Uri\Uri;
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\CollectionIds;
 use JoomShaper\SPPageBuilder\DynamicContent\Site\CollectionRenderer;
 
 class SppagebuilderAddonDynamic_content_collection extends SppagebuilderAddons
@@ -21,9 +22,20 @@ class SppagebuilderAddonDynamic_content_collection extends SppagebuilderAddons
     public function render()
     {
         $addon = $this->addon;
+        
+        if(empty($addon->settings->source)) {
+            return '';
+        }
+
         $renderer = new CollectionRenderer($addon);
-        $output = $renderer->render();
-        $pagination = $renderer->renderPagination();
+        if ($addon->settings->source === CollectionIds::ARTICLES_COLLECTION_ID || $addon->settings->source === CollectionIds::TAGS_COLLECTION_ID) {
+            $output = $renderer->renderArticles();
+            $pagination = $renderer->renderArticlesPagination();
+        } else {
+            $output = $renderer->render();
+            $pagination = $renderer->renderPagination();
+        }
+        
         $css = $renderer->generateCSS();
 
         return $output . $pagination . $css;

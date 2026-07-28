@@ -32,6 +32,11 @@ SpAddonsConfig::addonConfig([
 							'std' => 'John Doe',
 						],
 
+						'item_visibility' => [
+                            'type' => 'visibility',
+                            'std'  => true,
+                        ],
+
 						'designation' => [
 							'type' => 'text',
 							'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_DESIGNATION'),
@@ -232,6 +237,22 @@ SpAddonsConfig::addonConfig([
 					],
 					'std' => 1,
 				],
+
+				'pause_on_hover' => [
+					'type'    => 'checkbox',
+					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_CAROUSEL_PAUSE_ON_HOVER'),
+					'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_CAROUSEL_PAUSE_ON_HOVER_DESC'),
+					'std'     => 1,
+					'depends' => [['autoplay', '=', 1]],
+				],
+
+				'loop' => [
+                        'type'    => 'checkbox',
+                        'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_JS_SLIDER_LOOP'),
+                        'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_JS_SLIDER_LOOP_DESC'),
+                        'std'     => 1,
+                        'depends' => [['autoplay', '=', 1]]
+                ],
 
 				'interval' => [
 					'type'    => 'slider',

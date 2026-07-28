@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2016-2023 Joomlashack.com. All rights reserved
+ * @copyright 2016-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -24,14 +25,16 @@
 namespace Alledia\Framework\Joomla\Controller;
 
 use Joomla\CMS\Application\CMSApplication;
-use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\Router\Route;
 use Joomla\Input\Input;
 
 defined('_JEXEC') or die();
 
-class Form extends FormController
+/**
+ * @deprecated v3.8.1
+ */
+class Form extends AbstractForm
 {
     use TraitController;
 
@@ -59,7 +62,7 @@ class Form extends FormController
         $this->checkToken();
 
         $inflector = $this->getStringInflector();
-        $view      = $this->app->input->getCmd('view', $this->default_view);
+        $view      = $this->input->getCmd('view', $this->default_view);
 
         if ($inflector->isPlural($view)) {
             $modelName = $inflector->toSingular($view);
@@ -67,8 +70,8 @@ class Form extends FormController
             $model = $this->getModel($modelName, '', []);
 
             $linkQuery = http_build_query([
-                'option' => $this->app->input->getCmd('option'),
-                'view'   => $view
+                'option' => $this->input->getCmd('option'),
+                'view'   => $view,
             ]);
             $this->setRedirect(Route::_('index.php?' . $linkQuery . $this->getRedirectToListAppend(), false));
 

@@ -46,6 +46,7 @@ SppagebuilderHelperSite::loadAssets();
 HTMLHelper::_('jquery.framework');
 HTMLHelper::_('script', 'components/com_sppagebuilder/assets/js/jquery.parallax.js', ['version' => SppagebuilderHelperSite::getVersion(true)]);
 HTMLHelper::_('script', 'components/com_sppagebuilder/assets/js/sppagebuilder.js', ['version' => SppagebuilderHelperSite::getVersion(true)], ['defer' => true]);
+HTMLHelper::_('script', 'components/com_sppagebuilder/assets/js/es5_interaction.js', ['version' => SppagebuilderHelperSite::getVersion(true)], ['defer' => true]);
 
 
 

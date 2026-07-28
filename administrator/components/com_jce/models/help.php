@@ -4,11 +4,11 @@
  * @subpackage  Admin
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -23,6 +23,19 @@ class JceModelHelp extends BaseDatabaseModel
         $tag = $language->getTag();
 
         return substr($tag, 0, strpos($tag, '-'));
+    }
+
+    private function resolveHelpFile(string $file): string
+    {
+        $base = realpath(JPATH_SITE . '/components/com_jce/editor');
+        if (!$base) {
+            return '';
+        }
+        $path = realpath($base . '/' . $file);
+        if (!$path || strpos($path, $base) !== 0) {
+            return '';
+        }
+        return $path;
     }
 
     public function getTopics($file)
@@ -44,7 +57,10 @@ class JceModelHelp extends BaseDatabaseModel
 
                     // if file attribute load file
                     if ($file) {
-                        $result .= $this->getTopics(JPATH_SITE . '/components/com_jce/editor/' . $file);
+                        $resolved = $this->resolveHelpFile($file);
+                        if ($resolved) {
+                            $result .= $this->getTopics($resolved);
+                        }
                     } else {
                         $result .= '<li id="' . $key . '" class="nav-item ' . $class . '"><a href="#" class="nav-link"><i class="icon-copy"></i>&nbsp;' . trim(Text::_($title)) . '</a>';
                     }
@@ -56,11 +72,14 @@ class JceModelHelp extends BaseDatabaseModel
 
                             // if a file is set load it as sub-subtopics
                             if ($file = (string) $subtopic->attributes()->file) {
-                                $result .= '<li class="nav-item subtopics"><a href="#" class="nav-link"><i class="icon-file"></i>&nbsp;' . trim(Text::_((string) $subtopic->attributes()->title)) . '</a>';
-                                $result .= '<ul class="nav nav-list hidden">';
-                                $result .= $this->getTopics(JPATH_SITE . '/components/com_jce/editor/' . $file);
-                                $result .= '</ul>';
-                                $result .= '</li>';
+                                $resolved = $this->resolveHelpFile($file);
+                                if ($resolved) {
+                                    $result .= '<li class="nav-item subtopics"><a href="#" class="nav-link"><i class="icon-file"></i>&nbsp;' . trim(Text::_((string) $subtopic->attributes()->title)) . '</a>';
+                                    $result .= '<ul class="nav nav-list hidden">';
+                                    $result .= $this->getTopics($resolved);
+                                    $result .= '</ul>';
+                                    $result .= '</li>';
+                                }
                             } else {
                                 $id = $subtopic->attributes()->key ? ' id="' . (string) $subtopic->attributes()->key . '"' : '';
 

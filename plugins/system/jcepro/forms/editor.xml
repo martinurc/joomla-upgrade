@@ -14,6 +14,11 @@
         </fieldset>
 
         <fieldset name="editor.filesystem">
+            <field name="dir" type="keyvalue" default="" size="50" label="WF_PARAM_DIRECTORY" description="WF_PARAM_DIRECTORY_DESC" sortable="true">
+                <field name="path"  type="text" placeholder="images" size="50" label="WF_PARAM_DIRECTORY_PATH" />
+                <field name="label" type="text" size="50" label="WF_PARAM_DIRECTORY_LABEL" />
+            </field>
+            
             <field name="mode" type="list" default="radio" label="WF_MANAGER_MODE" description="WF_MANAGER_MODE_DESC">
                 <option value="list">WF_OPTION_LIST</option>
                 <option value="images">WF_OPTION_IMAGES</option>

@@ -12,7 +12,7 @@ namespace Joomla\CMS\Association;
 use Joomla\Utilities\ArrayHelper;
 
 // phpcs:disable PSR1.Files.SideEffects
-\defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
 /**
@@ -25,7 +25,7 @@ abstract class AssociationExtensionHelper implements AssociationExtensionInterfa
     /**
      * The extension name
      *
-     * @var     array  $extension
+     * @var     string  $extension
      *
      * @since   3.7.0
      */

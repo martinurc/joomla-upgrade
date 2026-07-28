@@ -24,8 +24,20 @@ use Joomla\CMS\Version;
 */
 class SppagebuilderControllerInstagram extends BaseController
 {
+	
 	public function accessToken()
 	{
+		if (session_status() === PHP_SESSION_NONE) {
+			session_set_cookie_params([
+				'lifetime' => 0,
+				'path' => '/',
+				'secure' => true,
+				'httponly' => true,
+				'samesite' => 'Lax'
+			]);
+			session_start();
+		}
+		
 		$app   = Factory::getApplication();
 		$doc   = Factory::getDocument();
 		$input = $app->input;
@@ -56,6 +68,7 @@ class SppagebuilderControllerInstagram extends BaseController
 		 * Get Facebook SDK redirect helper and OAuth2 Client
 		 */
 		$helper       = $facebook->getRedirectLoginHelper();
+		$helper->getPersistentDataHandler()->set('state', $_GET['state']);
 		$oAuth2Client = $facebook->getOAuth2Client();
 
 		$token = '';

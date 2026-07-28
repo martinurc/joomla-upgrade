@@ -1,5 +1,8 @@
 <?php
 
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\ArticleLayouts;
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\CollectionIds;
+use JoomShaper\SPPageBuilder\DynamicContent\Models\Page;
 
 /**
  * Sample trait for managing API endpoints.
@@ -57,6 +60,12 @@ trait PageContentById
 		$content->url = SppagebuilderHelperRoute::getFormRoute($content->id, $content->language, 0, $easyStoreRouteType, $isPopup);
 
 		unset($content->content);
+
+		if (!empty($content->view_id) && $content->view_id === CollectionIds::ARTICLES_COLLECTION_ID && !empty($content->extension_view) && $content->extension_view === Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX && empty($content->text)) {
+			$content->text = json_decode(ArticleLayouts::DEFAULT_LAYOUT_ARTICLE_INDEX);
+		} else if (!empty($content->view_id) && $content->view_id === CollectionIds::ARTICLES_COLLECTION_ID && !empty($content->extension_view) && $content->extension_view === Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL && empty($content->text)) {
+			$content->text = json_decode(ArticleLayouts::DEFAULT_LAYOUT_ARTICLE_DETAILS);
+		}
 
 		$this->sendResponse($content);
 	}

@@ -1,150 +1,120 @@
 <?php
-/**
-* @copyright	Copyright (C) 2013 Jsn Project company. All rights reserved.
-* @license		http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
-* @package		Easy Profile
-* website		www.easy-profile.com
-* Technical Support : Forum -	http://www.easy-profile.com/support.html
-*/
-
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
+use Joomla\CMS\Form\FormHelper;
+use Joomla\CMS\Form\Field\CheckboxesField;
+use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\CMS\Language\Text;
 
-JFormHelper::loadFieldClass('checkboxes');
+FormHelper::loadFieldClass('checkboxes');
 
 /**
- * Form Field class for the Joomla Framework.
- *
- * @package     Joomla.Libraries
- * @subpackage  Form
- * @since       3.1
+ * Form Field class for Easy Profile / Joomla.
  */
-class JFormFieldCheckboxlist extends JFormFieldCheckboxes
+class JFormFieldCheckboxlist extends CheckboxesField
 {
-	public $type = 'Checkboxlist';
+    public $type = 'Checkboxlist';
 
-	public $isNested = null;
-	
-	public $table = null;
+    public $isNested = null;
+    
+    public $table = null;
 
-	protected $comParams = null;
+    protected $comParams = null;
 
-	/**
-	 * Constructor
-	 *
-	 * @since  3.1
-	 */
-	public function __construct()
-	{
-		parent::__construct();
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        parent::__construct();
 
-		// Load com_jsn config
-		$this->comParams = JComponentHelper::getParams('com_jsn');
-	}
+        // Load com_jsn config
+        $this->comParams = ComponentHelper::getParams('com_jsn');
+    }
 
-	
-	protected function getInput()
-	{
-		if($this->element['optioninline']==1) $inline='inline';
-		else $inline='';
-		$html=array();
-		$version=new JVersion();
-		if($version->RELEASE<'3.5' && strlen($version->RELEASE)==3){
-			$from=array('<label','</label>','<ul>','</ul>','<li','</li>');
-			$to=array('<span','</span>','','','<label class="checkbox '.$inline.'"','</label>');
-		}
-		else{
-			$from=array('class="checkbox"');
-			$to=array('class="checkbox '.$inline.'"');
-		}
-		$html[]=str_replace($from,$to,parent::getInput());
-		if(isset($this->element['readonly']) && $this->element['readonly']=='true') $html[]='<input type="hidden" value="1" name="'.$this->name.'"/>' ;
-		return implode('', $html);
-	}
-	public function getOptions()
-	{
-		if(isset($this->element['dbopttable']) && !empty($this->element['dbopttable']) && isset($this->element['dboptvalue']) && !empty($this->element['dboptvalue']) && isset($this->element['dbopttext']) && !empty($this->element['dbopttext'])) // set the alias of your field (width this conditions the select type work normally for all field except for this field)
-		{	
-			$db		= JFactory::getDbo();
-			$query = $db->getQuery(true);
-			$query->select($this->element['dboptvalue'].' AS value, '.$this->element['dbopttext'].' AS text')->from($this->element['dbopttable']);
+    protected function getInput()
+    {
+        $inline = (isset($this->element['optioninline']) && (string)$this->element['optioninline'] === '1') ? 'inline' : '';
+        $html   = [];
 
-			/*if(isset($this->element['dboptfiltercolumn']) && !empty($this->element['dboptfiltercolumn']) && isset($this->element['dboptfiltervalue']) && !empty($this->element['dboptfiltervalue']))
-			{
-				if(empty($this->value))
-				{
-					return parent::getOptions();
-				}
-				elseif(is_array($this->value))
-				{
-					$value=$this->value;
-					foreach($value as &$val)
-						$val=$db->quote($val);
-					$value=implode(',',$value);
-					$query->where($this->element['dboptvalue'].' IN ('.$value.')');
-				}
-				else{
-					$query->where($this->element['dboptvalue'].' = '.$db->quote($this->value));
-				}
+        $from = ['class="checkbox"'];
+        $to   = ['class="checkbox ' . $inline . '"'];
 
-			}
-			
-			else*/if(isset($this->element['dboptwhere']) && !empty($this->element['dboptwhere']))
-			{
-				JPluginHelper::importPlugin('content');
-				$where= JHtml::_('content.prepare', $this->element['dboptwhere'], 'customwhere', 'com_finder.indexer');
-				if(empty($this->value))
-				{
-					$query->where($where);
-				}
-				elseif(is_array($this->value))
-				{
-					$value=$this->value;
-					foreach($value as &$val)
-						$val=$db->quote($val);
-					$value=implode(',',$value);
-					$query->where($where.' OR '.$this->element['dboptvalue'].' IN ('.$value.')');
-				}
-				else{
-					$query->where($where.' OR '.$this->element['dboptvalue'].' = '.$db->quote($this->value));
-				}
-			}
-			
-			$query->order('text');
-			
-			$db->setQuery($query);
+        $inputHtml = parent::getInput();
+        if ($inputHtml !== null) {
+            $html[] = str_replace($from, $to, $inputHtml);
+        }
 
-			try
-			{
-				$options = $db->loadObjectList();
-			}
-			catch (RuntimeException $e)
-			{
-				return false;
-			}
-			
-			foreach($options as &$option)
-			{
-				$option->text=JText::_($option->text);
-				$option->checked = null;
-			}
+        if (isset($this->element['readonly']) && (string)$this->element['readonly'] === 'true') {
+            $html[] = '<input type="hidden" value="1" name="' . htmlspecialchars($this->name ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
+        }
 
-			$options = array_merge(parent::getOptions(), $options); // Merge any additional options in the fields params (you can remove this).
+        return implode('', $html);
+    }
 
-			return $options;
-		}
-		else 
-		{
-			return parent::getOptions();
-		}
-	}
+    public function getOptions()
+    {
+        $table = (string)($this->element['dbopttable'] ?? '');
+        $value = (string)($this->element['dboptvalue'] ?? '');
+        $text  = (string)($this->element['dbopttext'] ?? '');
 
-	protected function getLayoutData()
-	{
-		$hasValue = (isset($this->value) && !empty($this->value));
-		if($hasValue && is_object($this->value)) $this->value = (array)$this->value;
-		$data = parent::getLayoutData();
-		return $data;
-	}
+        if (!empty($table) && !empty($value) && !empty($text)) {    
+            $db    = Factory::getContainer()->get('DatabaseDriver');
+            $query = $db->getQuery(true);
+            $query->select($db->quoteName($value) . ' AS value, ' . $db->quoteName($text) . ' AS text')
+                  ->from($db->quoteName($table));
 
+            $dboptwhere = (string)($this->element['dboptwhere'] ?? '');
+
+            if (!empty($dboptwhere)) {
+                PluginHelper::importPlugin('content');
+                $where = HTMLHelper::_('content.prepare', $dboptwhere, 'customwhere', 'com_finder.indexer');
+
+                if (empty($this->value)) {
+                    $query->where($where);
+                } elseif (is_array($this->value)) {
+                    $valArray = $this->value;
+                    foreach ($valArray as &$val) {
+                        $val = $db->quote($val);
+                    }
+                    $valueString = implode(',', $valArray);
+                    $query->where('(' . $where . ' OR ' . $db->quoteName($value) . ' IN (' . $valueString . '))');
+                } else {
+                    $query->where('(' . $where . ' OR ' . $db->quoteName($value) . ' = ' . $db->quote((string)$this->value) . ')');
+                }
+            }
+            
+            $query->order('text');
+            $db->setQuery($query);
+
+            try {
+                $options = (array) $db->loadObjectList();
+            } catch (\Throwable $e) {
+                return parent::getOptions();
+            }
+            
+            foreach ($options as &$option) {
+                $option->text    = Text::_($option->text);
+                $option->checked = null;
+            }
+
+            // Merge any additional options in the fields params
+            $parentOptions = parent::getOptions();
+            return array_merge($parentOptions, $options);
+        }
+
+        return parent::getOptions();
+    }
+
+    protected function getLayoutData()
+    {
+        $hasValue = (isset($this->value) && !empty($this->value));
+        if ($hasValue && is_object($this->value)) {
+            $this->value = (array) $this->value;
+        }
+        return parent::getLayoutData();
+    }
 }

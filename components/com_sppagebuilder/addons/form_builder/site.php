@@ -10,6 +10,8 @@
 //no direct access
 defined('_JEXEC') or die('Restricted access');
 
+require_once JPATH_ROOT . '/components/com_sppagebuilder/models/dynamic.php';
+use Joomla\CMS\Captcha\Captcha;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -20,6 +22,30 @@ use Joomla\CMS\Session\Session;
 class SppagebuilderAddonForm_builder extends SppagebuilderAddons
 {
     public static $salt = '3a1q3ko70zwa2lxnui73qk3hm7g2xq6oe7bi0ydk0eulifabjb';
+
+    /**
+     * Return the form steps, wrapping a legacy flat field list into a single step.
+     *
+     * @param   object  $settings  The addon settings.
+     * @return  array              List of step objects, each with sp_form_builder_item.
+     */
+    public static function normalizeSteps($settings)
+    {
+        if (isset($settings->sp_form_builder_steps) && is_array($settings->sp_form_builder_steps) && count($settings->sp_form_builder_steps)) {
+            return $settings->sp_form_builder_steps;
+        }
+
+        if (isset($settings->sp_form_builder_item) && is_array($settings->sp_form_builder_item) && count($settings->sp_form_builder_item)) {
+            return [
+                (object) [
+                    'step_title'           => 'Step 1',
+                    'sp_form_builder_item' => $settings->sp_form_builder_item,
+                ],
+            ];
+        }
+
+        return [];
+    }
 
     /**
      * The addon frontend render method.
@@ -67,7 +93,13 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         $captcha_question = (isset($settings->captcha_question) && $settings->captcha_question) ? $settings->captcha_question : '';
         $captcha_answer   = (isset($settings->captcha_answer) && $settings->captcha_answer) ? $settings->captcha_answer : '';
 
-        $captcha_selector = $captcha_type === 'turnstile' ? 'cf-turnstile-response' : '';
+        if ($captcha_type === 'turnstile') {
+            $captcha_selector = 'cf-turnstile-response';
+        } elseif ($captcha_type === 'powcaptcha') {
+            $captcha_selector = 'altcha';
+        } else {
+            $captcha_selector = '';
+        }
 
         // Policy & redirect
         $enable_policy   = (isset($settings->enable_policy) && $settings->enable_policy) ? $settings->enable_policy : '';
@@ -92,6 +124,7 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         $btn_icon_position = (isset($settings->btn_icon_position) && $settings->btn_icon_position) ? $settings->btn_icon_position : 'left';
         $btn_position      = (isset($settings->btn_position) && $settings->btn_position) ? ' sppb-text-' . $settings->btn_position : ' sppb-text-left';
         $btn_custom_class  = (isset($settings->btn_class) && $settings->btn_class) ? $settings->btn_class : '';
+        $send_copy_to_applicant = (isset($settings->send_copy_to_applicant) && $settings->send_copy_to_applicant) ? $settings->send_copy_to_applicant : 0;
 
         $icon_arr = array_filter(explode(' ', $btn_icon));
 
@@ -111,13 +144,81 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         $output .= '<form class="sppb-addon-form-builder-form"' . ($enable_redirect && $redirect_url != '' ? ' data-redirect="yes" data-redirect-url="' . $redirect_url . '"' : '') . '>';
         $output .= HTMLHelper::_('form.token');
 
-        if (isset($settings->sp_form_builder_item) && is_array($settings->sp_form_builder_item)) {
-            $increasing_addon_id = (int) $addon_id;
+        $date_formatters = [];
 
-            foreach ($settings->sp_form_builder_item as $item_key => $item_value) {
-                if ($increasing_addon_id === $increasing_addon_id) {
-                    $increasing_addon_id++;
+        $steps = self::normalizeSteps($settings);
+
+        $step_indicator_type   = (isset($settings->step_indicator_type) && $settings->step_indicator_type) ? $settings->step_indicator_type : 'number_text';
+        $step_indicator_shape  = (isset($settings->step_indicator_shape) && $settings->step_indicator_shape) ? $settings->step_indicator_shape : 'circle';
+        $step_next_text        = (isset($settings->step_next_label) && $settings->step_next_label) ? $settings->step_next_label : 'Next';
+        $step_prev_text        = (isset($settings->step_prev_label) && $settings->step_prev_label) ? $settings->step_prev_label : 'Previous';
+
+        // Step button styling (shared by Previous / Next)
+        $step_btn_class  = (isset($settings->step_btn_type) && $settings->step_btn_type) ? ' sppb-btn-' . $settings->step_btn_type : ' sppb-btn-primary';
+        $step_btn_class .= (isset($settings->step_btn_size) && $settings->step_btn_size) ? ' sppb-btn-' . $settings->step_btn_size : '';
+        $step_btn_class .= (isset($settings->step_btn_shape) && $settings->step_btn_shape) ? ' sppb-btn-' . $settings->step_btn_shape : ' sppb-btn-rounded';
+        $step_btn_class .= (isset($settings->step_btn_appearance) && $settings->step_btn_appearance) ? ' sppb-btn-' . $settings->step_btn_appearance : '';
+        $step_btn_class .= (isset($settings->step_btn_block) && $settings->step_btn_block) ? ' ' . $settings->step_btn_block : '';
+        $step_next_position = (isset($settings->step_next_position) && $settings->step_next_position) ? ' sppb-text-' . $settings->step_next_position : ' sppb-text-left';
+        $step_prev_position = (isset($settings->step_prev_position) && $settings->step_prev_position) ? ' sppb-text-' . $settings->step_prev_position : ' sppb-text-left';
+
+        $is_multi_step       = count($steps) > 1;
+        $increasing_addon_id = (int) $addon_id;
+        $global_item_key     = 0;
+        $total_steps         = count($steps);
+
+        $check_svg = '<svg class="sppb-step-indicator-check" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M13.3 4.6 6.4 11.5 2.7 7.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+        if ($is_multi_step && $step_indicator_type !== 'none') {
+            if ($step_indicator_type === 'progress_bar') {
+                $progress_value = $total_steps ? (int) round(100 / $total_steps) : 0;
+
+                $output .= '<div class="sppb-form-builder-progress">';
+                $output .= '<div class="sppb-form-builder-progress-text"><span class="sppb-form-builder-progress-percent">' . $progress_value . '%</span></div>';
+                $output .= '<div class="sppb-form-builder-progress-track">';
+                $output .= '<span class="sppb-form-builder-progress-fill" style="width:' . $progress_value . '%;"></span>';
+                $output .= '</div>';
+                $output .= '</div>';
+            } else {
+                $has_marker = ($step_indicator_type !== 'text');
+                $has_label  = ($step_indicator_type === 'text' || $step_indicator_type === 'number_text' || $step_indicator_type === 'icon_text');
+                $is_icon    = ($step_indicator_type === 'icon' || $step_indicator_type === 'icon_text');
+
+                $output .= '<ol class="sppb-form-builder-steps-indicator sppb-step-shape-' . $step_indicator_shape . ' sppb-step-type-' . $step_indicator_type . '">';
+
+                foreach ($steps as $step_index => $step) {
+                    $step_title = (isset($step->step_title) && $step->step_title) ? $step->step_title : ('Step ' . ($step_index + 1));
+
+                    $output .= '<li class="sppb-form-builder-step-indicator-item' . ($step_index === 0 ? ' active' : '') . '" data-step="' . $step_index . '">';
+
+                    if ($has_marker) {
+                        $output .= '<span class="sppb-step-indicator-marker">';
+                        $output .= $is_icon ? $check_svg : '<span class="sppb-step-indicator-number">' . ($step_index + 1) . '</span>';
+                        $output .= '</span>';
+                    }
+
+                    if ($has_label) {
+                        $output .= '<span class="sppb-step-indicator-label">' . $step_title . '</span>';
+                    }
+
+                    $output .= '</li>';
                 }
+
+                $output .= '</ol>';
+            }
+        }
+
+        foreach ($steps as $step_index => $step) {
+            $step_fields = (isset($step->sp_form_builder_item) && is_array($step->sp_form_builder_item)) ? $step->sp_form_builder_item : [];
+
+            if ($is_multi_step) {
+                $output .= '<div class="sppb-form-builder-step" data-step="' . $step_index . '"' . ($step_index === 0 ? '' : ' style="display:none;"') . '>';
+            }
+
+            foreach ($step_fields as $item_value) {
+                $increasing_addon_id++;
+                $item_key = $global_item_key;
+                $global_item_key++;
 
                 $label               = (isset($item_value->title) && $item_value->title) ? $item_value->title : '';
                 $field_name          = (isset($item_value->field_name) && $item_value->field_name) ? $item_value->field_name : '';
@@ -138,6 +239,11 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
                 $tel_pattern       = (isset($item_value->tel_pattern) && $item_value->tel_pattern) ? $item_value->tel_pattern : '';
                 $minimum_character = (isset($item_value->minimum_character) && $item_value->minimum_character) ? " minlength = " . $item_value->minimum_character : '';
                 $maximum_character = (isset($item_value->maximum_character) && $item_value->maximum_character) ? " maxlength = " . $item_value->maximum_character : '';
+                
+                if ($field_type === 'date' && $field_name) {
+                    $date_formatter = (isset($item_value->date_formatter) && $item_value->date_formatter) ? $item_value->date_formatter : 'Y-m-d';
+                    $date_formatters[$field_name] = $date_formatter;
+                }
 
                 if ($field_type == 'radio') {
                     $output .= '<div class="sppb-form-group ' . $item_name_id . '">';
@@ -281,14 +387,20 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
                     $output .= $field_is_required ? '<span class="sppb-form-builder-required">' . $required_field_message . '</span>' : '';
                     $output .= '</div>'; //.sppb-form-group
                 }
-            } //end first foreach
-        }
+            } //end fields foreach
+
+            if ($is_multi_step) {
+                $output .= '</div>'; //.sppb-form-builder-step
+            }
+        } //end steps foreach
 
         // Hidden field
         $hidden_value = [
-            'recipient_email'   => base64_encode($recipient_email),
-            'additional_header' => base64_encode($additional_header),
-            'from'              => base64_encode($from),
+            'recipient_email'               => base64_encode($recipient_email),
+            'additional_header'             => base64_encode($additional_header),
+            'from'                          => base64_encode($from),
+            'send_copy_to_applicant'        => base64_encode($send_copy_to_applicant),
+            'date_formatters'                => base64_encode(json_encode($date_formatters)),
         ];
         $hidden_json   = json_encode($hidden_value);
         $hidden_base64 = base64_encode($hidden_json);
@@ -304,7 +416,7 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
 
         // Captcha
         if ($enable_captcha && $captcha_type == 'default') {
-            $output .= '<div class="sppb-form-group">';
+            $output .= '<div class="sppb-form-group' . ($is_multi_step ? ' sppb-form-builder-last-step' : '') . '">';
             $output .= '<label ' . $hidden_label_class . ' for="captcha-' . $addon_id . '">' . $captcha_question . '</label>';
             $output .= '<input type="text" name="captcha_question" id="captcha-' . $addon_id . '" class="sppb-form-control" placeholder="' . $captcha_question . '" aria-required="true" required>';
             $output .= '</div>';
@@ -328,10 +440,16 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         } else {
             if ($enable_captcha) {
                 $output .= '<input type="hidden" name="captcha_selector" value="' . $captcha_selector . '">';
-                PluginHelper::importPlugin('captcha', $captcha_type);
-                Factory::getApplication()->triggerEvent('onInit', ['custom_captcha_' . $addon_id]);
-                $recaptcha = Factory::getApplication()->triggerEvent('onDisplay', [null, 'custom_captcha_' . $addon_id, 'sppb-dynamic-recaptcha']);
-                $output .= (isset($recaptcha[0])) ? $recaptcha[0] : '<p class="sppb-text-danger">' . Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_CUSTOM_CAPTCHA_NOT_INSTALLED') . '</p>';
+                if ($captcha_type === 'powcaptcha') {
+                    $captcha = Captcha::getInstance('powcaptcha');
+                    $captcha_markup = $captcha ? $captcha->display($captcha_selector, 'pow_captcha_' . $addon_id, 'sppb-form-builder-powcaptcha') : '';
+                    $output .= !empty($captcha_markup) ? $captcha_markup : '<p class="sppb-text-danger">' . Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_CUSTOM_CAPTCHA_NOT_INSTALLED') . '</p>';
+                } else {
+                    PluginHelper::importPlugin('captcha', $captcha_type);
+                    Factory::getApplication()->triggerEvent('onInit', ['custom_captcha_' . $addon_id]);
+                    $recaptcha = Factory::getApplication()->triggerEvent('onDisplay', [null, 'custom_captcha_' . $addon_id, 'sppb-dynamic-recaptcha']);
+                    $output .= (isset($recaptcha[0])) ? $recaptcha[0] : '<p class="sppb-text-danger">' . Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_CUSTOM_CAPTCHA_NOT_INSTALLED') . '</p>';
+                }
             }
         }
 
@@ -339,7 +457,7 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
 
         // Policy
         if ($enable_policy) {
-            $output .= '<div class="sppb-form-check">';
+            $output .= '<div class="sppb-form-check' . ($is_multi_step ? ' sppb-form-builder-last-step' : '') . '">';
             $output .= '<input class="sppb-form-check-input" type="checkbox" name="policy" id="policy-' . $addon_id . '" aria-label="Policy Text" value="Yes" aria-required="true" required>';
             $output .= '<label class="sppb-form-check-label" for="policy-' . $addon_id . '">' . $policy_text . '</label>';
             $output .= '<input type="hidden" value="true" name="is_policy">';
@@ -347,10 +465,33 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         }
 
         // Button
-        if ($btn_text) {
+        if ($btn_text && !$is_multi_step) {
             $output .= '<div class="sppb-form-builder-btn' . $btn_position . ' ' . $btn_custom_class . '">';
             $output .= '<button type="submit" id="btn-' . $addon_id . '" class="sppb-btn' . $btn_class . '" aria-label="' . strip_tags($btn_text_aria) . '">' . $btn_text . '</button>';
             $output .= '</div>'; //.sppb-form-builder-btn
+        }
+
+        // Step navigation (multi-step): the Previous / Next buttons use the dedicated
+        // Step Button styling; the submit button keeps the form's Send-button styling
+        // and replaces Next on the last step.
+        if ($is_multi_step) {
+            $output .= '<div class="sppb-form-builder-step-nav">';
+
+            $output .= '<div class="sppb-form-builder-btn' . $step_prev_position . ' sppb-form-builder-prev" style="display:none;">';
+            $output .= '<button type="button" id="btn-prev-' . $addon_id . '" class="sppb-btn' . $step_btn_class . '" aria-label="' . strip_tags($step_prev_text) . '">' . $step_prev_text . '</button>';
+            $output .= '</div>';
+
+            $output .= '<div class="sppb-form-builder-btn' . $step_next_position . ' sppb-form-builder-next">';
+            $output .= '<button type="button" id="btn-next-' . $addon_id . '" class="sppb-btn' . $step_btn_class . '" aria-label="' . strip_tags($step_next_text) . '">' . $step_next_text . '</button>';
+            $output .= '</div>';
+
+            if ($btn_text) {
+                $output .= '<div class="sppb-form-builder-btn' . $btn_position . ' ' . $btn_custom_class . ' sppb-form-builder-submit" style="display:none;">';
+                $output .= '<button type="submit" id="btn-' . $addon_id . '" class="sppb-btn' . $btn_class . '" aria-label="' . strip_tags($btn_text_aria) . '">' . $btn_text . '</button>';
+                $output .= '</div>';
+            }
+
+            $output .= '</div>';
         }
 
         $output .= '</form>'; //.sppb-addon-form-builder-form
@@ -374,6 +515,7 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
 
         $input  = Factory::getApplication()->input;
         $viewid = $input->get('id', 0, 'INT');
+        $view   = $input->get('view', 'page', 'STRING');
 
         $mail    = Factory::getMailer();
         $message = '';
@@ -397,6 +539,7 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
 
         $gcaptcha = '';
         $addonId  = '';
+        $decrypted_data = null;
 
         foreach ($inputs as $name => $input) {
 
@@ -417,6 +560,7 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
                     $recipient              = base64_decode($decrypted_data->recipient_email);
                     $additional_header_ajax = base64_decode($decrypted_data->additional_header);
                     $from                   = base64_decode($decrypted_data->from);
+                    $send_copy_to_applicant = !empty($decrypted_data->send_copy_to_applicant) ? base64_decode($decrypted_data->send_copy_to_applicant) : 0;
                 } else {
                     die('Restricted Access');
                 }
@@ -537,6 +681,10 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
             return json_encode($output);
         }
 
+        if ($view === 'dynamic') {
+            $viewid = (new SppagebuilderModelDynamic())->getPageIdFromCollectionItemId();
+        }
+
         // get addon infos
         if ($view_type == 'module') {
             $item_data = new stdClass();
@@ -601,13 +749,23 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
                     return json_encode($output);
                 }
             } else {
-                PluginHelper::importPlugin('captcha', $captcha_type);
+                if ($captcha_type === 'powcaptcha') {
+                    $captcha = Captcha::getInstance('powcaptcha');
+                    $res = $captcha ? $captcha->checkAnswer($gcaptcha) : false;
+                    if (empty($res)) {
+                        $output['content'] = '<span class="sppb-text-danger">' . Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_INVALID_CAPTCHA') . '</span>';
 
-                $res = Factory::getApplication()->triggerEvent('onCheckAnswer', [$gcaptcha]);
-                if (empty($res[0])) {
-                    $output['content'] = '<span class="sppb-text-danger">' . Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_INVALID_CAPTCHA') . '</span>';
+                        return json_encode($output);
+                    }
+                } else {
+                    PluginHelper::importPlugin('captcha', $captcha_type);
 
-                    return json_encode($output);
+                    $res = Factory::getApplication()->triggerEvent('onCheckAnswer', [$gcaptcha]);
+                    if (empty($res[0])) {
+                        $output['content'] = '<span class="sppb-text-danger">' . Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_INVALID_CAPTCHA') . '</span>';
+
+                        return json_encode($output);
+                    }
                 }
                 $output['gcaptchaId']   = 'custom_recaptcha_' . $addon_id;
                 $output['gcaptchaType'] = 'custom';
@@ -659,9 +817,28 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
             }
         }
 
+        $dateFormatters = [];
+        if ($decrypted_data && isset($decrypted_data->date_formatters) && $decrypted_data->date_formatters) {
+            $dateFormattersJson = json_decode(base64_decode($decrypted_data->date_formatters), true);
+            if (is_array($dateFormattersJson)) {
+                $dateFormatters = $dateFormattersJson;
+            }
+        }
+
         $output['fields'] = $fieldNames;
 
         foreach ($fieldNames as $name => $value) {
+            if (isset($dateFormatters[$name]) && !empty($value)) {
+                try {
+                    $dateObj = new DateTime($value);
+                    $formattedValue = $dateObj->format($dateFormatters[$name]);
+                    $value = $formattedValue;
+                    $fieldNames[$name] = $formattedValue;
+                } catch (Exception $e) {
+                    // If date parsing fails, use original value
+                }
+            }
+            
             $emailBody        = str_replace("{{" . $name . "}}", $value, $emailBody);
             $emailSubjectAjax = str_replace("{{" . $name . "}}", $value, $emailSubjectAjax);
             $replyToName      = str_replace("{{" . $name . "}}", $value, $replyToName);
@@ -726,8 +903,22 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         }
 
         if ($mail->sendMail($senderMail, $senderName, $recipient, $emailSubjectAjax, $emailBody, $isHtmlMode, $cc, $bcc, $attachment, $replyToMail, $replyToName)) {
-            $output['status']  = true;
-            $output['content'] = '<span class="sppb-text-success">' . $success_message_ajax . '</span>';
+            if (!empty($send_copy_to_applicant)) {
+                $copyMail        = Factory::getMailer();
+                $copyMailSubject = Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_SEND_COPY_MAIL_SUBJECT') . $emailSubjectAjax;
+                $copyMailBody    = '<div><p>' . Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_SEND_COPY_MAIL_HEADER') . ':</p>' . $emailBody . '</div>';
+
+                if ($copyMail->sendMail($senderMail, $senderName, $replyToMail, $copyMailSubject, $copyMailBody, $isHtmlMode)) {
+                    $output['status']  = true;
+                    $output['content'] = '<span class="sppb-text-success">' . Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_SUCCESS_WITH_COPY') . '</span>';
+                }
+                $output['status']  = true;
+                $output['content'] = '<span class="sppb-text-success">' . $success_message_ajax . '</span>';
+
+            } else {
+                $output['status']  = true;
+                $output['content'] = '<span class="sppb-text-success">' . $success_message_ajax . '</span>';
+            }
         } else {
             $output['content'] = '<span class="sppb-text-danger">' . $failed_message_ajax . '</span>';
         }
@@ -781,8 +972,16 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
 
         $css = '';
 
-        if (isset($settings->sp_form_builder_item) && is_array($settings->sp_form_builder_item)) {
-            foreach ($settings->sp_form_builder_item as $item_key => $itemValue) {
+        $steps           = self::normalizeSteps($settings);
+        $global_item_key = 0;
+
+        foreach ($steps as $step) {
+            $step_fields = (isset($step->sp_form_builder_item) && is_array($step->sp_form_builder_item)) ? $step->sp_form_builder_item : [];
+
+            foreach ($step_fields as $itemValue) {
+                $item_key = $global_item_key;
+                $global_item_key++;
+
                 $field_type   = (isset($itemValue->field_type) && $itemValue->field_type) ? $itemValue->field_type : 'text';
                 $item_name_id = $field_type ? 'sppb-form-builder-field-' . $item_key : '';
 
@@ -837,10 +1036,12 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         $formBuilderForm = $cssHelper->generateStyle('.sppb-addon-form-builder-form', $settings, ['field_gutter' => ['margin-left', 'margin-right']]);
         $formCheck       = $cssHelper->generateStyle('.sppb-form-check, .sppb-form-builder-btn', $settings, ['field_gutter' => ['margin-left', 'margin-right']]);
         $formRecapt      = $cssHelper->generateStyle('.sppb-form-builder-recaptcha, .sppb-form-builder-invisible-recaptcha, .sppb-addon-form-builder-form .sppb-form-group', $settings, ['field_gutter' => ['padding-left', 'padding-right']]);
+        $formPowCapt      = $cssHelper->generateStyle('.sppb-form-builder-powcaptcha', $settings, ['field_gutter' => ['padding-left', 'padding-right']],[],[],[],[],'margin-bottom:20px;');
 
         $css .= $formBuilderForm;
         $css .= $formCheck;
         $css .= $formRecapt;
+        $css .= $formPowCapt;
 
         $fieldHorizontalSpace = $cssHelper->generateStyle('.sppb-addon-form-builder-form .sppb-form-group', $settings, ['field_horizontal_space' => 'margin-bottom']);
 
@@ -933,8 +1134,94 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
 
         $css .= $css_path->render(['addon_id' => $addon_id, 'options' => $options, 'id' => 'btn-' . $this->addon->id]);
 
+        // Step buttons (Previous / Next) use their own dedicated styling.
+        if (count($steps) > 1) {
+            $stepBase                              = new stdClass;
+            $stepBase->button_type                 = (isset($settings->step_btn_type) && $settings->step_btn_type) ? $settings->step_btn_type : '';
+            $stepBase->button_appearance           = (isset($settings->step_btn_appearance) && $settings->step_btn_appearance) ? $settings->step_btn_appearance : '';
+            $stepBase->button_fontstyle            = (isset($settings->step_btn_fontstyle) && $settings->step_btn_fontstyle) ? $settings->step_btn_fontstyle : '';
+            $stepBase->button_font_style           = (isset($settings->step_btn_font_style) && $settings->step_btn_font_style) ? $settings->step_btn_font_style : '';
+            $stepBase->link_button_color           = '';
+            $stepBase->link_border_color           = '';
+            $stepBase->link_button_border_width    = '';
+            $stepBase->link_button_padding_bottom  = '';
+            $stepBase->font_family                 = (isset($settings->step_btn_font_family) && $settings->step_btn_font_family) ? $settings->step_btn_font_family : null;
+            $stepBase->fontsize                    = isset($settings->step_btn_fontsize_original) ? $settings->step_btn_fontsize_original : ($settings->step_btn_fontsize ?? null);
+            $stepBase->button_typography           = (isset($settings->step_btn_typography) && $settings->step_btn_typography) ? $settings->step_btn_typography : null;
+
+            $nextOptions                                = clone $stepBase;
+            $nextOptions->button_color                  = (isset($settings->step_next_color) && $settings->step_next_color) ? $settings->step_next_color : '';
+            $nextOptions->button_color_hover            = (isset($settings->step_next_color_hover) && $settings->step_next_color_hover) ? $settings->step_next_color_hover : '';
+            $nextOptions->button_background_color       = (isset($settings->step_next_background_color) && $settings->step_next_background_color) ? $settings->step_next_background_color : '';
+            $nextOptions->button_background_color_hover = (isset($settings->step_next_background_color_hover) && $settings->step_next_background_color_hover) ? $settings->step_next_background_color_hover : '';
+            $nextOptions->button_background_gradient        = (isset($settings->step_next_background_gradient) && $settings->step_next_background_gradient) ? $settings->step_next_background_gradient : new stdClass();
+            $nextOptions->button_background_gradient_hover  = (isset($settings->step_next_background_gradient_hover) && $settings->step_next_background_gradient_hover) ? $settings->step_next_background_gradient_hover : new stdClass();
+
+            $prevOptions                                = clone $stepBase;
+            $prevOptions->button_color                  = (isset($settings->step_prev_color) && $settings->step_prev_color) ? $settings->step_prev_color : '';
+            $prevOptions->button_color_hover            = (isset($settings->step_prev_color_hover) && $settings->step_prev_color_hover) ? $settings->step_prev_color_hover : '';
+            $prevOptions->button_background_color       = (isset($settings->step_prev_background_color) && $settings->step_prev_background_color) ? $settings->step_prev_background_color : '';
+            $prevOptions->button_background_color_hover = (isset($settings->step_prev_background_color_hover) && $settings->step_prev_background_color_hover) ? $settings->step_prev_background_color_hover : '';
+            $prevOptions->button_background_gradient        = (isset($settings->step_prev_background_gradient) && $settings->step_prev_background_gradient) ? $settings->step_prev_background_gradient : new stdClass();
+            $prevOptions->button_background_gradient_hover  = (isset($settings->step_prev_background_gradient_hover) && $settings->step_prev_background_gradient_hover) ? $settings->step_prev_background_gradient_hover : new stdClass();
+
+            $css .= $css_path->render(['addon_id' => $addon_id, 'options' => $nextOptions, 'id' => 'btn-next-' . $this->addon->id]);
+            $css .= $css_path->render(['addon_id' => $addon_id, 'options' => $prevOptions, 'id' => 'btn-prev-' . $this->addon->id]);
+
+            $stepNavButtons = '.sppb-form-builder-step-nav .sppb-form-builder-prev button, .sppb-form-builder-step-nav .sppb-form-builder-next button';
+            $stepBtnSize    = (isset($settings->step_btn_size) && $settings->step_btn_size) ? $settings->step_btn_size : '';
+
+            if ($stepBtnSize === 'custom') {
+                $css .= $cssHelper->generateStyle($stepNavButtons, $settings, ['step_btn_padding' => 'padding'], [], ['step_btn_padding' => 'spacing']);
+            }
+
+            $css .= $cssHelper->generateStyle($stepNavButtons, $settings, ['step_btn_margin' => 'margin'], [], ['step_btn_margin' => 'spacing']);
+
+            // Gap between the Previous / Next-Send buttons is owned by the parent row.
+            // Cancel the inner-facing gutter/margin on both the wrapper and the button.
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-step-nav', $settings, ['step_btn_gap' => 'gap']);
+            $css .= $addon_id . ' .sppb-form-builder-step-nav .sppb-form-builder-prev,' . $addon_id . ' .sppb-form-builder-step-nav .sppb-form-builder-prev button{margin-right:0 !important;}';
+            $css .= $addon_id . ' .sppb-form-builder-step-nav .sppb-form-builder-next,' . $addon_id . ' .sppb-form-builder-step-nav .sppb-form-builder-next button,' . $addon_id . ' .sppb-form-builder-step-nav .sppb-form-builder-submit,' . $addon_id . ' .sppb-form-builder-step-nav .sppb-form-builder-submit button{margin-left:0 !important;}';
+
+            // Step indicator
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-steps-indicator, .sppb-form-builder-progress', $settings, ['step_indicator_spacing' => 'margin-bottom']);
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-steps-indicator', $settings, ['step_indicator_divider_gap' => '--sppb-step-divider-gap']);
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-steps-indicator', $settings, ['step_indicator_icon_size' => '--sppb-step-icon-size']);
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-steps-indicator', $settings, ['step_indicator_padding' => '--sppb-step-marker-pad']);
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-step-indicator-item::before', $settings, ['step_indicator_divider_width' => 'height']);
+
+            $css .= $cssHelper->typography('.sppb-form-builder-steps-indicator .sppb-step-indicator-label, .sppb-form-builder-progress-text', $settings, 'step_indicator_typography', [
+                'font'           => 'step_indicator_font_family',
+                'size'           => 'step_indicator_fontsize',
+                'letter_spacing' => 'step_indicator_letterspace',
+                'weight'         => 'step_indicator_font_style.weight',
+                'italic'         => 'step_indicator_font_style.italic',
+                'underline'      => 'step_indicator_font_style.underline',
+                'uppercase'      => 'step_indicator_font_style.uppercase',
+            ]);
+
+            // Inactive state
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-step-indicator-item .sppb-step-indicator-label', $settings, ['step_indicator_inactive_text' => 'color'], ['step_indicator_inactive_text' => false]);
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-step-indicator-item .sppb-step-indicator-marker', $settings, ['step_indicator_inactive_icon' => 'color', 'step_indicator_inactive_border' => 'border-color', 'step_indicator_inactive_bg' => 'background'], ['step_indicator_inactive_icon' => false, 'step_indicator_inactive_border' => false, 'step_indicator_inactive_bg' => false]);
+
+            // Active state
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-step-indicator-item.active .sppb-step-indicator-label', $settings, ['step_indicator_active_text' => 'color'], ['step_indicator_active_text' => false]);
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-step-indicator-item.active .sppb-step-indicator-marker', $settings, ['step_indicator_active_icon' => 'color', 'step_indicator_active_border' => 'border-color', 'step_indicator_active_bg' => 'background'], ['step_indicator_active_icon' => false, 'step_indicator_active_border' => false, 'step_indicator_active_bg' => false]);
+
+            // Completed state
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-step-indicator-item.completed .sppb-step-indicator-label', $settings, ['step_indicator_completed_text' => 'color'], ['step_indicator_completed_text' => false]);
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-step-indicator-item.completed .sppb-step-indicator-marker', $settings, ['step_indicator_completed_icon' => 'color', 'step_indicator_completed_border' => 'border-color', 'step_indicator_completed_bg' => 'background'], ['step_indicator_completed_icon' => false, 'step_indicator_completed_border' => false, 'step_indicator_completed_bg' => false]);
+
+            // Progress bar
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-progress-text', $settings, ['step_indicator_progress_text' => 'color'], ['step_indicator_progress_text' => false]);
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-progress-fill', $settings, ['step_indicator_progress_color' => 'background'], ['step_indicator_progress_color' => false]);
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-progress-track', $settings, ['step_indicator_progress_bg' => 'background'], ['step_indicator_progress_bg' => false]);
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-progress-track', $settings, ['step_indicator_progress_height' => 'height']);
+            $css .= $cssHelper->generateStyle('.sppb-form-builder-progress-track, .sppb-form-builder-progress-fill', $settings, ['step_indicator_progress_radius' => 'border-radius']);
+        }
+
         $btn_size = (isset($settings->btn_size) && $settings->btn_size) ? $settings->btn_size : '';
-        if ((! empty($options->button_type) && $options->button_type === "custom")) {
+        if ((! empty($btn_size) && $btn_size === "custom")) {
             $btnPadding = $cssHelper->generateStyle('.sppb-form-builder-btn button', $settings, ['btn_padding' => 'padding'], [], ['btn_padding' => 'spacing']);
             $css .= $btnPadding;
         }
@@ -999,6 +1286,7 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         }
         return false;
     }
+
 
     /**
      * Generate the lodash template string for the frontend editor.
@@ -1106,9 +1394,14 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         $output .= '<# } #>';
 
         $output .= '
-        <# if(!_.isEmpty(data.sp_form_builder_item) && _.isArray(data.sp_form_builder_item)){
+        <#
+            var __cssSteps = (_.isArray(data.sp_form_builder_steps) && data.sp_form_builder_steps.length) ? data.sp_form_builder_steps : [{ sp_form_builder_item: (data.sp_form_builder_item || []) }];
+            var __cssFields = [];
+            _.each(__cssSteps, function(__s){ _.each((_.isArray(__s.sp_form_builder_item) ? __s.sp_form_builder_item : []), function(__f){ __cssFields.push(__f); }); });
+        #>
+        <# if(__cssFields.length > 0){
 
-            _.each (data.sp_form_builder_item, function(item_value, item_key) {
+            _.each (__cssFields, function(item_value, item_key) {
                 let field_type = (!_.isEmpty(item_value.field_type) && item_value.field_type) ? item_value.field_type : "text";
                 let item_name_id = field_type ? "sppb-form-builder-field-"+item_key : "";
                 if(_.isObject(item_value.field_width)){ '
@@ -1175,7 +1468,6 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         <# } #>';
 
         $output .= '<# if (data.btn_type == "custom") { #>';
-        $output .= $lodash->spacing('padding', '#btn-{{ data.id }}.sppb-btn-custom', 'data.btn_padding');
         $output .= $lodash->color('color', '#btn-{{ data.id }}.sppb-btn-custom', 'data.btn_color');
         $output .= $lodash->color('color', '#btn-{{ data.id }}.sppb-btn-custom:hover', 'data.btn_color_hover');
         $output .= $lodash->color('background-color', '#btn-{{ data.id }}.sppb-btn-custom:hover', 'data.btn_background_color_hover');
@@ -1196,7 +1488,102 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         $output .= '<# } #>';
         $output .= '<# } #>';
 
+
+        $output .= '<# if (!_.isEmpty(data.btn_padding) && data.btn_size == "custom") { #>';
+        $output .= $lodash->spacing('padding', '#btn-{{ data.id }}.sppb-btn-custom', 'data.btn_padding');
+        $output .= '<# } #>';
+
         $output .= $lodash->unit('margin', '.sppb-form-builder-btn button', 'data.btn_margin');
+
+        // Step buttons (Previous / Next) custom colors
+        $output .= '<# if (data.step_btn_type == "custom") { #>';
+        $output .= $lodash->color('color', '#btn-next-{{ data.id }}.sppb-btn-custom', 'data.step_next_color');
+        $output .= $lodash->color('color', '#btn-next-{{ data.id }}.sppb-btn-custom:hover', 'data.step_next_color_hover');
+        $output .= $lodash->color('color', '#btn-prev-{{ data.id }}.sppb-btn-custom', 'data.step_prev_color');
+        $output .= $lodash->color('color', '#btn-prev-{{ data.id }}.sppb-btn-custom:hover', 'data.step_prev_color_hover');
+        $output .= $lodash->unit('font-size', '#btn-next-{{ data.id }}.sppb-btn-custom', 'data.step_btn_fontsize', 'px');
+        $output .= $lodash->unit('font-size', '#btn-prev-{{ data.id }}.sppb-btn-custom', 'data.step_btn_fontsize', 'px');
+        $output .= '<# if (data.step_btn_appearance == "outline") { #>';
+        $output .= $lodash->border('border-color', '#btn-next-{{ data.id }}.sppb-btn-custom', 'data.step_next_background_color');
+        $output .= $lodash->border('border-color', '#btn-next-{{ data.id }}.sppb-btn-custom:hover', 'data.step_next_background_color_hover');
+        $output .= $lodash->border('border-color', '#btn-prev-{{ data.id }}.sppb-btn-custom', 'data.step_prev_background_color');
+        $output .= $lodash->border('border-color', '#btn-prev-{{ data.id }}.sppb-btn-custom:hover', 'data.step_prev_background_color_hover');
+        $output .= '#sppb-addon-{{ data.id }} #btn-next-{{ data.id }}.sppb-btn-custom, #sppb-addon-{{ data.id }} #btn-prev-{{ data.id }}.sppb-btn-custom {background-color:transparent;}';
+        $output .= '<# } else if(data.step_btn_appearance == "gradient"){ #>';
+        $output .= '#sppb-addon-{{ data.id }} #btn-next-{{ data.id }}.sppb-btn-custom, #sppb-addon-{{ data.id }} #btn-prev-{{ data.id }}.sppb-btn-custom { border: none; }';
+        $output .= $lodash->color('background-color', '#btn-next-{{ data.id }}.sppb-btn-custom', 'data.step_next_background_gradient');
+        $output .= $lodash->color('background-color', '#btn-next-{{ data.id }}.sppb-btn-custom:hover', 'data.step_next_background_gradient_hover');
+        $output .= $lodash->color('background-color', '#btn-prev-{{ data.id }}.sppb-btn-custom', 'data.step_prev_background_gradient');
+        $output .= $lodash->color('background-color', '#btn-prev-{{ data.id }}.sppb-btn-custom:hover', 'data.step_prev_background_gradient_hover');
+        $output .= '<# } else { #>';
+        $output .= $lodash->color('background-color', '#btn-next-{{ data.id }}.sppb-btn-custom', 'data.step_next_background_color');
+        $output .= $lodash->color('background-color', '#btn-next-{{ data.id }}.sppb-btn-custom:hover', 'data.step_next_background_color_hover');
+        $output .= $lodash->color('background-color', '#btn-prev-{{ data.id }}.sppb-btn-custom', 'data.step_prev_background_color');
+        $output .= $lodash->color('background-color', '#btn-prev-{{ data.id }}.sppb-btn-custom:hover', 'data.step_prev_background_color_hover');
+        $output .= '<# } #>';
+        $output .= '<# } #>';
+
+        // Step buttons padding / margin / gap (gap owned by the parent row)
+        $output .= '<# if (!_.isEmpty(data.step_btn_padding) && data.step_btn_size == "custom") { #>';
+        $output .= $lodash->spacing('padding', '.sppb-form-builder-step-nav .sppb-form-builder-prev button, .sppb-form-builder-step-nav .sppb-form-builder-next button', 'data.step_btn_padding');
+        $output .= '<# } #>';
+        $output .= $lodash->unit('margin', '.sppb-form-builder-step-nav .sppb-form-builder-prev button, .sppb-form-builder-step-nav .sppb-form-builder-next button', 'data.step_btn_margin');
+        $output .= $lodash->unit('gap', '.sppb-form-builder-step-nav', 'data.step_btn_gap', 'px');
+        $output .= '#sppb-addon-{{ data.id }} .sppb-form-builder-step-nav .sppb-form-builder-prev, #sppb-addon-{{ data.id }} .sppb-form-builder-step-nav .sppb-form-builder-prev button{margin-right:0 !important;}';
+        $output .= '#sppb-addon-{{ data.id }} .sppb-form-builder-step-nav .sppb-form-builder-next, #sppb-addon-{{ data.id }} .sppb-form-builder-step-nav .sppb-form-builder-next button, #sppb-addon-{{ data.id }} .sppb-form-builder-step-nav .sppb-form-builder-submit, #sppb-addon-{{ data.id }} .sppb-form-builder-step-nav .sppb-form-builder-submit button{margin-left:0 !important;}';
+
+        // Step indicator. Responsive sliders store { xl, lg, md, sm, xs } where some devices
+        // may be empty, so resolve each value across devices and only emit when present - the
+        // single-device lodash helper would otherwise emit an empty value that drops the rule
+        // (and poisons calc() for the CSS variables, collapsing the marker).
+        $output .= '<#
+            var __sppbStepDev = function(v){ return (v && typeof v === "object") ? (v[window.builderDefaultDevice] || v.xl || v.lg || v.md || v.sm || v.xs) : v; };
+            var __stepSpacing = __sppbStepDev(data.step_indicator_spacing);
+            var __stepDividerGap = __sppbStepDev(data.step_indicator_divider_gap);
+            var __stepDividerWidth = __sppbStepDev(data.step_indicator_divider_width);
+            var __stepIconSize = __sppbStepDev(data.step_indicator_icon_size);
+            var __stepMarkerPad = __sppbStepDev(data.step_indicator_padding);
+            var __stepProgressHeight = __sppbStepDev(data.step_indicator_progress_height);
+            var __stepProgressRadius = __sppbStepDev(data.step_indicator_progress_radius);
+        #>';
+        $output .= '<# if(__stepSpacing || __stepSpacing === 0){ #>#sppb-addon-{{ data.id }} .sppb-form-builder-steps-indicator, #sppb-addon-{{ data.id }} .sppb-form-builder-progress{margin-bottom:{{__stepSpacing}}px;}<# } #>';
+        $output .= '<# if(__stepDividerGap || __stepDividerGap === 0){ #>#sppb-addon-{{ data.id }} .sppb-form-builder-steps-indicator{--sppb-step-divider-gap:{{__stepDividerGap}}px;}<# } #>';
+        $output .= '<# if(__stepIconSize || __stepIconSize === 0){ #>#sppb-addon-{{ data.id }} .sppb-form-builder-steps-indicator{--sppb-step-icon-size:{{__stepIconSize}}px;}<# } #>';
+        $output .= '<# if(__stepMarkerPad || __stepMarkerPad === 0){ #>#sppb-addon-{{ data.id }} .sppb-form-builder-steps-indicator{--sppb-step-marker-pad:{{__stepMarkerPad}}px;}<# } #>';
+        $output .= '<# if(__stepDividerWidth || __stepDividerWidth === 0){ #>#sppb-addon-{{ data.id }} .sppb-form-builder-step-indicator-item::before{height:{{__stepDividerWidth}}px;}<# } #>';
+
+        $stepIndicatorTypoFallbacks = [
+            'font'           => 'data.step_indicator_font_family',
+            'size'           => 'data.step_indicator_fontsize',
+            'letter_spacing' => 'data.step_indicator_letterspace',
+            'weight'         => 'data.step_indicator_font_style?.weight',
+            'italic'         => 'data.step_indicator_font_style?.italic',
+            'underline'      => 'data.step_indicator_font_style?.underline',
+            'uppercase'      => 'data.step_indicator_font_style?.uppercase',
+        ];
+        $output .= $lodash->typography('.sppb-form-builder-steps-indicator .sppb-step-indicator-label, .sppb-form-builder-progress-text', 'data.step_indicator_typography', $stepIndicatorTypoFallbacks);
+
+        $output .= $lodash->color('color', '.sppb-form-builder-step-indicator-item .sppb-step-indicator-label', 'data.step_indicator_inactive_text');
+        $output .= $lodash->color('color', '.sppb-form-builder-step-indicator-item .sppb-step-indicator-marker', 'data.step_indicator_inactive_icon');
+        $output .= $lodash->color('border-color', '.sppb-form-builder-step-indicator-item .sppb-step-indicator-marker', 'data.step_indicator_inactive_border');
+        $output .= $lodash->color('background', '.sppb-form-builder-step-indicator-item .sppb-step-indicator-marker', 'data.step_indicator_inactive_bg');
+
+        $output .= $lodash->color('color', '.sppb-form-builder-step-indicator-item.active .sppb-step-indicator-label', 'data.step_indicator_active_text');
+        $output .= $lodash->color('color', '.sppb-form-builder-step-indicator-item.active .sppb-step-indicator-marker', 'data.step_indicator_active_icon');
+        $output .= $lodash->color('border-color', '.sppb-form-builder-step-indicator-item.active .sppb-step-indicator-marker', 'data.step_indicator_active_border');
+        $output .= $lodash->color('background', '.sppb-form-builder-step-indicator-item.active .sppb-step-indicator-marker', 'data.step_indicator_active_bg');
+
+        $output .= $lodash->color('color', '.sppb-form-builder-step-indicator-item.completed .sppb-step-indicator-label', 'data.step_indicator_completed_text');
+        $output .= $lodash->color('color', '.sppb-form-builder-step-indicator-item.completed .sppb-step-indicator-marker', 'data.step_indicator_completed_icon');
+        $output .= $lodash->color('border-color', '.sppb-form-builder-step-indicator-item.completed .sppb-step-indicator-marker', 'data.step_indicator_completed_border');
+        $output .= $lodash->color('background', '.sppb-form-builder-step-indicator-item.completed .sppb-step-indicator-marker', 'data.step_indicator_completed_bg');
+
+        $output .= $lodash->color('color', '.sppb-form-builder-progress-text', 'data.step_indicator_progress_text');
+        $output .= $lodash->color('background', '.sppb-form-builder-progress-fill', 'data.step_indicator_progress_color');
+        $output .= $lodash->color('background', '.sppb-form-builder-progress-track', 'data.step_indicator_progress_bg');
+        $output .= '<# if(__stepProgressHeight || __stepProgressHeight === 0){ #>#sppb-addon-{{ data.id }} .sppb-form-builder-progress-track{height:{{__stepProgressHeight}}px;}<# } #>';
+        $output .= '<# if(__stepProgressRadius || __stepProgressRadius === 0){ #>#sppb-addon-{{ data.id }} .sppb-form-builder-progress-track, #sppb-addon-{{ data.id }} .sppb-form-builder-progress-fill{border-radius:{{__stepProgressRadius}}px;}<# } #>';
+
         $output .= $lodash->generateTransformCss('.sppb-addon-form-builder-form', 'data.transform');
 
         $output .= '
@@ -1219,8 +1606,70 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         <form class="sppb-addon-form-builder-form" {{{redirect_url_attr}}}>
 
             <#
-            if(_.isArray(data.sp_form_builder_item) && data.sp_form_builder_item.length > 0){
-                _.each (data.sp_form_builder_item, function(item_value, item_key) {
+            var __steps = (_.isArray(data.sp_form_builder_steps) && data.sp_form_builder_steps.length) ? data.sp_form_builder_steps : [{ step_title: "Step 1", sp_form_builder_item: (data.sp_form_builder_item || []) }];
+            var isMultiStep = __steps.length > 1;
+            var total_steps = __steps.length;
+            var step_indicator_type = data.step_indicator_type || "number_text";
+            var step_indicator_shape = data.step_indicator_shape || "circle";
+            var step_prev_text = data.step_prev_label || "Previous";
+            var step_next_text = data.step_next_label || "Next";
+            var globalKey = 0;
+
+            var progress_value = total_steps ? Math.round(100 / total_steps) : 0;
+            var has_marker = step_indicator_type !== "text";
+            var has_label = (step_indicator_type === "text" || step_indicator_type === "number_text" || step_indicator_type === "icon_text");
+            var is_icon = (step_indicator_type === "icon" || step_indicator_type === "icon_text");
+
+            var step_btn_class = data.step_btn_type ? (" sppb-btn-" + data.step_btn_type) : " sppb-btn-primary";
+            step_btn_class += data.step_btn_size ? (" sppb-btn-" + data.step_btn_size) : "";
+            step_btn_class += data.step_btn_shape ? (" sppb-btn-" + data.step_btn_shape) : " sppb-btn-rounded";
+            step_btn_class += data.step_btn_appearance ? (" sppb-btn-" + data.step_btn_appearance) : "";
+            step_btn_class += data.step_btn_block ? (" " + data.step_btn_block) : "";
+            var step_next_position = data.step_next_position ? (" sppb-text-" + data.step_next_position) : " sppb-text-left";
+            var step_prev_position = data.step_prev_position ? (" sppb-text-" + data.step_prev_position) : " sppb-text-left";
+            #>
+
+            <# if(isMultiStep && step_indicator_type === "progress_bar"){ #>
+                <div class="sppb-form-builder-progress">
+                    <div class="sppb-form-builder-progress-text"><span class="sppb-form-builder-progress-percent">{{progress_value}}%</span></div>
+                    <div class="sppb-form-builder-progress-track">
+                        <span class="sppb-form-builder-progress-fill" style="width:{{progress_value}}%;"></span>
+                    </div>
+                </div>
+            <# } else if(isMultiStep && step_indicator_type !== "none"){ #>
+                <ol class="sppb-form-builder-steps-indicator sppb-step-shape-{{step_indicator_shape}} sppb-step-type-{{step_indicator_type}}">
+                    <# _.each(__steps, function(__step, __stepIndex){
+                        var step_title = (!_.isEmpty(__step.step_title) && __step.step_title) ? __step.step_title : ("Step " + (__stepIndex + 1));
+                    #>
+                        <li class="sppb-form-builder-step-indicator-item <# if(__stepIndex===0){ #>active<# } #>" data-step="{{__stepIndex}}">
+                            <# if(has_marker){ #>
+                                <span class="sppb-step-indicator-marker">
+                                    <# if(is_icon){ #>
+                                        <svg class="sppb-step-indicator-check" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M13.3 4.6 6.4 11.5 2.7 7.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    <# } else { #>
+                                        <span class="sppb-step-indicator-number">{{__stepIndex + 1}}</span>
+                                    <# } #>
+                                </span>
+                            <# } #>
+                            <# if(has_label){ #>
+                                <span class="sppb-step-indicator-label">{{step_title}}</span>
+                            <# } #>
+                        </li>
+                    <# }) #>
+                </ol>
+            <# } #>
+
+            <#
+            _.each (__steps, function(__step, __stepIndex) {
+                var __stepFields = _.isArray(__step.sp_form_builder_item) ? __step.sp_form_builder_item : [];
+            #>
+                <# if(isMultiStep){ #>
+                    <div class="sppb-form-builder-step" data-step="{{__stepIndex}}" <# if(__stepIndex!==0){ #>style="display:none;"<# } #>>
+                <# } #>
+                <#
+                _.each (__stepFields, function(item_value) {
+                    var item_key = globalKey;
+                    globalKey++;
                     let label = (!_.isEmpty(item_value.title) && item_value.title) ? item_value.title : "";
                     let field_name = (!_.isEmpty(item_value.field_name) && item_value.field_name) ? item_value.field_name : "";
                     let field_placeholder = (!_.isEmpty(item_value.field_placeholder) && item_value.field_placeholder) ? item_value.field_placeholder : "";
@@ -1446,7 +1895,12 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
                     <# }
 
                 })
-            } #>
+                #>
+                <# if(isMultiStep){ #>
+                    </div>
+                <# } #>
+            <# }) #>
+
             <# if (data.enable_captcha && data.captcha_type == "default") { #>
                 <div class="sppb-form-group">
                     <label {{hidden_label_class}}>{{data.captcha_question}}</label>
@@ -1490,10 +1944,26 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
                 } else {
                     iconRight = \'<span class="\' + icon_name + \'"></span>\';
                 }
-            if(data.btn_text){
+            if(data.btn_text && !isMultiStep){
             #>
                 <div class="sppb-form-builder-btn sppb-text-{{data.btn_position}} {{data.btn_class}}">
                     <button type="button" id="btn-{{ data.id }}" class="sppb-btn {{classList}}">{{{iconLeft}}} {{ data.btn_text }} {{{iconRight}}}</button>
+                </div>
+            <# } #>
+
+            <# if(isMultiStep){ #>
+                <div class="sppb-form-builder-step-nav">
+                    <div class="sppb-form-builder-btn{{step_prev_position}} sppb-form-builder-prev" style="display:none;">
+                        <button type="button" id="btn-prev-{{data.id}}" class="sppb-btn{{step_btn_class}}">{{step_prev_text}}</button>
+                    </div>
+                    <div class="sppb-form-builder-btn{{step_next_position}} sppb-form-builder-next">
+                        <button type="button" id="btn-next-{{data.id}}" class="sppb-btn{{step_btn_class}}">{{step_next_text}}</button>
+                    </div>
+                    <# if(data.btn_text){ #>
+                        <div class="sppb-form-builder-btn sppb-text-{{data.btn_position}} {{data.btn_class}} sppb-form-builder-submit" style="display:none;">
+                            <button type="button" id="btn-{{data.id}}" class="sppb-btn{{classList}}">{{data.btn_text}}</button>
+                        </div>
+                    <# } #>
                 </div>
             <# } #>
 

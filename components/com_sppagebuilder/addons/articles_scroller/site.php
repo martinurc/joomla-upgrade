@@ -48,12 +48,11 @@ class SppagebuilderAddonArticles_scroller extends SppagebuilderAddons
 		$carousel_content_align = (isset($settings->carousel_content_align)) ? ' ' . $settings->carousel_content_align : ' sppb-text-left';
 
 		// Addon options
-		$resource 		= (isset($settings->resource) && $settings->resource) ? $settings->resource : 'article';
+		$resource 		= 'article';
 		$catid 			= (isset($settings->catid) && $settings->catid) ? $settings->catid : 0;
 		$tagids 		= (isset($settings->tagids) && $settings->tagids) ? $settings->tagids : array();
 		$include_subcat = (isset($settings->include_subcat)) ? (int) $settings->include_subcat : 1;
 		$post_type 		= (isset($settings->post_type) && $settings->post_type) ? $settings->post_type : '';
-		$k2catid 		= (isset($settings->k2catid) && $settings->k2catid) ? $settings->k2catid : 0;
 		$article_scroll_limit = (isset($settings->article_scroll_limit) && $settings->article_scroll_limit) ? $settings->article_scroll_limit : 12;
 		$ordering 		= (isset($settings->ordering) && $settings->ordering) ? $settings->ordering : 'latest';
 		$thumb_size 	= (isset($settings->thumb_size) && $settings->thumb_size) ? $settings->thumb_size : 'image_thumbnail';
@@ -78,27 +77,10 @@ class SppagebuilderAddonArticles_scroller extends SppagebuilderAddons
 
 		$output   = '';
 
-		// Include k2 helper
-		$k2helper 		= JPATH_ROOT . '/components/com_sppagebuilder/helpers/k2.php';
 		$article_helper = JPATH_ROOT . '/components/com_sppagebuilder/helpers/articles.php';
-		$isk2installed  = self::isComponentInstalled('com_k2');
 
-		if ($resource === 'k2') {
-			if ($isk2installed == 0) {
-				$output .= '<p class="alert alert-danger">' . Text::_('COM_SPPAGEBUILDER_ADDON_ARTICLE_ERORR_K2_NOTINSTALLED') . '</p>';
-				return $output;
-			} elseif (!\file_exists($k2helper)) {
-				$output .= '<p class="alert alert-danger">' . Text::_('COM_SPPAGEBUILDER_ADDON_K2_HELPER_FILE_MISSING') . '</p>';
-				return $output;
-			} else {
-				require_once $k2helper;
-			}
-
-			$items = SppagebuilderHelperK2::getItems($article_scroll_limit, $ordering, $k2catid, $include_subcat);
-		} else {
-			require_once $article_helper;
-			$items = SppagebuilderHelperArticles::getArticles($article_scroll_limit, $ordering, $catid, $include_subcat, $post_type, $tagids);
-		}
+		require_once $article_helper;
+		$items = SppagebuilderHelperArticles::getArticles($article_scroll_limit, $ordering, $catid, $include_subcat, $post_type, $tagids);
 
 		if (!count($items)) {
 			$output .= '<p class="alert alert-warning">' . Text::_('COM_SPPAGEBUILDER_ADDON_ARTICLE_NO_ITEMS_FOUND') . '</p>';
@@ -117,17 +99,7 @@ class SppagebuilderAddonArticles_scroller extends SppagebuilderAddons
 				foreach ($items as $key => $item) {
 					$intro_text = StringHelper::truncate($item->introtext, $intro_limit, true, false);
 					$intro_text = str_replace('...', '', $intro_text);
-					$image = '';
-
-					if ($resource === 'k2') {
-						if (isset($item->image_medium) && $item->image_medium) {
-							$image = $item->image_medium;
-						} elseif (isset($item->image_large) && $item->image_large) {
-							$image = $item->image_medium;
-						}
-					} else {
-						$image = $item->{$thumb_size} ?? $item->image_thumbnail;
-					}
+					$image = $item->{$thumb_size} ?? $item->image_thumbnail;
 
 					$bg_style = "";
 
@@ -180,25 +152,18 @@ class SppagebuilderAddonArticles_scroller extends SppagebuilderAddons
 				foreach ($items as $key => $item) {
 					$intro_text = StringHelper::truncate($item->introtext, $intro_limit, true, false);
 					$intro_text = str_replace('...', '', $intro_text);
-					$image = '';
-
-					if ($resource === 'k2') {
-						if (isset($item->image_medium) && $item->image_medium) {
-							$image = $item->image_medium;
-						} elseif (isset($item->image_large) && $item->image_large) {
-							$image = $item->image_medium;
-						}
-					} else {
-						$image = $item->{$thumb_size} ?? $item->image_thumbnail;
-					}
+					$image = $item->{$thumb_size} ?? $item->image_thumbnail;
 
 					$output .= '<div role="article" class="sppb-articles-carousel-column ' . $col_size . '">';
 
-					$output .= '<div class="sppb-articles-carousel-img">';
-					$output .= '<a href="' . $item->link . '" class="sppb-articles-carousel-img-link" itemprop="url">';
-					$output .= '<img src="' . $image . '" alt="' . $item->title . '" />';
-					$output .= '</a>';
-					$output .= '</div>'; //.sppb-articles-carousel-img
+					if ( isset($image) && !empty($image) ) {
+						$output .= '<div class="sppb-articles-carousel-img">';
+						$output .= '<a href="' . $item->link . '" class="sppb-articles-carousel-img-link" itemprop="url">';
+						$output .= '<img src="' . $image . '" alt="' . $item->title . '" />';
+						$output .= '</a>';
+						$output .= '</div>'; //.sppb-articles-carousel-img
+					}
+
 
 					$output .= '<div class="sppb-articles-carousel-content' . $carousel_content_align . '">';
 
@@ -215,11 +180,7 @@ class SppagebuilderAddonArticles_scroller extends SppagebuilderAddons
 					}
 
 					//Category
-					if ($resource == 'k2') {
-						$item->catUrl = urldecode(Route::_(K2HelperRoute::getCategoryRoute($item->catid . ':' . urlencode($item->category_alias))));
-					} else {
-						$item->catUrl = Route::_(version_compare($JoomlaVersion, '4.0.0', '>=') ? Joomla\Component\Content\Site\Helper\RouteHelper::getCategoryRoute($item->catslug) : ContentHelperRoute::getCategoryRoute($item->catslug));
-					}
+					$item->catUrl = Route::_(version_compare($JoomlaVersion, '4.0.0', '>=') ? Joomla\Component\Content\Site\Helper\RouteHelper::getCategoryRoute($item->catslug) : ContentHelperRoute::getCategoryRoute($item->catslug));
 
 					$output .= '<span class="sppb-articles-carousel-meta-category"><a href="' . $item->catUrl . '" itemprop="genre">' . $item->category . '</a></span>';
 					$output .= '</div>'; //.sppb-articles-carousel-content
@@ -578,7 +539,7 @@ class SppagebuilderAddonArticles_scroller extends SppagebuilderAddons
 							slideSelector: "div.sppb-articles-carousel-column",
 							minSlides: ' . $number_of_items_mobile . ',
 							maxSlides: ' . $number_of_items_mobile . ',
-							moveSlides: ' . $number_of_items_mobile . ',
+							moveSlides: ' . $move_slide . ',
 							pager: ' . ($carousel_indicators ? 'true' : 'false') . ',
 							controls: ' . ($carousel_arrow ? 'true' : 'false') . ',
 							slideWidth: 1140,
@@ -612,7 +573,7 @@ class SppagebuilderAddonArticles_scroller extends SppagebuilderAddons
 							slideSelector: "div.sppb-articles-carousel-column",
 							minSlides: ' . $number_of_items_tab . ',
 							maxSlides: ' . $number_of_items_tab . ',
-							moveSlides: ' . $number_of_items_tab . ',
+							moveSlides: ' . $move_slide . ',
 							pager: ' . ($carousel_indicators ? 'true' : 'false') . ',
 							controls: ' . ($carousel_arrow ? 'true' : 'false') . ',
 							nextText: "<i class=\'fa fa-angle-right\' aria-hidden=\'true\'></i>",
@@ -646,7 +607,7 @@ class SppagebuilderAddonArticles_scroller extends SppagebuilderAddons
 							slideSelector: "div.sppb-articles-carousel-column",
 							minSlides: ' . $number_of_items . ',
 							maxSlides: ' . $number_of_items . ',
-							moveSlides: ' . $number_of_items . ',
+							moveSlides: ' . $move_slide . ',
 							pager: ' . ($carousel_indicators ? 'true' : 'false') . ',
 							controls: ' . ($carousel_arrow ? 'true' : 'false') . ',
 							nextText: "<i class=\'fa fa-angle-right\' aria-hidden=\'true\'></i>",
@@ -683,7 +644,7 @@ class SppagebuilderAddonArticles_scroller extends SppagebuilderAddons
 					"use strict";
 					jQuery("' . $addon_id . ' .sppb-articles-carousel-wrap").not(".slick-initialized").slick({
 						slidesToShow: ' . $number_of_items . ',
-						slidesToScroll: ' . $number_of_items . ',
+						slidesToScroll: ' . $move_slide . ',
 						autoplay: ' . ($carousel_autoplay ? 'true' : 'false') . ',
 						arrows: ' . ($carousel_arrow ? 'true' : 'false') . ',
 						draggable: ' . ($carousel_touch ? 'true' : 'false') . ',
@@ -697,7 +658,7 @@ class SppagebuilderAddonArticles_scroller extends SppagebuilderAddons
 							  breakpoint: 1320,
 							  settings: {
 								slidesToShow: ' . $number_of_items . ',
-								slidesToScroll: ' . $number_of_items . ',
+								slidesToScroll: ' . $move_slide . ',
 								infinite: true,
 							  }
 							},
@@ -705,14 +666,14 @@ class SppagebuilderAddonArticles_scroller extends SppagebuilderAddons
 							  breakpoint: 1140,
 							  settings: {
 								slidesToShow: ' . $number_of_items_tab . ',
-								slidesToScroll: ' . $number_of_items_tab . '
+								slidesToScroll: ' . $move_slide . '
 							  }
 							},
 							{
 							  breakpoint: 720,
 							  settings: {
 								slidesToShow: ' . $number_of_items_mobile . ',
-								slidesToScroll: ' . $number_of_items_mobile . '
+								slidesToScroll: ' . $move_slide . '
 							  }
 							}
 						  ]

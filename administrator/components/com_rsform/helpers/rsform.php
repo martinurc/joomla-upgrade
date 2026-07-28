@@ -10,7 +10,7 @@ defined('_JEXEC') or die;
 use Joomla\CMS\Filter\OutputFilter;
 use Joomla\CMS\Table\Table;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\File;
+use Joomla\Filesystem\File;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Plugin\PluginHelper;
@@ -853,7 +853,7 @@ class RSFormProHelper
 
 	public static function readFile($file, $download_name = null, $die = true)
 	{
-		$ext = strtolower(File::getExt($file));
+		$ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
 		if ($ext == 'tgz' || $ext == 'gz') {
 			// Needed when some servers with GZIP compression perform double encoding
@@ -1559,9 +1559,8 @@ class RSFormProHelper
 			$recipients = !is_array($userEmail['to']) ? explode(',', $userEmail['to']) : $userEmail['to'];
 
 			RSFormProHelper::sendMail($userEmail['from'], $userEmail['fromName'], $recipients, $userEmail['subject'], $userEmail['text'], $userEmail['mode'], !empty($userEmail['cc']) ? $userEmail['cc'] : null, !empty($userEmail['bcc']) ? $userEmail['bcc'] : null, $userEmail['files'], !empty($userEmail['replyto']) ? $userEmail['replyto'] : '', !empty($userEmail['replytoName']) ? $userEmail['replytoName'] : null, $userEmail['recipientName'], $formId);
-
-			$mainframe->triggerEvent('onRsformAfterUserEmail', array(array('form' => &$form, 'placeholders' => &$placeholders, 'values' => &$values, 'submissionId' => $SubmissionId, 'SubmissionId' => $SubmissionId, 'userEmail'=>&$userEmail)));
 		}
+        $mainframe->triggerEvent('onRsformAfterUserEmail', array(array('form' => &$form, 'placeholders' => &$placeholders, 'values' => &$values, 'submissionId' => $SubmissionId, 'SubmissionId' => $SubmissionId, 'userEmail'=>&$userEmail)));
 
 		$mainframe->triggerEvent('onRsformBeforeAdminEmail', array(array('form' => &$form, 'placeholders' => &$placeholders, 'values' => &$values, 'submissionId' => $SubmissionId, 'SubmissionId' => $SubmissionId, 'adminEmail'=>&$adminEmail)));
 
@@ -1586,9 +1585,8 @@ class RSFormProHelper
 			$recipients = !is_array($adminEmail['to']) ? explode(',', $adminEmail['to']) : $adminEmail['to'];
 
 			RSFormProHelper::sendMail($adminEmail['from'], $adminEmail['fromName'], $recipients, $adminEmail['subject'], $adminEmail['text'], $adminEmail['mode'], !empty($adminEmail['cc']) ? $adminEmail['cc'] : null, !empty($adminEmail['bcc']) ? $adminEmail['bcc'] : null, $adminEmail['files'], !empty($adminEmail['replyto']) ? $adminEmail['replyto'] : '', !empty($adminEmail['replytoName']) ? $adminEmail['replytoName'] : null, $adminEmail['recipientName'], $formId);
-
-			$mainframe->triggerEvent('onRsformAfterAdminEmail', array(array('form' => &$form, 'placeholders' => &$placeholders, 'values' => &$values, 'submissionId' => $SubmissionId, 'SubmissionId' => $SubmissionId, 'adminEmail'=>&$adminEmail)));
 		}
+        $mainframe->triggerEvent('onRsformAfterAdminEmail', array(array('form' => &$form, 'placeholders' => &$placeholders, 'values' => &$values, 'submissionId' => $SubmissionId, 'SubmissionId' => $SubmissionId, 'adminEmail'=>&$adminEmail)));
 
 		// Additional emails
         $query = $db->getQuery(true)
@@ -1687,9 +1685,9 @@ class RSFormProHelper
 					$recipients = !is_array($additionalEmail['to']) ? explode(',', $additionalEmail['to']) : $additionalEmail['to'];
 
 					RSFormProHelper::sendMail($additionalEmail['from'], $additionalEmail['fromName'], $recipients, $additionalEmail['subject'], $additionalEmail['text'], $additionalEmail['mode'], !empty($additionalEmail['cc']) ? $additionalEmail['cc'] : null, !empty($additionalEmail['bcc']) ? $additionalEmail['bcc'] : null, $additionalEmail['files'], !empty($additionalEmail['replyto']) ? $additionalEmail['replyto'] : '', !empty($additionalEmail['replytoName']) ? $additionalEmail['replytoName'] : null, $additionalEmail['recipientName'], $formId);
-
-					$mainframe->triggerEvent('onRsformAfterAdditionalEmail', array(array('form' => &$form, 'placeholders' => &$placeholders, 'values' => &$values, 'submissionId' => $SubmissionId, 'SubmissionId' => $SubmissionId, 'additionalEmail'=>&$additionalEmail)));
 				}
+
+                $mainframe->triggerEvent('onRsformAfterAdditionalEmail', array(array('form' => &$form, 'placeholders' => &$placeholders, 'values' => &$values, 'submissionId' => $SubmissionId, 'SubmissionId' => $SubmissionId, 'additionalEmail'=>&$additionalEmail)));
 			}
 		}
 
@@ -1813,6 +1811,14 @@ class RSFormProHelper
 		if ($form->ScrollToError) {
 			RSFormProAssets::addScriptDeclaration('RSFormPro.scrollToError = true;');
 		}
+
+        if (RSFormProHelper::getConfig('global.scroll_page')) {
+            RSFormProAssets::addScriptDeclaration('RSFormPro.scrollPage = true;');
+
+            if ($offset = (int) RSFormProHelper::getConfig('global.scroll_page_offset')) {
+                RSFormProAssets::addScriptDeclaration('RSFormPro.scrollPageOffset = ' . json_encode($offset) . ';');
+            }
+        }
 
 		RSFormProAssets::addStyleSheet(HTMLHelper::_('stylesheet', 'com_rsform/front.css', array('pathOnly' => true, 'relative' => true)));
 		RSFormProAssets::addScript(HTMLHelper::_('script', 'com_rsform/script.js', array('pathOnly' => true, 'relative' => true)));
@@ -2092,9 +2098,12 @@ class RSFormProHelper
 		$error = '';
 		if (!empty($validation)) {
 			$error = $errorMessage;
+            $error = str_replace('{error_count}', is_array($validation) ? count($validation) : 0, $error);
 		} elseif ($hasAjax) {
 			$error = '<div id="rsform_error_'.$formId.'" style="display: none;">'.$errorMessage.'</div>';
+            $error = str_replace('{error_count}', '<span id="rsform_error_count_' . $formId . '"></span>', $error);
 		}
+
 		$find[] 	= '{error}';
 		$replace[] 	= $error;
 
@@ -2168,7 +2177,7 @@ class RSFormProHelper
 			}
 		}
 
-		$formLayout = '<form method="post" '.$CSSId.$CSSClass.$CSSName.$CSSAdditionalAttributes.$encType.' action="'.RSFormProHelper::htmlEscape($u).'">' . $formLayout . $token . '</form>';
+		$formLayout = '<form method="post" '.$CSSId.$CSSClass.$CSSName.$CSSAdditionalAttributes.$encType.' action="'.RSFormProHelper::htmlEscape($u).'">' . $formLayout . "\n" . $token . '</form>';
 
 		require_once JPATH_ADMINISTRATOR.'/components/com_rsform/helpers/prices.php';
 		if ($prices = RSFormProPrices::getInstance($formId)->getPrices()) {
@@ -2205,7 +2214,7 @@ class RSFormProHelper
 		}
 
 		if (!empty($pages)) {
-			RSFormProAssets::addScriptDeclaration(sprintf('document.addEventListener(\'DOMContentLoaded\', function(){ rsfp_changePage(%d, %d, %d); });', $formId, $start_page, count($pages)));
+			RSFormProAssets::addScriptDeclaration(sprintf('document.addEventListener(\'DOMContentLoaded\', function(){ RSFormPro.initialPage = true; rsfp_changePage(%d, %d, %d); RSFormPro.initialPage = false; });', $formId, $start_page, count($pages)));
 		}
 
 		if ($hasAjax && !$hasAjaxRoot) {
@@ -2339,6 +2348,11 @@ class RSFormProHelper
 
 		// Clear
 		$session->clear('com_rsform.formparams.formId'.$formId);
+
+        if (RSFormProHelper::getConfig('global.trigger_thankyou_content_plugins'))
+        {
+            $output = HTMLHelper::_('content.prepare', $output, null, 'com_rsform.thankyou');
+        }
 
 		//Trigger Event - onAfterShowThankyouMessage
 		$mainframe->triggerEvent('onRsformFrontendAfterShowThankyouMessage', array(array('output'=>&$output,'formId'=>&$formId)));
@@ -3090,11 +3104,11 @@ class RSFormProHelper
 		return RSFormProMappings::mappingsColumns($config, $method, $row);
 	}
 
-	public static function getMappingQuery($row)
+	public static function getMappingQuery($row, $config = array())
 	{
 		require_once __DIR__.'/mappings.php';
 
-		return RSFormProMappings::getMappingQuery($row);
+		return RSFormProMappings::getMappingQuery($row, $config);
 	}
 
 	public static function escapeSql(&$value)
@@ -3145,6 +3159,15 @@ class RSFormProHelper
 			)));
 
 			$mail->ClearReplyTos();
+
+            if (!is_array($from))
+            {
+                $from = trim($from);
+            }
+            if (!is_array($fromname))
+            {
+                $fromname = trim($fromname);
+            }
 
 			/**
 			 * Apparently there are 2 issues:

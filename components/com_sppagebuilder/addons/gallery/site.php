@@ -32,6 +32,7 @@ class SppagebuilderAddonGallery extends SppagebuilderAddons
 		$item_alignment = AddonUtils::parseDeviceData($item_alignment, SpPgaeBuilderBase::$defaultDevice);
 		$show_thumb_desc = (isset($settings->show_thumb_desc) && $settings->show_thumb_desc) ? $settings->show_thumb_desc : 0;
 		$show_full_desc = (isset($settings->show_full_desc) && $settings->show_full_desc) ? $settings->show_full_desc : 0;
+		$show_desc_on_hover = (isset($settings->show_desc_on_hover) && $settings->show_desc_on_hover) ? $settings->show_desc_on_hover : 0;
 
 		$output  = '<div class="sppb-addon sppb-addon-gallery ' . $class . '">';
 		$output .= ($title) ? '<' . $heading_selector . ' class="sppb-addon-title">' . $title . '</' . $heading_selector . '>' : '';
@@ -42,6 +43,9 @@ class SppagebuilderAddonGallery extends SppagebuilderAddons
 		{
 			foreach ($settings->sp_gallery_item as $key => $value)
 			{
+				if (isset($value->item_visibility) && !$value->item_visibility) {
+					continue;
+				}
 				$thumb_img = isset($value->thumb) && $value->thumb ? $value->thumb : '';
 				$thumb_src = isset($thumb_img->src) ? $thumb_img->src : $thumb_img;
 				$alt_text_fallback = isset($value->title) ? $value->title : '';
@@ -69,11 +73,11 @@ class SppagebuilderAddonGallery extends SppagebuilderAddons
 					}
 
 					$placeholder = $thumb_src == '' ? false : $this->get_image_placeholder($thumb_src);
-					$title = $show_full_desc && isset($value->description) && $value->description ?  'data-title="<div id='. $addon_id . '>' . '<p class=sppb-gallery-desc>' . $description . '</p>' . '</div>"' : '';
+					$title = $show_full_desc && isset($value->description) && $value->description ?  'data-title="<div id='. $addon_id . '>' . '<p class=sppb-gallery-desc>' . $description . '</p>' . '</div>"' : 'data-title=""';
 
 					$output .= '<li>';
-					$output .= ($full_src) ? '<a href="' . $full_src . '" class="sppb-gallery-btn">' : '';
-					$output .= '<img ' . $title . ' class="sppb-img-responsive' . ($placeholder ? ' sppb-element-lazy' : '') . '" src="' . ($placeholder ? $placeholder : $thumb_src) . '" alt="' . $alt_text . '" ' . ($placeholder ? 'data-large="' . $thumb_src . '"' : '') . ' ' . ($thumb_width ? 'width="' . $thumb_width . '"' : '') . ' ' . ($thumb_height ? 'height="' . $thumb_height . '"' : '') . ' loading="lazy">';
+					$output .= ($full_src) ? '<a '. ($show_desc_on_hover ? 'style="position: relative;" ' : '') . 'href="' . $full_src . '" class="sppb-gallery-btn gallery-item-' . $key . '">' : '';
+					$output .= '<img ' . $title . ' class="sppb-img-responsive ' . ($placeholder ? ' sppb-element-lazy' : '') . '" src="' . ($placeholder ? $placeholder : $thumb_src) . '" alt="' . $alt_text . '" ' . ($placeholder ? 'data-large="' . $thumb_src . '"' : '') . ' ' . ($thumb_width ? 'width="' . $thumb_width . '"' : '') . ' ' . ($thumb_height ? 'height="' . $thumb_height . '"' : '') . ' loading="lazy">';
 					$output .= ($full_src) ? '</a>' : '';
 
 					if($show_thumb_desc && $description)
@@ -163,10 +167,15 @@ class SppagebuilderAddonGallery extends SppagebuilderAddons
 		$css = '';
 
 		$border_radius = (isset($settings->border_radius) && $settings->border_radius) ? $settings->border_radius : 0;
-		$width = (isset($settings->width) && $settings->width) ? $settings->width . 'px' : 'auto';
 
 		if ($border_radius) {
 			$border_radius = explode(" ", $settings->border_radius);
+		}
+
+		$galleryImageDefaultStyle = '';
+
+		if (!isset($settings->width) || empty($settings->width)) {
+			$galleryImageDefaultStyle = $cssHelper->generateStyle('.sppb-gallery img', $settings, [], false, [], null, false, 'width: auto;');
 		}
 
 		if (is_array($border_radius) && (count($border_radius) > 2)) {
@@ -176,9 +185,9 @@ class SppagebuilderAddonGallery extends SppagebuilderAddons
 			],
 			[
 				'border_radius' => 'spacing'
-			],'px', [], ['width' => $width]);
+			]);
 		} else {
-			$galleryImageStyle = $cssHelper->generateStyle('.sppb-gallery img', $settings, ['width' => 'width', 'height' => 'height', 'border_radius' => 'border-radius'], 'px', [], ['width' => $width]);
+			$galleryImageStyle = $cssHelper->generateStyle('.sppb-gallery img', $settings, ['width' => 'width', 'height' => 'height', 'border_radius' => 'border-radius']);
 		}
 
 		$galleryStyle = $cssHelper->generateStyle('.sppb-gallery', $settings, ['item_gap' => 'margin: -%s', 'item_alignment' => 'justify-content'], ['item_alignment' => false]);
@@ -186,14 +195,42 @@ class SppagebuilderAddonGallery extends SppagebuilderAddons
 		$transformCss = $cssHelper->generateTransformStyle('.sppb-gallery', $settings, 'transform');
 		$descriptionAlignment = $cssHelper->generateStyle('.sppb-gallery-desc', $settings, ['description_alignment' => 'text-align'], false);
 		$descriptionWidth = $cssHelper->generateStyle('.sppb-gallery-desc', $settings, ['width' => 'max-width'], 'px');
+
+		$show_desc_on_hover = (isset($settings->show_desc_on_hover) && $settings->show_desc_on_hover) ? $settings->show_desc_on_hover : 0;
+
+		if($show_desc_on_hover){
+			foreach($settings->sp_gallery_item as $key => $value){
+				if (isset($value->item_visibility) && !$value->item_visibility) {
+					continue;
+				}
+				$description = isset($value->description) && $value->description ? $value->description : '';
+				if($description){
+					$css .= $cssHelper->generateStyle('.gallery-item-'.$key.'::after', $settings, ['description_alignment' => 'text-align', 'width' => 'width', 'border_radius' => 'border-radius'], ['description_alignment' => false, 'width' => 'px', 'border_radius' => 'px'], false, null, false, 'content: "' . $description . '"; position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.5); color: #fff; opacity: 0; transition: opacity 0.3s;');
+					$css .= $addon_id.' .gallery-item-'.$key.':hover::after { opacity: 1; }';
+				}
+			}
+		}
+
+		$descTypography = $cssHelper->typography('.sppb-gallery-desc, .sppb-gallery-btn', $settings, 'description_typography', [
+							'font' => 'description_font_family',
+							'size' => 'description_fontsize',
+							'line_height' => 'description_lineheight',
+							'letter_spacing' => 'description_letterspace',
+							'uppercase' => 'description_font_style.uppercase',
+							'italic' => 'description_font_style.italic',
+							'underline' => 'description_font_style.underline',
+							'weight' => 'description_font_style.weight',
+						]);
 		
 
 		$css .= $galleryStyle;
 		$css .= $galleryItemStyle;
+		$css .= $galleryImageDefaultStyle;
 		$css .= $galleryImageStyle;
 		$css .= $transformCss;
 		$css .= $descriptionAlignment;
 		$css .= $descriptionWidth;
+		$css .= $descTypography;
 
 		return $css;
 	}
@@ -242,7 +279,20 @@ class SppagebuilderAddonGallery extends SppagebuilderAddons
 			'weight'         => 'data.title_font_style?.weight',
 		];
 
+		$descriptionTypographyFallbacks = [
+			'font'           => 'data.description_font_family',
+			'size'           => 'data.description_fontsize',
+			'line_height'    => 'data.description_lineheight',
+			'letter_spacing' => 'data.description_letterspace',
+			'uppercase'      => 'data.description_font_style?.uppercase',
+			'italic'         => 'data.description_font_style?.italic',
+			'underline'      => 'data.description_font_style?.underline',
+			'weight'         => 'data.description_font_style?.weight',
+		];
+
 		$output .= $lodash->typography('.sppb-addon-title', 'data.title_typography', $titleTypographyFallbacks);
+		$output .= $lodash->typography('.sppb-gallery-desc', 'data.description_typography', $descriptionTypographyFallbacks);
+
 		$output .= $lodash->unit('margin-top', '.sppb-addon-title', 'data.title_margin_top', 'px');
 		$output .= $lodash->unit('margin-bottom', '.sppb-addon-title', 'data.title_margin_bottom', 'px');
 		$output .= $lodash->generateTransformCss('.sppb-gallery', 'data.transform');
@@ -256,6 +306,9 @@ class SppagebuilderAddonGallery extends SppagebuilderAddons
                 
                 <#
                 _.each(data.sp_gallery_item, function (value, key) {
+					if(typeof value.item_visibility !== "undefined" && !value.item_visibility){
+						return;
+					}
                     var thumbImg = {}
                     var fullImg = {}
 					var desc = data.show_thumb_desc && value.description;

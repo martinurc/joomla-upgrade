@@ -43,6 +43,14 @@ SpAddonsConfig::addonConfig([
 					'responsive' => true
 				],
 
+				'rotate' => [
+                    'type'    => 'slider',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_ACCORDION_ICON_ROTATION'),
+                    'max'     => 360,
+                    'info'    => 'deg',
+                    'std'     => 0,
+                ],
+
 				'title_link'=> [
 					'type'   => 'link',
 					'format' => 'attachment',
@@ -56,6 +64,13 @@ SpAddonsConfig::addonConfig([
                     'desc' => Text::_('COM_SPPAGEBUILDER_GLOBAL_ARIA_LABEL_DESC'),
                     'std'  => ''
                 ],
+
+				'role' => [
+					'type' => 'text',
+					'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_ROLE'),
+					'desc' => Text::_('COM_SPPAGEBUILDER_GLOBAL_ROLE_DESC'),
+					'std'  => 'img'
+				],
 				
 				'margin'=> [
 					'type'        => 'margin',

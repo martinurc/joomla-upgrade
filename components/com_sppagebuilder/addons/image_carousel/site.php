@@ -27,6 +27,8 @@ class SppagebuilderAddonImage_carousel extends SppagebuilderAddons
         $class = (isset($settings->class) && $settings->class) ? ' ' . $settings->class : '';
         $image_carousel_layout = (isset($settings->image_carousel_layout) && $settings->image_carousel_layout) ? $settings->image_carousel_layout : 'layout2';
         $carousel_autoplay = (isset($settings->carousel_autoplay) && $settings->carousel_autoplay) ? $settings->carousel_autoplay : 0;
+        $loop = !isset($settings->loop) ? 1 : (int) $settings->loop;
+        $carousel_pause_on_hover = (isset($settings->carousel_pause_on_hover) && $settings->carousel_pause_on_hover) ? 1 : 0;
         $carousel_speed = (isset($settings->carousel_speed) && $settings->carousel_speed) ? $settings->carousel_speed : 2500;
         $carousel_interval = (isset($settings->carousel_interval) && $settings->carousel_interval) ? $settings->carousel_interval : 4500;
         $carousel_center_padding_xl = (isset($settings->carousel_center_padding_xl) && is_numeric($settings->carousel_center_padding_xl)) ? $settings->carousel_center_padding_xl : 180;
@@ -87,7 +89,7 @@ class SppagebuilderAddonImage_carousel extends SppagebuilderAddons
         }
 
         //Output
-        $output  = '<div class="sppb-addon sppb-carousel-extended' . $class . ' sppb-image-carousel-' . $image_carousel_layout . '" data-left-arrow="' . $left_arrow . '" data-right-arrow="' . $right_arrow . '" data-arrow="' . $carousel_arrow . '" data-dots="' . $carousel_bullet . '" data-image-layout="' . $image_carousel_layout . '" data-autoplay="' . $carousel_autoplay . '" data-speed="' . $carousel_speed . '" data-interval="' . $carousel_interval . '" 
+        $output  = '<div'.($image_carousel_layout === 'layout3' || $image_carousel_layout === 'layout4' ? ' data-is-image-layout="true"' : '') . ' class="sppb-addon sppb-carousel-extended' . $class . ' sppb-image-carousel-' . $image_carousel_layout . '" data-left-arrow="' . $left_arrow . '" data-right-arrow="' . $right_arrow . '" data-arrow="' . $carousel_arrow . '" data-dots="' . $carousel_bullet . '" data-image-layout="' . $image_carousel_layout . '" data-loop="' . ($loop ? 'true' : 'false') . '" data-autoplay="' . $carousel_autoplay . '" data-pause-on-hover="' . $carousel_pause_on_hover . '" data-speed="' . $carousel_speed . '" data-interval="' . $carousel_interval . '" 
         data-margin-xl="' . $carousel_margin_xl . '"
 		data-margin-lg="' . $carousel_margin_lg . '"
 		data-margin-md="' . $carousel_margin_md . '"
@@ -105,6 +107,10 @@ class SppagebuilderAddonImage_carousel extends SppagebuilderAddons
 
             foreach ($settings->sp_image_carousel_item as $item_key => $carousel_item)
             {
+                if(isset($carousel_item->item_visibility) && !$carousel_item->item_visibility){
+                    continue;
+                }
+
                 $output .= '<div class="sppb-carousel-extended-item">';
 
 
@@ -587,6 +593,7 @@ class SppagebuilderAddonImage_carousel extends SppagebuilderAddons
             data-dots="{{data.carousel_bullet}}" 
             data-image-layout="{{data.image_carousel_layout}}" 
             data-autoplay="{{data.carousel_autoplay}}" 
+            data-pause-on-hover="{{data.carousel_pause_on_hover}}" 
             data-speed="{{data.carousel_speed}}" 
             data-interval="{{data.carousel_interval}}" 
             data-margin-xl="{{carousel_margin_xl}}"
@@ -616,6 +623,10 @@ class SppagebuilderAddonImage_carousel extends SppagebuilderAddons
 					data.sp_image_carousel_item = _.shuffle(data.sp_image_carousel_item);
 				}
                     _.each(data.sp_image_carousel_item, function(carousel_item){
+
+                        if(carousel_item.item_visibility !== undefined && !carousel_item.item_visibility){
+                            return;
+                        }
                     
                         var carouselImg = {}
                         if (typeof carousel_item.image_carousel_img !== "undefined" && typeof carousel_item.image_carousel_img.src !== "undefined") {

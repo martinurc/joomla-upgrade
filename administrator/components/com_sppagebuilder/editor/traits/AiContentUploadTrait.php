@@ -72,43 +72,63 @@ trait AiContentUploadTrait
 			$this->sendResponse($report, 403);
 		}
 
-		// Validate the URL
-		if (!filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+		$imageUrlTrim = trim($imageUrl);
+		$temporaryDecodedFile = null;
+
+		if (strpos($imageUrlTrim, 'data:image/') === 0) {
+			$temporaryDecodedFile = $this->aiWriteDataUriImageToTemp($imageUrlTrim);
+
+			if ($temporaryDecodedFile === null) {
+				$report['status'] = false;
+				$report['message'] = Text::_('COM_SPPAGEBUILDER_MEDIA_MANAGER_UPLOAD_FAILED');
+				$this->sendResponse($report, 400);
+			}
+
+			$conversionSource = $temporaryDecodedFile;
+		} elseif (!filter_var($imageUrlTrim, FILTER_VALIDATE_URL)) {
 			$report['status'] = false;
 			$report['message'] = Text::_('Invalid url');
 			$this->sendResponse($report, 400);
+		} else {
+			$conversionSource = $imageUrlTrim;
 		}
 
-		// Generate a unique filename
-		$extension = 'webp';
-		$base_name = uniqid('ai_img_', true);
-		$filename = $base_name . '.' . $extension;
+		try {
+			$extension = 'webp';
+			$base_name = uniqid('ai_img_', true);
+			$filename = $base_name . '.' . $extension;
 
-		// Save the image to the server
-		$mediaParams = ComponentHelper::getParams('com_media');
-		$folder_root = $mediaParams->get('file_path', 'images') . '/';
-		$date = Factory::getDate();
-		$folder = $folder_root . HTMLHelper::_('date', $date, 'Y') . '/' . HTMLHelper::_('date', $date, 'm') . '/' . HTMLHelper::_('date', $date, 'd');
+			// Save the image to the server
+			$mediaParams = ComponentHelper::getParams('com_media');
+			$folder_root = $mediaParams->get('file_path', 'images') . '/';
+			$date = Factory::getDate();
+			$folder = $folder_root . HTMLHelper::_('date', $date, 'Y') . '/' . HTMLHelper::_('date', $date, 'm') . '/' . HTMLHelper::_('date', $date, 'd');
 
-		if (!Folder::exists(JPATH_ROOT . '/' . $folder))
-		{
-			Folder::create(JPATH_ROOT . '/' . $folder, 0755);
-		}
+			if (!Folder::exists(JPATH_ROOT . '/' . $folder))
+			{
+				Folder::create(JPATH_ROOT . '/' . $folder, 0755);
+			}
 
-		if (!Folder::exists(JPATH_ROOT . '/' . $folder . '/_spmedia_thumbs'))
-		{
-			Folder::create(JPATH_ROOT . '/' . $folder . '/_spmedia_thumbs', 0755);
-		}
+			if (!Folder::exists(JPATH_ROOT . '/' . $folder . '/_spmedia_thumbs'))
+			{
+				Folder::create(JPATH_ROOT . '/' . $folder . '/_spmedia_thumbs', 0755);
+			}
 
-		$src = Path::clean($folder . '/' . $filename);
-		$dest = Path::clean(JPATH_ROOT . '/' . $src);
+			$src = Path::clean($folder . '/' . $filename);
+			$dest = Path::clean(JPATH_ROOT . '/' . $src);
 
-		$isImageSaved = !empty($aspectRatio) ? $this->changeAspectRatio($aspectRatio, $imageUrl, $dest) : $this->convertImageToWebp($imageUrl, $dest);
-		if(!$isImageSaved)
-		{
-			$report['status'] = false;
-			$report['message'] = Text::_('COM_SPPAGEBUILDER_MEDIA_MANAGER_UPLOAD_FAILED');
-			$this->sendResponse($report, 400);
+			$isImageSaved = !empty($aspectRatio) ? $this->changeAspectRatio($aspectRatio, $conversionSource, $dest) : $this->convertImageToWebp($conversionSource, $dest);
+
+			if (!$isImageSaved)
+			{
+				$report['status'] = false;
+				$report['message'] = Text::_('COM_SPPAGEBUILDER_MEDIA_MANAGER_UPLOAD_FAILED');
+				$this->sendResponse($report, 400);
+			}
+		} finally {
+			if ($temporaryDecodedFile !== null && is_file($temporaryDecodedFile)) {
+				@unlink($temporaryDecodedFile);
+			}
 		}
 		
 		$media_attr = [];
@@ -156,6 +176,38 @@ trait AiContentUploadTrait
 		$report['message'] = $format_layout->render(array('media' => $model->getMediaByID($insert_id), 'innerHTML' => true));
 
 		$this->sendResponse($report, 200);
+	}
+
+	/**
+	 * Decode data:image MIME;base64 payload into a temp file for GD pipelines.
+	 *
+	 * @param   string  $dataUri  Full data URI
+	 *
+	 * @return  string|null  Temp path or null on failure
+	 */
+	private function aiWriteDataUriImageToTemp(string $dataUri): ?string
+	{
+		if (!preg_match('/^data:image\/([\w+.+-]+);base64,([\s\S]+)$/i', $dataUri, $matches))
+		{
+			return null;
+		}
+
+		$data = preg_replace('/\s+/', '', $matches[2]);
+		$binary = base64_decode($data, true);
+
+		if ($binary === false || $binary === '')
+		{
+			return null;
+		}
+
+		$tmp = tempnam(sys_get_temp_dir(), 'ai_b64_');
+
+		if (@file_put_contents($tmp, $binary) === false)
+		{
+			return null;
+		}
+
+		return $tmp;
 	}
 
 	private static function is_in_array($needle, $haystack)

@@ -32,6 +32,11 @@ SpAddonsConfig::addonConfig([
 							'std'   => 'Client 1'
 						],
 
+						'item_visibility' => [
+							'type' => 'visibility',
+							'std'  => true,
+						],
+
 						'image' => [
 							'type'   => 'media',
 							'title'  => Text::_('COM_SPPAGEBUILDER_GLOBAL_IMAGE'),
@@ -90,6 +95,22 @@ SpAddonsConfig::addonConfig([
 					'std'     => 0,
 					'depends' => [['create_carousel', '=', 1]],
 				],
+
+				'pause_on_hover' => [
+					'type'    => 'checkbox',
+					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_CAROUSEL_PAUSE_ON_HOVER'),
+					'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_CAROUSEL_PAUSE_ON_HOVER_DESC'),
+					'std'     => 1,
+					'depends' => [['create_carousel', '=', 1], ['carousel_autoplay', '=', 1]],
+				],
+
+				'loop' => [
+                        'type'    => 'checkbox',
+                        'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_JS_SLIDER_LOOP'),
+                        'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_JS_SLIDER_LOOP_DESC'),
+                        'std'     => 1,
+                        'depends' => [['carousel_autoplay', '=', 1]]
+                ],
 
 				'carousel_arrow' => [
 					'type'    => 'checkbox',

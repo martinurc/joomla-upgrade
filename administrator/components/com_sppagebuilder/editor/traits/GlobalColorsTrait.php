@@ -7,7 +7,7 @@
  * @license http://www.gnu.org/licenses/gpl-2.0.html GNU/GPLv2 or later
  */
 
-
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 
@@ -19,20 +19,15 @@ defined('_JEXEC') or die('Restricted access');
  */
 trait GlobalColorsTrait
 {
-	public function globalColors()
+	/**
+	 * Get the default colors from the template style (Helix)
+	 * 
+	 * @return mixed
+	 * @since 5.7.0
+	 */
+	private function getDefaultThemeColors()
 	{
-		$method = $this->getInputMethod();
-		$this->checkNotAllowedMethods(['POST', 'PUT', 'PATCH', 'DELETE'], $method);
-
-		if ($method === 'GET')
-		{
-			$this->getGlobalColors();
-		}
-	}
-
-	private function getDefaultStyleColors()
-	{
-		$colorPrefix = 'sppb-';
+		$colorPrefix = 'sppb';
 
 		$keysToExtract = [
 			"topbar_bg_color",
@@ -76,6 +71,12 @@ trait GlobalColorsTrait
 
 			$styleObjDecoded = \json_decode($styleObj);
 
+			$isCustomTemplateStyle = isset($styleObjDecoded->custom_style) && $styleObjDecoded->custom_style == 1;
+
+			if(!$isCustomTemplateStyle && isset($styleObjDecoded->preset) && !empty($styleObjDecoded->preset)) {
+				$styleObjDecoded = json_decode($styleObjDecoded->preset);
+			}
+
 			$newStyleObj = new \stdClass();
 
 			foreach ($keysToExtract as $key) {
@@ -95,9 +96,10 @@ trait GlobalColorsTrait
 			foreach ($styleObjDecoded as $key => $value) {
 				if (is_string($value) && !empty($value)) {
 					array_push($colorValues, [
-						'id' => uniqid(),
+						'path' => [$colorPrefix . '-'  . str_replace('_', '-', strtolower
+						($key)), ''],
 						'value' => $value,
-						'name' => $colorPrefix . str_replace('_', '-', strtolower($key))
+						'isTemplateColor' => true,
 					]);
 				}
 			}
@@ -108,62 +110,221 @@ trait GlobalColorsTrait
 		}
 	}
 
-	private function getGlobalColors()
+	public function globalColors()
 	{
-		$colorPrefix = 'sppb-';
-		$db = Factory::getDbo();
-		$query = $db->getQuery(true);
-		$query->select(['id', 'name', 'colors'])
-			->from($db->quoteName('#__sppagebuilder_colors'))
-			->where($db->quoteName('published') . ' = 1');
-		$db->setQuery($query);
+		$method = $this->getInputMethod();
+		$this->checkNotAllowedMethods(['POST', 'PUT', 'PATCH', 'DELETE'], $method);
 
-		$colors = [];
-
-		try
+		if ($method === 'GET')
 		{
-			$colors = $db->loadObjectList();
-			$ext = $this->getDefaultStyleColors();
+			$this->getColorVariables();
 		}
-		catch (\Exception $e)
+	}
+
+	/**
+	 * Get color variables
+	 *
+	 * @return mixed
+	 *
+	 * @since 5.7.0
+	 */
+	private function getColorVariables()
+	{
+		$params = ComponentHelper::getParams('com_sppagebuilder');
+		$colorVariables = [];
+
+		if ($params->exists('sppb_color_variables'))
 		{
-			return [];
+			$colorVariables = $params->get('sppb_color_variables');
 		}
 
-		if (!empty($colors))
+		$themeColors = $this->getDefaultThemeColors();
+		$colorVariables = array_merge($colorVariables, json_decode($themeColors, true));
+
+		$this->sendResponse($colorVariables);
+
+	}
+
+	public function importColorPresets()
+	{
+		$method = $this->getInputMethod();
+		$this->checkNotAllowedMethods(['GET', 'PUT', 'PATCH', 'DELETE'], $method);
+
+		if ($method === 'POST')
 		{
-			foreach ($colors as &$color)
+			$this->importColorPresetsHandler();
+		}
+	}
+
+	public function exportColorPresets()
+	{
+		$method = $this->getInputMethod();
+		$this->checkNotAllowedMethods(['POST', 'DELETE', 'PUT', 'PATCH'], $method);
+
+		if ($method === 'GET') {
+			$this->exportColorPresetsHandler();
+		}
+	}
+
+	/**
+	 * Import color presets handler
+	 *
+	 * @return void
+	 *
+	 * @since 6.1.3
+	 */
+	private function importColorPresetsHandler()
+	{
+		$input = Factory::getApplication()->input;
+		$file = $input->files->get('file');
+		$override = $input->post->get('override', 'false', 'STRING');
+		$override = in_array($override, ['true', '1', 1], true);
+		
+		if (!$file || $file['error'] !== UPLOAD_ERR_OK)
+		{
+			$this->sendResponse(['success' => false, 'message' => Text::_('COM_SPPAGEBUILDER_EDITOR_INVALID_COLOR_PRESETS_FILE')], 400);
+			return;
+		}
+
+		$importedColors = json_decode(file_get_contents($file['tmp_name']), true);
+
+		if (!$this->validateColorData($importedColors))
+		{
+			$this->sendResponse(['success' => false, 'message' => Text::_('COM_SPPAGEBUILDER_EDITOR_INVALID_COLOR_PRESETS_FILE')], 400);
+			return;
+		}
+
+		$params = ComponentHelper::getParams('com_sppagebuilder');
+		$finalColors = $override ? $importedColors : $this->mergeColorPresets($params, $importedColors);
+
+		$params->set('sppb_color_variables', $finalColors);
+		$table = \Joomla\CMS\Table\Table::getInstance('extension');
+		$table->load(['element' => 'com_sppagebuilder']);
+		$table->bind(['params' => $params->toString()]);
+		$table->store();
+
+		$this->sendResponse(['success' => true, 'message' => Text::_('COM_SPPAGEBUILDER_EDITOR_IMPORT_COLOR_PRESETS_SUCCESS_MESSAGE')]);
+	}
+
+	private function validateColorData($colors)
+	{
+		if (!is_array($colors)) return false;
+
+		foreach ($colors as $color)
+		{
+			if (!is_array($color) || !isset($color['path'], $color['value'])) return false;
+			if (!is_array($color['path']) || !is_string($color['value'])) return false;
+		}
+
+		return true;
+	}
+
+	private function ensureArray($data)
+	{
+		if (is_object($data)) return json_decode(json_encode($data), true);
+		return is_array($data) ? $data : [];
+	}
+
+	private function groupColorsByVariable($colors, $buildMaps = false)
+	{
+		$grouped = [];
+		$variableMap = [];
+		$presetMap = [];
+		
+		foreach ($colors as $color)
+		{
+			$color = $this->ensureArray($color);
+			if (!isset($color['path']) || !is_array($color['path']) || count($color['path']) < 2) continue;
+
+			$variable = $color['path'][0];
+			$preset = $color['path'][1];
+			$variableLower = strtolower($variable);
+			$presetLower = strtolower($preset);
+			
+			if ($buildMaps)
 			{
-				$color->colors = \json_decode($color->colors);
+				if (!isset($variableMap[$variableLower])) $variableMap[$variableLower] = $variable;
+				if (!isset($presetMap[$presetLower])) $presetMap[$presetLower] = $preset;
+			}
+			
+			$grouped[$variable][$preset] = $color['value'];
+		}
 
-				if (isset($color->name) && !empty($color->name))
-				{
-					$color->name = str_replace(' ', '-', trim($color->name));
-				}
+		return $buildMaps ? [$grouped, $variableMap, $presetMap] : $grouped;
+	}
 
-				if (isset($color->colors) && !empty($color->colors))
+	private function mergeColorPresets($params, $importedColors)
+	{
+		$existingColors = $this->ensureArray($params->get('sppb_color_variables', []));
+		list($existing, $existingVarMap, $existingPresetMap) = $this->groupColorsByVariable($existingColors, true);
+		$imported = $this->groupColorsByVariable($importedColors);
+
+		foreach ($imported as $variableName => $presets)
+		{
+			$variableLower = strtolower($variableName);
+			$newName = $variableName;
+			$suffix = 1;
+			
+			while (isset($existingVarMap[$variableLower]))
+			{
+				$newName = $variableName . '_' . $suffix++;
+				$variableLower = strtolower($newName);
+			}
+			
+			$mappedPresets = [];
+			foreach ($presets as $preset => $value)
+			{
+				$presetLower = strtolower($preset);
+				$canonicalPreset = isset($existingPresetMap[$presetLower]) ? $existingPresetMap[$presetLower] : $preset;
+				$mappedPresets[$canonicalPreset] = $value;
+				
+				if (!isset($existingPresetMap[$presetLower]))
 				{
-					foreach ($color->colors as &$colorValue)
-					{
-						if (isset($colorValue->name))
-						{
-							$colorValue->name = str_replace(' ', '-', trim($colorValue->name));
-							$colorValue->name = str_replace('_', '-', $colorValue->name);
-							$colorValue->name = strtolower($colorPrefix . $color->name . '-' . $colorValue->name);
-						}
-					}
+					$existingPresetMap[$presetLower] = $canonicalPreset;
 				}
 			}
-
-			unset($color);
-
-		}
-		
-
-		if ($ext !== '[]' && $ext !== '{}') {
-			array_push($colors, \json_decode('{ "id": -1, "name": "' . Text::_("COM_SPPAGEBUILDER_EDITOR_SETTINGS_PAGE_DEFAULT_GLOBAL_THEME_COLOR_TITLE") . '", "colors": ' . $ext . ' }'));
+			
+			$existing[$newName] = $mappedPresets;
+			$existingVarMap[$variableLower] = $newName;
 		}
 
-		$this->sendResponse($colors);
+		$allPresets = array_values($existingPresetMap);
+		foreach ($existing as $variable => $presets)
+		{
+			foreach ($allPresets as $preset)
+			{
+				if (!isset($presets[$preset])) $existing[$variable][$preset] = '#7A7C85';
+			}
+		}
+
+		$result = [];
+		foreach ($existing as $variable => $presets)
+		{
+			foreach ($presets as $preset => $value)
+			{
+				$result[] = ['path' => [$variable, $preset], 'value' => $value];
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Export color presets handler
+	 *
+	 * @return void
+	 *
+	 * @since 6.1.3
+	 */
+	private function exportColorPresetsHandler(){
+		$params = ComponentHelper::getParams('com_sppagebuilder');
+		$colorVariables = [];
+
+		if ($params->exists('sppb_color_variables'))
+		{
+			$colorVariables = $params->get('sppb_color_variables');
+		}
+
+		$this->sendResponse($colorVariables);
 	}
 }

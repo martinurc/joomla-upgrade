@@ -163,6 +163,21 @@ SpAddonsConfig::addonConfig([
 					],
 				],
 
+				'button_text_alignment' => [
+					'type' => 'select',
+					'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_TEXT_ALIGNMENT'),
+					'values' => [
+						'left' => Text::_('COM_SPPAGEBUILDER_GLOBAL_LEFT'),
+						'center' => Text::_('COM_SPPAGEBUILDER_GLOBAL_CENTER'),
+						'right' => Text::_('COM_SPPAGEBUILDER_GLOBAL_RIGHT'),
+					],
+					'std' => 'left',
+					'depends' => [
+						['modal_selector', '=', 'button'],
+						['button_block', '!=', ''],
+					],
+				],
+
 				'button_icon_separator' => [
 					'type' => 'separator',
 					'depends' => [
@@ -194,6 +209,18 @@ SpAddonsConfig::addonConfig([
 					'depends' => [
 						['modal_selector', '=', 'button'],
 						['button_type', '!=', 'link'],
+					],
+				],
+
+				'button_icon_margin' => [
+					'type'       => 'margin',
+					'title'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_ICON_MARGIN'),
+					'responsive' => true,
+					'std'        => ['xl' => '0px 0px 0px 0px', 'lg' => '', 'md' => '', 'sm' => '', 'xs' => ''],
+					'depends' => [
+						['modal_selector', '=', 'button'],
+						['button_type', '!=', 'link'],
+						['button_icon', '!=', ''],
 					],
 				],
 
@@ -555,6 +582,14 @@ SpAddonsConfig::addonConfig([
 					'type'    => 'text',
 					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_MODAL_VIDEO'),
 					'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_MODAL_VIDEO_DESC'),
+					'depends' => ['modal_content_type' => 'video']
+				],
+
+				'enable_vertical_video' => [
+					'type'    => 'checkbox',
+					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_MODAL_ENABLE_VERTICAL_VIDEO'),
+					'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_MODAL_ENABLE_VERTICAL_VIDEO_DESC'),
+					'std'     => 0,
 					'depends' => ['modal_content_type' => 'video']
 				],
 

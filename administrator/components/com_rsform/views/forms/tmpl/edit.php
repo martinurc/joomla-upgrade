@@ -124,7 +124,7 @@ Text::script('COM_RSFORM_EMAIL_FIELD_ERROR_WRONG_DELIMITER');
 					</div><!-- adminemails -->
 					<div id="emailsdiv">
 						<h3 class="rsfp-legend"><?php echo Text::_('RSFP_FORM_EMAILS'); ?></h3>
-						<p><button type="button" onclick="openRSModal('<?php echo Route::_('index.php?option=com_rsform&task=emails.edit&type=additional&tmpl=component&formId='.$this->formId); ?>', 'Emails', '800x750');" class="btn btn-primary"><?php echo Text::_('RSFP_FORM_EMAILS_NEW'); ?></button></p>
+						<p><button type="button" onclick="openRSModal('<?php echo Route::_('index.php?option=com_rsform&task=emails.edit&type=additional&tmpl=component&formId='.$this->formId); ?>', 'Emails');" class="btn btn-primary"><?php echo Text::_('RSFP_FORM_EMAILS_NEW'); ?></button></p>
 						<div id="emailsContent">
 							<?php echo $this->loadTemplate('emails'); ?>
 						</div>
@@ -145,7 +145,7 @@ Text::script('COM_RSFORM_EMAIL_FIELD_ERROR_WRONG_DELIMITER');
 					<?php $this->triggerEvent('onRsformBackendAfterShowFormScriptsTabs'); ?>
 					<div id="mappingsdiv">
 						<p>
-							<button type="button" class="btn btn-primary" onclick="openRSModal('<?php echo Route::_('index.php?option=com_rsform&view=mappings&formId='.$this->formId.'&tmpl=component'); ?>', 'Mappings', '1000x800')"><?php echo Text::_('RSFP_FORM_MAPPINGS_NEW'); ?></button>
+							<button type="button" class="btn btn-primary" onclick="openRSModal('<?php echo Route::_('index.php?option=com_rsform&view=mappings&formId='.$this->formId.'&tmpl=component'); ?>', 'Mappings')"><?php echo Text::_('RSFP_FORM_MAPPINGS_NEW'); ?></button>
 						</p>
 						<div id="mappingsContents" style="overflow: auto;">
 							<?php echo $this->loadTemplate('mappings'); ?>
@@ -156,7 +156,7 @@ Text::script('COM_RSFORM_EMAIL_FIELD_ERROR_WRONG_DELIMITER');
 							<div class="alert alert-warning"><?php echo Text::_('RSFP_CONDITION_MULTILANGUAGE_WARNING'); ?></div>
 						<?php } ?>
 						<p>
-							<button type="button" class="btn btn-primary" onclick="openRSModal('<?php echo Route::_('index.php?option=com_rsform&view=conditions&layout=edit&formId=' . $this->formId .'&tmpl=component'); ?>', 'Conditions', '1024x768')"><?php echo Text::_('RSFP_FORM_CONDITION_NEW'); ?></button>
+							<button type="button" class="btn btn-primary" onclick="openRSModal('<?php echo Route::_('index.php?option=com_rsform&view=conditions&layout=edit&formId=' . $this->formId .'&tmpl=component'); ?>', 'Conditions')"><?php echo Text::_('RSFP_FORM_CONDITION_NEW'); ?></button>
 						</p>
 						<div id="conditionsContent" style="overflow: auto;">
 							<?php echo $this->loadTemplate('conditions'); ?>
@@ -167,7 +167,7 @@ Text::script('COM_RSFORM_EMAIL_FIELD_ERROR_WRONG_DELIMITER');
 					</div><!-- postscriptdiv -->
 					<div id="calculationsdiv">
 						<p>
-							<button type="button" class="btn btn-primary" onclick="openRSModal('<?php echo Route::_('index.php?option=com_rsform&view=calculation&formId='.$this->formId.'&tmpl=component'); ?>', 'Calculations', '1000x800')"><?php echo Text::_('COM_RSFORM_NEW_CALCULATION'); ?></button>
+							<button type="button" class="btn btn-primary" onclick="openRSModal('<?php echo Route::_('index.php?option=com_rsform&view=calculation&formId='.$this->formId.'&tmpl=component'); ?>', 'Calculations')"><?php echo Text::_('COM_RSFORM_NEW_CALCULATION'); ?></button>
 						</p>
 
 						<div id="calculationsContents">

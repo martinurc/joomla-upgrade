@@ -9,7 +9,7 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Filesystem\File;
+use Joomla\Filesystem\File;
 use Joomla\CMS\Application\ApplicationHelper;
 use Joomla\CMS\User\UserHelper;
 use Joomla\CMS\Uri\Uri;
@@ -317,7 +317,7 @@ class RsformControllerSubmissions extends RsformController
             }
             for ($i = 0; $i < $limit; $i++)
             {
-                $data = fgetcsv($h, 0, $delimiter, $enclosure);
+                $data = fgetcsv($h, 0, $delimiter, $enclosure, '');
 
                 if ($data !== false)
                 {

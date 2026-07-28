@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2016-2023 Joomlashack.com. All rights reserved
+ * @copyright 2016-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -28,7 +29,10 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 
 defined('_JEXEC') or die();
 
-class Base extends BaseController
+/**
+ * @deprecated v3.8.1
+ */
+class Base extends AbstractBase
 {
     use TraitController;
 

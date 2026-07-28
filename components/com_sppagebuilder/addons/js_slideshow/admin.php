@@ -135,6 +135,11 @@ SpAddonsConfig::addonConfig(
                                         'std'   => 'Item number 1',
                                     ],
 
+                                    'item_visibility' => [
+                                        'type' => 'visibility',
+                                        'std'  => true,
+                                    ],
+
                                     'slider_bg_options' => [
                                         'type'   => 'buttons',
                                         'title' => Text::_('COM_SPPAGEBUILDER_ADDON_JS_SLIDER_BACKGROUND_TYPE'),
@@ -342,6 +347,11 @@ SpAddonsConfig::addonConfig(
                                                             'icon_content'  => Text::_('COM_SPPAGEBUILDER_GLOBAL_ICON_NAME'),
                                                         ],
                                                         'std'     => 'title_content',
+                                                    ],
+
+                                                    'item_visibility' => [
+                                                        'type' => 'visibility',
+                                                        'std'  => true,
                                                     ],
 
                                                     // Title Type
@@ -858,6 +868,14 @@ SpAddonsConfig::addonConfig(
                         'depends' => [['autoplay', '=', 1]]
                     ],
 
+                    'loop' => [
+                        'type'    => 'checkbox',
+                        'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_JS_SLIDER_LOOP'),
+                        'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_JS_SLIDER_LOOP_DESC'),
+                        'std'     => 1,
+                        'depends' => [['autoplay', '=', 1]]
+                    ],
+
                     'interval' => [
                         'type'    => 'number',
                         'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_JS_SLIDER_INTERVAL'),
@@ -1298,6 +1316,16 @@ SpAddonsConfig::addonConfig(
                         'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_JS_SLIDER_TEXT_THUMB_WIDTH_DESC'),
                         'max'        => 100,
                         'responsive' => true,
+                        'depends' => [
+                            ['dot_controllers', '!=', 0],
+                            ['dot_controllers_style', '=', 'with_text'],
+                        ],
+                    ],
+
+                    'text_thumb_ctlr_wrap_bg_img' => [
+                        'type'    => 'checkbox',
+                        'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_JS_SLIDER_TEXT_THUMB_BG_IMG'),
+                        'std'     => 0,
                         'depends' => [
                             ['dot_controllers', '!=', 0],
                             ['dot_controllers_style', '=', 'with_text'],

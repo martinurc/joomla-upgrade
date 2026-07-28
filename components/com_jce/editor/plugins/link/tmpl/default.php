@@ -3,11 +3,11 @@
  * @package     JCE
  * @subpackage  Editor
  *
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
- defined('JPATH_PLATFORM') or die;
+ \defined('_JEXEC') or die;
 
  use Joomla\CMS\Factory;
  use Joomla\CMS\Language\Text;
@@ -24,6 +24,10 @@ $tabs = WFTabs::getInstance();
 </form>
 <div class="actionPanel">
 	<button class="button" id="cancel"><?php echo Text::_('WF_LABEL_CANCEL')?></button>
-	<button class="button" id="help"><?php echo Text::_('WF_LABEL_HELP')?></button>
+
+	<?php if ($this->plugin->showHelp()): ?>
+		<button class="button" id="help"><?php echo Text::_('WF_LABEL_HELP')?></button>
+	<?php endif; ?>
+
 	<button class="button" id="insert"><?php echo Text::_('WF_LABEL_INSERT')?></button>
 </div>

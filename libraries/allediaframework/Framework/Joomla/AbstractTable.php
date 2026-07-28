@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2016-2023 Joomlashack.com. All rights reserved
+ * @copyright 2016-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -26,8 +27,16 @@ namespace Alledia\Framework\Joomla;
 use Alledia\Framework\Factory;
 use Joomla\CMS\Table\Table;
 use Joomla\CMS\Version;
+use Joomla\Database\DatabaseInterface;
 
+// phpcs:disable PSR1.Files.SideEffects.FoundWithSymbols
 defined('_JEXEC') or die();
+
+if (interface_exists(DatabaseInterface::class) == false) {
+    class_alias(\JDatabaseDriver::class, DatabaseInterface::class);
+}
+
+// phpcs:enable PSR1.Files.SideEffects.FoundWithSymbols
 
 abstract class AbstractTable extends Table
 {
@@ -59,5 +68,21 @@ abstract class AbstractTable extends Table
         }
 
         return $table ?? null;
+    }
+
+    /**
+     * @inheritDoc Joomla 4+)
+     * @return DatabaseInterface
+     */
+    public function getDatabase(): DatabaseInterface
+    {
+        if (is_callable(parent::class . '::getDatabase')) {
+            return parent::getDatabase();
+
+        } elseif (is_callable(parent::class . '::getDbo')) {
+            return parent::getDbo();
+        }
+
+        return Factory::getDatabase();
     }
 }

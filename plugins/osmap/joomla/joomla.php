@@ -38,6 +38,7 @@ use Joomla\Utilities\ArrayHelper;
 // phpcs:disable PSR1.Files.SideEffects
 defined('_JEXEC') or die();
 
+// @TODO: Framework creates alias for this
 if (class_exists(RouteHelper::class) == false) {
     $siteContentPath = JPATH_SITE . '/components/com_content/helpers/route.php';
     if (is_file($siteContentPath)) {
@@ -100,7 +101,7 @@ class PlgOSMapJoomla extends Base implements ContentInterface
     {
         static::checkMemory();
 
-        $db        = Factory::getDbo();
+        $db        = Factory::getDatabase();
         $container = Factory::getPimpleContainer();
 
         $link      = parse_url($node->link);
@@ -223,7 +224,7 @@ class PlgOSMapJoomla extends Base implements ContentInterface
      */
     public static function getTree($collector, $parent, $params)
     {
-        $db = Factory::getDbo();
+        $db = Factory::getDatabase();
 
         $link      = parse_url($parent->link);
         $linkQuery = $link['query'] ?? null;
@@ -376,7 +377,7 @@ class PlgOSMapJoomla extends Base implements ContentInterface
     ): void {
         static::checkMemory();
 
-        $db = Factory::getDbo();
+        $db = Factory::getDatabase();
 
         $where = [
             'a.parent_id = ' . $catid,
@@ -485,7 +486,7 @@ class PlgOSMapJoomla extends Base implements ContentInterface
     ): void {
         static::checkMemory();
 
-        $db        = Factory::getDbo();
+        $db        = Factory::getDatabase();
         $container = Factory::getPimpleContainer();
 
         $nullDate = $db->quote($db->getNullDate());

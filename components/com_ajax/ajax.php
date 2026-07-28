@@ -8,13 +8,16 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use Joomla\CMS\Event\Plugin\AjaxEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
+use Joomla\CMS\Plugin\Attribute\AllowUnauthorizedAdministratorAccess;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Response\JsonResponse;
+use Joomla\CMS\String\StringableInterface;
 use Joomla\CMS\Table\Table;
 
 /*
@@ -32,6 +35,30 @@ $app->allowCache(false);
 
 // Prevent the api url from being indexed
 $app->setHeader('X-Robots-Tag', 'noindex, nofollow');
+
+$unauthorizedAdministratorAccessCheck = ($app->isClient('administrator') && $app->getIdentity()->guest);
+
+/**
+ * Validate the presence of the AllowUnauthorizedAdministratorAccess attribute on the method being called.
+ *
+ * @param $classOrObject
+ * @param $method
+ *
+ * @return void
+ * @throws \RuntimeException
+ */
+
+$verifyUnauthorizedAdministratorAccessCheck = function ($classOrObject, $method): void {
+    $reflection = new ReflectionMethod($classOrObject, $method);
+
+    foreach ($reflection->getAttributes() as $attribute) {
+        if ($attribute->getName() === AllowUnauthorizedAdministratorAccess::class) {
+            return;
+        }
+    }
+
+    throw new RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'));
+};
 
 // JInput object
 $input = $app->getInput();
@@ -85,13 +112,23 @@ if (!$format) {
         $moduleInstance = $app->bootModule('mod_' . $module, $app->getName());
 
         if ($moduleInstance instanceof \Joomla\CMS\Helper\HelperFactoryInterface && $helper = $moduleInstance->getHelper(substr($class, 3))) {
-            $results = method_exists($helper, $method . 'Ajax') ? $helper->{$method . 'Ajax'}() : null;
+            if (method_exists($helper, $method . 'Ajax')) {
+                if ($unauthorizedAdministratorAccessCheck) {
+                    $verifyUnauthorizedAdministratorAccessCheck($helper, $method . 'Ajax');
+                }
+
+                $results = $helper->{$method . 'Ajax'}();
+            }
         }
 
         if ($results === null && is_file($helperFile)) {
             JLoader::register($class, $helperFile);
 
             if (method_exists($class, $method . 'Ajax')) {
+                if ($unauthorizedAdministratorAccessCheck) {
+                    $verifyUnauthorizedAdministratorAccessCheck($class, $method . 'Ajax');
+                }
+
                 // Load language file for module
                 $basePath = JPATH_BASE;
                 $lang     = Factory::getLanguage();
@@ -99,7 +136,7 @@ if (!$format) {
                 || $lang->load('mod_' . $module, $basePath . '/modules/mod_' . $module);
 
                 try {
-                    $results = call_user_func($class . '::' . $method . 'Ajax');
+                    $results = \call_user_func($class . '::' . $method . 'Ajax');
                 } catch (Exception $e) {
                     $results = $e;
                 }
@@ -125,13 +162,21 @@ if (!$format) {
      * (i.e. index.php?option=com_ajax&plugin=foo)
      *
      */
-    $group      = $input->get('group', 'ajax');
-    PluginHelper::importPlugin($group);
-    $plugin     = ucfirst($input->get('plugin'));
-
     try {
-        $results = Factory::getApplication()->triggerEvent('onAjax' . $plugin);
-    } catch (Exception $e) {
+        $dispatcher = $app->getDispatcher();
+        $group      = $input->get('group', 'ajax');
+        $eventName  = 'onAjax' . ucfirst($input->get('plugin', ''));
+
+        PluginHelper::importPlugin($group, null, true, $dispatcher);
+
+        if ($unauthorizedAdministratorAccessCheck) {
+            foreach ($dispatcher->getListeners($eventName) as $event) {
+                $verifyUnauthorizedAdministratorAccessCheck($event[0], $event[1]);
+            }
+        }
+
+        $results = $dispatcher->dispatch($eventName, new AjaxEvent($eventName, ['subject' => $app]))->getArgument('result', []);
+    } catch (Throwable $e) {
         $results = $e;
     }
 } elseif ($input->get('template')) {
@@ -175,13 +220,17 @@ if (!$format) {
             JLoader::register($class, $helperFile);
 
             if (method_exists($class, $method . 'Ajax')) {
+                if ($unauthorizedAdministratorAccessCheck) {
+                    $verifyUnauthorizedAdministratorAccessCheck($class, $method . 'Ajax');
+                }
+
                 // Load language file for template
                 $lang = Factory::getLanguage();
                 $lang->load('tpl_' . $template, $basePath)
                 || $lang->load('tpl_' . $template, $basePath . '/templates/' . $template);
 
                 try {
-                    $results = call_user_func($class . '::' . $method . 'Ajax');
+                    $results = \call_user_func($class . '::' . $method . 'Ajax');
                 } catch (Exception $e) {
                     $results = $e;
                 }
@@ -201,16 +250,27 @@ if (!$format) {
 
 // Return the results in the desired format
 switch ($format) {
-    // JSONinzed
     case 'json':
-        echo new JsonResponse($results, null, false, $input->get('ignoreMessages', true, 'bool'));
+        if (!($results instanceof Throwable) && $results instanceof StringableInterface) {
+            echo $results;
+        } else {
+            if (\is_object($results) && !($results instanceof Throwable) && $results instanceof \Stringable) {
+                @trigger_error(
+                    'Ajax result object (except Throwable) which implements Stringable interface (implicitly or explicitly), will be rendered directly. Starting from 7.0',
+                    \E_USER_DEPRECATED
+                );
+            }
+
+            // JSONized
+            echo new JsonResponse($results, null, false, $input->get('ignoreMessages', true, 'bool'));
+        }
 
         break;
 
-    // Handle as raw format
     default:
+        // Handle as raw format
         // Output exception
-        if ($results instanceof Exception) {
+        if ($results instanceof Throwable) {
             // Log an error
             Log::add($results->getMessage(), Log::ERROR);
 
@@ -218,8 +278,8 @@ switch ($format) {
             $app->setHeader('status', $results->getCode(), true);
 
             // Echo exception type and message
-            $out = get_class($results) . ': ' . $results->getMessage();
-        } elseif (is_scalar($results)) {
+            $out = \get_class($results) . ': ' . $results->getMessage();
+        } elseif (\is_scalar($results) || $results instanceof StringableInterface) {
             // Output string/ null
             $out = (string) $results;
         } else {

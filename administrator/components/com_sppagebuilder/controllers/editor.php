@@ -16,6 +16,7 @@ use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Session\Session;
 
 $traits = [
+	'CommonTrait.php',
 	'PageTrait.php',
 	'PageDuplicateTrait.php',
 	'IconsListTrait.php',
@@ -58,7 +59,9 @@ $traits = [
 	'FontsTrait.php',
 	'UploadFontTrait.php',
 	'AllFontsTrait.php',
-	'PluginsTrait.php'
+	'PluginsTrait.php',
+	'PageVersionsTrait.php',
+	'ContentArticleSchemaFormTrait.php'
 ];
 
 foreach ($traits as $trait)
@@ -115,6 +118,8 @@ class SppagebuilderControllerEditor extends AdminController
 	use UploadFontTrait;
 	use AllFontsTrait;
 	use PluginsTrait;
+	use PageVersionsTrait;
+	use ContentArticleSchemaFormTrait;
 
 	protected $app = null;
 

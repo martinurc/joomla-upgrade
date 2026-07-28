@@ -65,6 +65,10 @@
                 <option value="0">JNO</option>
                 <option value="1">JYES</option>
             </field>
+            <field name="sanitize_html" type="radio" default="1" label="WF_PARAM_SANITIZE_HTML" description="WF_PARAM_EDITOR_PROFILE_SANITIZE_HTML_DESC" class="btn-group btn-group-yesno">
+                <option value="1">JYES</option>
+                <option value="0">JNO</option>
+            </field>
             <field name="schema" type="list" default="" label="WF_PARAM_DOCTYPE" description="WF_PARAM_EDITOR_PROFILE_DOCTYPE_DESC">
                 <option value="">WF_OPTION_INHERIT</option>
                 <option value="mixed">WF_PARAM_DOCTYPE_MIXED</option>
@@ -101,7 +105,7 @@
             <field name="custom_colors" type="textarea" rows="3" cols="50" default="" label="WF_PARAM_CUSTOM_COLORS" description="WF_PARAM_CUSTOM_COLORS_DESC" placeholder="eg: #CC0000,#FF0000" />
         </fieldset>
         <fieldset name="editor.filesystem">
-            <field name="dir" type="directorypath" default="" size="50" placeholder="images" label="WF_PARAM_DIRECTORY" description="WF_PARAM_DIRECTORY_DESC"/>
+            <field name="dir" type="filesystempath" default="" size="50" placeholder="images" label="WF_PARAM_DIRECTORY" description="WF_PARAM_DIRECTORY_DESC" />
 
             <field name="dir_filter" type="repeatable" default="" label="WF_PARAM_DIRECTORY_FILTER" description="WF_PARAM_DIRECTORY_FILTER_DESC">
                 <field type="text" size="50" hiddenLabel="true" />
@@ -166,15 +170,26 @@
 
 				<field type="spacer" label="WF_LABEL_OR" />
 
-				<field type="textarea" name="startup_content_html" filter="html" rows="2" cols="3" class="input-xlarge" default="" label="WF_PARAM_STARTUP_CONTENT_HTML" spellcheck="false" description="WF_PARAM_STARTUP_CONTENT_HTML_DESC" />
+				<field type="code" name="startup_content_html" filter="JComponentHelper::filterText" rows="4" cols="3" class="input-xlarge" default="" label="WF_PARAM_STARTUP_CONTENT_HTML" spellcheck="false" description="WF_PARAM_STARTUP_CONTENT_HTML_DESC" />
             </field>
 
             <field type="spacer" />
             
-            <field name="invalid_elements" type="text" size="50" default="" label="WF_PARAM_NO_ELEMENTS" description="WF_PARAM_NO_ELEMENTS_DESC" />
-            <field name="invalid_attributes" type="text" size="50" default="dynsrc,lowsrc" label="WF_PARAM_INVALID_ATTRIBUTES" description="WF_PARAM_INVALID_ATTRIBUTES_DESC" />
-            <field name="invalid_attribute_values" type="text" size="50" default="" label="WF_PARAM_INVALID_ATTRIBUTE_VALUES" description="WF_PARAM_INVALID_ATTRIBUTE_VALUES_DESC" />
-            <field name="extended_elements" type="textarea" rows="2" cols="46" default="" label="WF_PARAM_ELEMENTS" description="WF_PARAM_ELEMENTS_DESC" />
+            <field name="invalid_elements" type="repeatable" default="" label="WF_PARAM_NO_ELEMENTS" description="WF_PARAM_NO_ELEMENTS_DESC">
+                <field type="text" size="50" hiddenLabel="true" />
+            </field>
+
+            <field name="invalid_attributes" type="repeatable" default="" label="WF_PARAM_INVALID_ATTRIBUTES" description="WF_PARAM_INVALID_ATTRIBUTES_DESC">
+                <field type="text" size="50" hiddenLabel="true" />
+            </field>
+            
+            <field name="invalid_attribute_values" type="repeatable" default="" label="WF_PARAM_INVALID_ATTRIBUTE_VALUES" description="WF_PARAM_INVALID_ATTRIBUTE_VALUES_DESC">
+                <field type="text" size="50" hiddenLabel="true" />
+            </field>
+            
+            <field name="extended_elements" type="repeatable" default="" label="WF_PARAM_ELEMENTS" description="WF_PARAM_ELEMENTS_DESC">
+                <field type="text" size="50" hiddenLabel="true" />
+            </field>
 
             <field name="validate_styles" type="yesno" default="1" label="WF_PARAM_VALIDATE_STYLES" description="WF_PARAM_VALIDATE_STYLES_DESC">
                 <option value="1">JYES</option>

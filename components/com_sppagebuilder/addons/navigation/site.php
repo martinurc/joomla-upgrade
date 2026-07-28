@@ -30,6 +30,7 @@ class SppagebuilderAddonNavigation extends SppagebuilderAddons
 		$scroll_to_offset = (isset($settings->scroll_to_offset)) ? $settings->scroll_to_offset : '';
 		$sticky_menu = (isset($settings->sticky_menu) && $settings->sticky_menu) ? $settings->sticky_menu : false;
 		$responsive_menu = (isset($settings->responsive_menu)) ? $settings->responsive_menu : true;
+		$aria_label = (isset($settings->aria_label) && $settings->aria_label) ? $settings->aria_label : 'Menu';
 
 		$responsive_bar_aria_label = (isset($settings->responsive_bar_aria_label)) ? $settings->responsive_bar_aria_label : 'Mobile Navigation Button';
 
@@ -61,7 +62,7 @@ class SppagebuilderAddonNavigation extends SppagebuilderAddons
 
 		$output .= '<div class="sppb-link-list-wrap ' . $nav_type . $nav_align . $responsive_menu_cls . $class . '" ' . $sticky_row_attr . ' ' . $data_offset . '>';
 		$output .= ($responsive_menu) ? '<div class="sppb-responsive-bars" aria-haspopup="menu" aria-controls="nav-menu" aria-label="' . $responsive_bar_aria_label . '" ><span class="sppb-responsive-bar"></span><span class="sppb-responsive-bar"></span><span class="sppb-responsive-bar"></span></div>' : '';
-		$output .= '<nav role="navigation" aria-label="Menu"><ul id="nav-menu">';
+		$output .= '<nav role="navigation" aria-label="' . $aria_label . '"><ul id="nav-menu">';
 
 		if (count((array) $links))
 		{

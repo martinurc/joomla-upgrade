@@ -8,8 +8,9 @@
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Filesystem\File;
+use Joomla\Filesystem\File;
 use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
 
 require_once JPATH_ADMINISTRATOR.'/components/com_rsform/helpers/field.php';
 
@@ -42,6 +43,7 @@ class RSFormProFieldFileUpload extends RSFormProField
 
 		if ($multiple && $multipleplus)
 		{
+			$this->addScript(HTMLHelper::_('script', 'com_rsform/multipleplus.js', array('pathOnly' => true, 'relative' => true)));
 			$minFiles = (int) $this->getProperty('MINFILES', 1);
 
 			// If we require a minimum number of files to be uploaded, let's show a separate input for each upload in order to help the user
@@ -91,7 +93,7 @@ class RSFormProFieldFileUpload extends RSFormProField
 
 		$button .= ' data-rsfp-formid="' . $this->formId . '"';
 
-		$button .= ' onclick="RSFormPro.addMoreFiles(this);">' . Text::_('COM_RSFORM_FILE_ADD_PLUS') . '</button>';
+		$button .= '>' . Text::_('COM_RSFORM_FILE_ADD_PLUS') . '</button>';
 
 		return $button;
 	}
@@ -308,7 +310,15 @@ class RSFormProFieldFileUpload extends RSFormProField
 			}
 
 			// Upload File
-			if (File::upload($actualFile['tmp_name'], $file, false, (bool) RSFormProHelper::getConfig('allow_unsafe')))
+			try
+			{
+				$uploaded = File::upload($actualFile['tmp_name'], $file);
+			}
+			catch (Exception $e)
+			{
+				$uploaded = false;
+			}
+			if ($uploaded)
 			{
 				if ($this->getProperty('ACCEPTEDFILESIMAGES', false))
 				{

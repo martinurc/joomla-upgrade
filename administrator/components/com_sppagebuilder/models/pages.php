@@ -42,6 +42,8 @@ class SppagebuilderModelPages extends ListModel
 		}
 
 		parent::__construct($config);
+		
+		$this->setDispatcher(\Joomla\CMS\Factory::getApplication()->getDispatcher());
 	}
 
 	protected function populateState($ordering = null, $direction = null)
@@ -220,4 +222,14 @@ class SppagebuilderModelPages extends ListModel
 		}
 		return $items;
 	}
+
+	 public function getFilterForm($data = [], $loadData = true)
+    {
+        $form = $this->loadForm(
+            'com_sppagebuilder.filter_pages', 
+            'filter_pages',  
+            ['control' => '', 'load_data' => $loadData]
+        );
+        return $form;
+    }
 }

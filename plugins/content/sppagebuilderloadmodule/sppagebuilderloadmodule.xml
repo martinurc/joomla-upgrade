@@ -7,7 +7,7 @@
 	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
 	<authorEmail>support@joomshaper.com</authorEmail>
 	<authorUrl>joomshaper.com</authorUrl>
-	<version>5.5.7</version>
+	<version>6.7.0</version>
 	<description>PLG_SPPAGEBUILDER_LOADMODULE_XML_DESCRIPTION</description>
 	<namespace path="src">JoomShaper\Plugin\Content\Sppagebuilderloadmodule</namespace>
 	<files>

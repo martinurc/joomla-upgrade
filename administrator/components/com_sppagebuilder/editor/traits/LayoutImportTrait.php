@@ -18,6 +18,8 @@ defined('_JEXEC') or die('Restricted access');
  */
 trait LayoutImportTrait
 {
+	use CommonTrait;
+
 	public function import()
 	{
 		$method = $this->getInputMethod();
@@ -54,7 +56,7 @@ trait LayoutImportTrait
 			$this->sendResponse($response, 500);
 		}
 
-		$apiURL = 'https://www.joomshaper.com/index.php?option=com_layouts&task=' . $type . '.download&support=4beyond&id=' . $id . '&email=' . $email . '&api_key=' . $apiKey;
+		$apiURL = 'https://www.joomshaper.com/index.php?option=com_layouts&task=' . $type . '.download&support=4beyond&id=' . $id . '&email=' . urlencode($email) . '&api_key=' . $apiKey;
 		$pageResponse = $http->get($apiURL);
 		$pageData = $pageResponse->body;
 
@@ -67,6 +69,8 @@ trait LayoutImportTrait
 		if (!empty($pageData))
 		{
 			$pageData = json_decode($pageData);
+			$updatedFieldIds = [];
+			$updatedCollectionIds = [];
 
 			if (isset($pageData->status) && !$pageData->status && $pageData->authorised)
 			{
@@ -74,6 +78,14 @@ trait LayoutImportTrait
 			}
 
 			$pageDataContent = $pageData->content;
+
+			if(isset($pageDataContent->dynamicContentData) && !empty($pageDataContent->dynamicContentData))
+			{
+				$updatedData = $this->importDynamicContentData($pageDataContent->dynamicContentData);
+				$updatedFieldIds = $updatedData['globalFieldsMap'] ?? [];
+				$updatedCollectionIds = $updatedData['globalCollectionsIdMap'] ?? [];
+			}
+
 			$content = (object) ['template' => '', 'css' => ''];
 
 			if (!isset($pageDataContent->template))
@@ -90,7 +102,11 @@ trait LayoutImportTrait
 			}
 
 			require_once JPATH_COMPONENT_SITE . '/helpers/helper.php';
+
+			
 			$content->template = ApplicationHelper::sanitizePageText($content->template);
+
+			$content->template = $this->updateDynamicIds($content->template, $updatedFieldIds, $updatedCollectionIds);
 
 			$this->sendResponse(($content), 200);
 		}

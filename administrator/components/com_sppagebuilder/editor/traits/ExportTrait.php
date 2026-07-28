@@ -12,6 +12,8 @@ use Joomla\CMS\Filesystem\Folder;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Http\HttpFactory;
 use Joomla\CMS\Filesystem\File;
+use JoomShaper\SPPageBuilder\DynamicContent\Controllers\CollectionImportExportController;
+use JoomShaper\SPPageBuilder\DynamicContent\Models\Page;
 
 // No direct access
 defined('_JEXEC') or die('Restricted access');
@@ -29,6 +31,62 @@ trait ExportTrait
 		if ($method === 'POST') {
 			$this->exportLayout();
 		}
+	}
+
+	/**
+	 * Recursively checks if dynamic content exists in the data structure
+	 *
+	 * @param mixed $data The data to check
+	 * @param string $key The key to look for (default: 'type')
+	 * @param string $value The value to match (default: 'dynamic-content')
+	 * @return bool Returns true if dynamic content is found
+	 */
+	private function checkDynamicContent($data, $key = 'type', $value = 'dynamic-content') 
+	{
+		if ($data === null) {
+			return false;
+		}
+
+		if (is_object($data)) {
+			$data = (array) $data;
+		}
+
+		if (is_array($data)) {
+			if (isset($data[$key]) && $data[$key] === $value) {
+				return true;
+			}
+
+			foreach ($data as $item) {
+				if ($this->checkDynamicContent($item, $key, $value)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get dynamic content data if it exists in the page content.
+	 *
+	 * @return string
+	 * @since 5.7.0
+	 */
+	private function getDynamicContentData($content)
+	{
+		$hasDynamicContent = false;
+		$dynamicContentData = '';
+
+		if (isset($content->content) && is_string($content->content)) {
+			$hasDynamicContent = $this->checkDynamicContent(json_decode($content->content));
+		}
+
+		if($hasDynamicContent) {
+			$dynamicContentExportImportController = new CollectionImportExportController();
+			$dynamicContentData = $dynamicContentExportImportController->exportDynamicContent();
+		}
+
+		return $dynamicContentData;
 	}
 
 	/**
@@ -88,6 +146,8 @@ trait ExportTrait
 
 		$content = ApplicationHelper::preparePageData($content);
 
+		$dynamicContentData = $this->getDynamicContentData($content);
+
 		$seoSettings = [];
 
 		if ($isSeoChecked) {
@@ -112,9 +172,25 @@ trait ExportTrait
 			'language' => isset($content->language) ? $content->language : '*',
 		];
 
-		if (isset($content->extension_view) && $content->extension_view === 'popup') {
-			$pageContent->attribs = isset($content->attribs) ? json_encode($content->attribs) : '';
-			$pageContent->type = 'popup';
+		if (!empty($dynamicContentData)) {
+			$pageContent->dynamicContentData = json_encode($dynamicContentData);
+		}
+
+		if(isset($content->extension_view)) {
+			switch ($content->extension_view) {
+				case Page::PAGE_TYPE_POPUP:
+					$pageContent->attribs = isset($content->attribs) ? json_encode($content->attribs) : '';
+					$pageContent->type = Page::PAGE_TYPE_POPUP;
+					break;
+				case Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL:
+					$pageContent->type = Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL;
+					$pageContent->view_id = isset($content->view_id) ? (string)$content->view_id : '';
+					break;
+				case Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX:
+					$pageContent->type = Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX;
+					$pageContent->view_id = isset($content->view_id) ? (string)$content->view_id : '';
+					break;
+			}
 		}
 
 
@@ -127,7 +203,7 @@ trait ExportTrait
 			'image' => array('jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'avif'),
 			'video' => array('mp4', 'mov', 'wmv', 'avi', 'mpg', 'ogv', '3gp', '3g2'),
 			'audio' => array('mp3', 'm4a', 'ogg', 'wav'),
-			'attachment' => array('pdf', 'doc', 'docx', 'key', 'ppt', 'pptx', 'pps', 'ppsx', 'odt', 'xls', 'xlsx', 'zip', 'json'),
+			'attachment' => array('pdf', 'doc', 'docx', 'key', 'ppt', 'pptx', 'pps', 'ppsx', 'odt', 'xls', 'xlsx', 'zip', 'json', 'srt', 'vtt'),
 		);
 		
 		$srcValues = [];
@@ -188,6 +264,8 @@ trait ExportTrait
 				'author' => isset($content->attribs) && isset($content->attribs->author) ?  $content->attribs->author : '',
 			];
 		}
+
+		$dynamicContentData = $this->getDynamicContentData($content);
 	
 		$pageContent = (object)
 		[
@@ -198,6 +276,27 @@ trait ExportTrait
 			'language' => isset($content->language) ? $content->language : '*',
 			'localMediaSources' => $localMediaSources ? $localMediaSources : '[]',
 		];
+
+		if (!empty($dynamicContentData)) {
+			$pageContent->dynamicContentData = json_encode($dynamicContentData);
+		}
+
+		if(isset($content->extension_view)) {
+			switch ($content->extension_view) {
+				case Page::PAGE_TYPE_POPUP:
+					$pageContent->attribs = isset($content->attribs) ? json_encode($content->attribs) : '';
+					$pageContent->type = Page::PAGE_TYPE_POPUP;
+					break;
+				case Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL:
+					$pageContent->type = Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL;
+					$pageContent->view_id = isset($content->view_id) ? (string)$content->view_id : '';
+					break;
+				case Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX:
+					$pageContent->type = Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX;
+					$pageContent->view_id = isset($content->view_id) ? (string)$content->view_id : '';
+					break;
+			}
+		}
 		
 		$zip = new ZipArchive();
 		$zipFileName = 'sp-page-builder-pages-' . $this->generateRandomId() . '.zip';

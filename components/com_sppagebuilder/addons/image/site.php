@@ -35,6 +35,7 @@ class SppagebuilderAddonImage extends SppagebuilderAddons
 		// Options
 		$image = (isset($settings->image) && $settings->image) ? $settings->image : '';
 		$image_title = (isset($settings->image_title) && $settings->image_title) ? $settings->image_title : '';
+		$fetch_priority = (isset($settings->fetch_priority) && $settings->fetch_priority) ? 'fetchpriority="' . $settings->fetch_priority . '"' : '';
 
 		$final_image_title = empty($image_title) ? $title : $image_title;
 
@@ -120,15 +121,14 @@ class SppagebuilderAddonImage extends SppagebuilderAddons
 				$default_shapes = ['circle', 'quarter_slice', 'half_circle', 'bevel', 'star', 'pentagon', 'right_point', 'triangle', 'trapezoid', 'right_chevron', 'right_arrow', 'rabbet'];
 				
 				if(in_array($image_shape, $default_shapes)) {
-					$output .= '<img class="sppb-img-responsive' . ($placeholder ? ' sppb-element-lazy ' : '') . ' ' . $image_shape_class . '" src="' . ($placeholder ? $placeholder : $image_src)  . '" ' . $image2x . ($placeholder ? 'data-large="' . $image_src . '"' : '') . ' alt="' . $alt_text . '" title="' . $final_image_title . '" ' . ($noCustomImageDimension ? 'width="' . $image_width . '"' : '') . ' ' . ($noCustomImageDimension ? 'height="' . $image_height . '"' : '') . ($placeholder ? 'loading="lazy"' : '') . ' ' . $dimension . ($image_fit ? ('style="object-fit: ' . $image_fit . '";') : '')  . '/>';
+					$output .= '<img ' .$fetch_priority. ' class="sppb-img-responsive' . ($placeholder ? ' sppb-element-lazy ' : '') . ' ' . $image_shape_class . '" src="' . ($placeholder ? $placeholder : $image_src)  . '" ' . $image2x . ($placeholder ? 'data-large="' . $image_src . '"' : '') . ' alt="' . $alt_text . '" title="' . $final_image_title . '" ' . ($noCustomImageDimension ? 'width="' . $image_width . '"' : '') . ' ' . ($noCustomImageDimension ? 'height="' . $image_height . '"' : '') . ($placeholder ? 'loading="lazy"' : '') . ' ' . $dimension . ($image_fit ? ('style="object-fit: ' . $image_fit . ';"') : '')  . '/>';
 				} else {
 					$decoded_shape = base64_decode($image_shape);
 					$pattern = '/<path.*?d="(.*?)".*?>/s';
 
 					if(preg_match($pattern, $decoded_shape, $matches)) {
 						$shape_data = $matches[1];
-	
-						$output .= '<img data-scale="'. $image_shape_scale .'" style="clip-path: url(#svg-shape-' . $this->addon->id . '); visibility: hidden;" class="sppb-img-responsive' . ($placeholder ? ' sppb-element-lazy ' : '') . ' " src="' . ($placeholder ? $placeholder : $image_src)  . '" ' . $image2x . ($placeholder ? 'data-large="' . $image_src . '"' : '') . ' alt="' . $alt_text . '" title="' . $final_image_title . '" ' . ($noCustomImageDimension ? 'width="' . $image_width . '"' : '') . ' ' . ($noCustomImageDimension ? 'height="' . $image_height . '"' : '') . ($placeholder ? 'loading="lazy"' : '') . ' ' . $dimension . ($image_fit ? ('style="object-fit: ' . $image_fit . '";') : '') . '/>';
+						$output .= '<img ' .$fetch_priority. ' data-scale="'. $image_shape_scale .'" style="clip-path: url(#svg-shape-' . $this->addon->id . '); visibility: hidden;" class="sppb-img-responsive' . ($placeholder ? ' sppb-element-lazy ' : '') . ' " src="' . ($placeholder ? $placeholder : $image_src)  . '" ' . $image2x . ($placeholder ? 'data-large="' . $image_src . '"' : '') . ' alt="' . $alt_text . '" title="' . $final_image_title . '" ' . ($noCustomImageDimension ? 'width="' . $image_width . '"' : '') . ' ' . ($noCustomImageDimension ? 'height="' . $image_height . '"' : '') . ($placeholder ? 'loading="lazy"' : '') . ' ' . $dimension . ($image_fit ? ('style="object-fit: ' . $image_fit . ';"') : '') . '/>';
 						$output .= '<svg>
 							<defs>
 							<clipPath id="svg-shape-' . $this->addon->id . '">
@@ -141,7 +141,7 @@ class SppagebuilderAddonImage extends SppagebuilderAddons
 				}
 
 			} else {
-				$output .= '<img class="sppb-img-responsive' . ($placeholder ? ' sppb-element-lazy ' : '') . ' ' . $image_shape_class . '" src="' . ($placeholder ? $placeholder : $image_src)  . '" ' . $image2x . ($placeholder ? 'data-large="' . $image_src . '"' : '') . ' alt="' . $alt_text . '" title="' . $final_image_title . '" ' . ($noCustomImageDimension ? 'width="' . $image_width . '"' : '') . ' ' . ($noCustomImageDimension ? 'height="' . $image_height . '"' : '') . ($placeholder ? 'loading="lazy"' : '') . ' ' . $dimension . ($image_fit ? ('style="object-fit: ' . $image_fit . '";') : '') . '/>';
+				$output .= '<img ' .$fetch_priority. ' class="sppb-img-responsive' . ($placeholder ? ' sppb-element-lazy ' : '') . ' ' . $image_shape_class . '" src="' . ($placeholder ? $placeholder : $image_src)  . '" ' . $image2x . ($placeholder ? 'data-large="' . $image_src . '"' : '') . ' alt="' . $alt_text . '" title="' . $final_image_title . '" ' . ($noCustomImageDimension ? 'width="' . $image_width . '"' : '') . ' ' . ($noCustomImageDimension ? 'height="' . $image_height . '"' : '') . ($placeholder ? 'loading="lazy"' : '') . ' ' . $dimension . ($image_fit ? ('style="object-fit: ' . $image_fit . ';"') : '') . '/>';
 			}
 
 

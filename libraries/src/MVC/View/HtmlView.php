@@ -11,15 +11,16 @@ namespace Joomla\CMS\MVC\View;
 
 use Joomla\CMS\Application\ApplicationHelper;
 use Joomla\CMS\Event\AbstractEvent;
+use Joomla\CMS\Event\View\DisplayEvent;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\Path;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\CurrentUserInterface;
 use Joomla\CMS\User\CurrentUserTrait;
+use Joomla\Filesystem\Path;
 
 // phpcs:disable PSR1.Files.SideEffects
-\defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
 /**
@@ -193,7 +194,7 @@ class HtmlView extends AbstractView implements CurrentUserInterface
             AbstractEvent::create(
                 'onBeforeDisplay',
                 [
-                    'eventClass' => 'Joomla\CMS\Event\View\DisplayEvent',
+                    'eventClass' => DisplayEvent::class,
                     'subject'    => $this,
                     'extension'  => $context,
                 ]
@@ -207,7 +208,7 @@ class HtmlView extends AbstractView implements CurrentUserInterface
             AbstractEvent::create(
                 'onAfterDisplay',
                 [
-                    'eventClass' => 'Joomla\CMS\Event\View\DisplayEvent',
+                    'eventClass' => DisplayEvent::class,
                     'subject'    => $this,
                     'extension'  => $context,
                     'source'     => $result,
@@ -280,7 +281,7 @@ class HtmlView extends AbstractView implements CurrentUserInterface
     {
         $previous = $this->_layout;
 
-        if (strpos($layout, ':') === false) {
+        if (!str_contains($layout, ':')) {
             $this->_layout = $layout;
         } else {
             // Convert parameter to array based on :
@@ -368,6 +369,9 @@ class HtmlView extends AbstractView implements CurrentUserInterface
         $file = preg_replace('/[^A-Z0-9_\.-]/i', '', $file);
         $tpl  = isset($tpl) ? preg_replace('/[^A-Z0-9_\.-]/i', '', $tpl) : $tpl;
 
+        // Clean the template name
+        $layoutTemplate  = isset($layoutTemplate) ? preg_replace('/[^A-Z0-9_-]/i', '', $layoutTemplate) : $layoutTemplate;
+
         try {
             // Load the language file for the template
             $lang = $this->getLanguage();
@@ -393,12 +397,12 @@ class HtmlView extends AbstractView implements CurrentUserInterface
         $this->_template = Path::find($this->_path['template'], $filetofind);
 
         // If alternate layout can't be found, fall back to default layout
-        if ($this->_template == false) {
+        if ($this->_template === false) {
             $filetofind      = $this->_createFileName('', ['name' => 'default' . (isset($tpl) ? '_' . $tpl : $tpl)]);
             $this->_template = Path::find($this->_path['template'], $filetofind);
         }
 
-        if ($this->_template != false) {
+        if ($this->_template !== false) {
             // Unset so as not to introduce into template scope
             unset($tpl, $file);
 
@@ -416,8 +420,7 @@ class HtmlView extends AbstractView implements CurrentUserInterface
 
             // Done with the requested template; get the buffer and
             // clear it.
-            $this->_output = ob_get_contents();
-            ob_end_clean();
+            $this->_output = ob_get_clean();
 
             return $this->_output;
         }
@@ -442,7 +445,7 @@ class HtmlView extends AbstractView implements CurrentUserInterface
         // Load the template script
         $helper = Path::find($this->_path['helper'], $this->_createFileName('helper', ['name' => $file]));
 
-        if ($helper != false) {
+        if ($helper !== false) {
             // Include the requested template filename in the local scope
             include_once $helper;
         }

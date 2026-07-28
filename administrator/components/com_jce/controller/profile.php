@@ -5,12 +5,13 @@
  * @subpackage  Admin
  *
  * @copyright   Copyright (C) 2005 - 2023 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\FormController;
 
 class JceControllerProfile extends FormController
@@ -41,8 +42,18 @@ class JceControllerProfile extends FormController
         parent::__construct($config);
 
         // only for Joomla 3.x
-        if (version_compare(JVERSION, '4', 'lt')) {      
+        if (version_compare(JVERSION, '4', 'lt')) {
             require_once JPATH_COMPONENT_ADMINISTRATOR . '/includes/classmap.php';
         }
+    }
+
+    protected function allowAdd($data = [])
+    {
+        return Factory::getUser()->authorise('jce.profiles', 'com_jce');
+    }
+
+    protected function allowEdit($data = [], $key = 'id')
+    {
+        return Factory::getUser()->authorise('jce.profiles', 'com_jce');
     }
 }

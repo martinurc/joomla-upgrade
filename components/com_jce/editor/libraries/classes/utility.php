@@ -1,14 +1,15 @@
 <?php
+
 /**
  * @package     JCE
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 /* Set internal character encoding to UTF-8 */
 if (function_exists('mb_internal_encoding')) {
@@ -19,22 +20,55 @@ use Joomla\CMS\Uri\Uri;
 
 abstract class WFUtility
 {
-    private static function safe_substr($string, $start, $length = null) {
+    /**
+     * Multi-byte-safe strpos replacement.
+     *
+     * @param string  $string The input string.
+     * @param string  $needle The substring to search for.
+     * @param integer $offset The search offset.
+     * @return int|false The position of the first occurrence of the substring, or false if not found.
+     */
+    public static function safe_strpos($string, $needle, $offset = 0)
+    {
+        if (function_exists('mb_strpos')) {
+            return mb_strpos($string, $needle, $offset);
+        } else {
+            return strpos($string, $needle, $offset);
+        }
+    }
+
+    /**
+     * Multi-byte-safe substr replacement.
+     *
+     * @param string  $string The input string.
+     * @param int     $start  The starting position.
+     * @param int|null $length The length of the substring.
+     * @return string The extracted substring.
+     */
+    public static function safe_substr($string, $start, $length = null)
+    {
         if (function_exists('mb_substr')) {
             return mb_substr($string, $start, $length);
         } else {
             return substr($string, $start, $length);
         }
     }
-    
-    private static function safe_strlen($string) {
+
+    /**
+     * Multi-byte-safe strlen replacement.
+     *
+     * @param string $string The input string.
+     * @return int The length of the string.
+     */
+    public static function safe_strlen($string)
+    {
         if (function_exists('mb_strlen')) {
             return mb_strlen($string);
         } else {
             return strlen($string);
         }
     }
-    
+
     /**
      * Multi-byte-safe pathinfo replacement.
      * Drop-in replacement for pathinfo(), but multibyte- and cross-platform-safe.
@@ -97,11 +131,11 @@ abstract class WFUtility
 
     /**
      * Get the file extension from a path
-     * 
+     *
      * From libraries/vendor/joomla/filesystem/src/File.php
      * @copyright  Copyright (C) 2005 - 2021 Open Source Matters, Inc. All rights reserved.
      *
-     * @param  string $path The file path
+     * @param  string $file The file path
      * @param  bool   $lowercase Convert the extension to lowercase
      * @return string The file extension
      */
@@ -162,6 +196,14 @@ abstract class WFUtility
         return self::stripExtension($path);
     }
 
+    /**
+     * Clean a file path by normalizing directory separators and adding a prefix if needed.
+     *
+     * @param string $path   The file path to clean.
+     * @param string $ds     The directory separator to normalize to (default '/').
+     * @param string $prefix Optional prefix to prepend to the result.
+     * @return string The cleaned path.
+     */
     public static function cleanPath($path, $ds = '/', $prefix = '')
     {
         $path = trim(rawurldecode($path));
@@ -180,22 +222,29 @@ abstract class WFUtility
         return $prefix . $path;
     }
 
-    public static function uriToAbsolutePath($url) {
+    /**
+     * Convert a site-root-relative URI to an absolute filesystem path.
+     *
+     * @param string $url The site-root-relative URL to convert.
+     * @return string The absolute filesystem path, or the original URL if it does not start with the site root.
+     */
+    public static function uriToAbsolutePath($url)
+    {
         // Get the relative root URL
         $root = Uri::root(true);
-        
+
         // Make sure JPATH_SITE has a trailing slash
         $base = rtrim(JPATH_SITE, '/');
-        
+
         // If $url starts with the root URL, replace it with JPATH_SITE
         $path = self::safe_substr($url, 0, self::safe_strlen($root));
 
         if ($path === $root) {
             $relativePath = self::safe_substr($url, self::safe_strlen($root));
-            
+
             return self::makePath($base, $relativePath);
         }
-        
+
         // If no match, return the original URL as it is (or handle accordingly)
         return $url;
     }
@@ -204,7 +253,6 @@ abstract class WFUtility
      * Append a DIRECTORY_SEPARATOR to the path if required.
      *
      * @param string $path the path
-     * @param string $ds   optional directory seperator
      *
      * @return string path with trailing DIRECTORY_SEPARATOR
      */
@@ -213,36 +261,135 @@ abstract class WFUtility
         return self::cleanPath($path . '/');
     }
 
+    /**
+     * Validates a string for use as a file or folder name or path, ensuring it contains only safe characters.
+     *
+     * Uses a deny-list rather than a narrow allow-list so that legitimately named files - created via
+     * FTP, migrations or other tools and containing characters such as ' $ & + , ; = @ # - can still be
+     * listed and operated on. This is safe because names/paths are always URL- and HTML-encoded on output
+     * and are never passed to a shell.
+     *
+     * Rejects:
+     * - Null bytes and control characters (0x00–0x1F, 0x7F).
+     * - Invalid UTF-8 (guards against malformed/overlong sequences that could disguise a "/" or ".." and
+     *   slip past the traversal check in checkPath()).
+     * - Characters reserved or unsafe across filesystems, URLs and markup: \ < > " | ? *
+     *
+     * Everything else - all Unicode letters, marks, numbers and the remaining printable punctuation,
+     * plus ":" and "/" - is permitted.
+     *
+     * @param string $string The input string to validate.
+     *
+     * @return bool True if the string contains only valid characters, false otherwise.
+     */
+
     private static function checkCharValue($string)
     {
-        // null byte check
-        if (strstr($string, "\x00")) {
+        // Disallow null byte
+        if (strpos($string, "\x00") !== false) {
             return false;
         }
 
-        // permitted characters below 127, eg: () Although reserved characters (sub-delims https://www.rfc-editor.org/rfc/rfc3986#section-2), probably OK in file paths
-        $permitted = array(40, 41);
+        // Require valid UTF-8. Malformed or overlong byte sequences are rejected so they cannot be used
+        // to disguise a "/" or ".." and bypass the traversal check that runs against this string.
+        $isUtf8 = function_exists('mb_check_encoding')
+            ? mb_check_encoding($string, 'UTF-8')
+            : (bool) preg_match('//u', $string); // minimal UTF-8 validity test
 
-        if (preg_match('#([^\w\.\:\-\/\\\\\s ])#i', $string, $matches)) {
-            foreach ($matches as $match) {
-                $ord = ord($match);
+        if (!$isUtf8) {
+            return false;
+        }
 
-                // not a safe UTF-8 character
-                if ($ord < 127 && !in_array($ord, $permitted)) {
-                    return false;
-                }
-            }
+        // Reject control characters and the reserved/unsafe set: \ < > " | ? *
+        // (byte-wise: valid UTF-8 multibyte characters are bytes >= 0x80 and never match this range).
+        if (preg_match('#[\x00-\x1F\x7F\\\\<>"|?*]#', $string)) {
+            return false;
         }
 
         return true;
     }
 
+    /**
+     * Validates a relative file or folder path for safe usage.
+     *
+     * - Decodes the path using urldecode().
+     * - Rejects paths containing directory traversal sequences (../).
+     * - Delegates character validation to checkCharValue(), ensuring only safe characters are used.
+     * - Throws an InvalidArgumentException on failure.
+     *
+     * Intended for validating UTF-8-safe relative paths, including multibyte directory and file names.
+     *
+     * @param string $path The relative path to validate (e.g. 'images/ειδήσεις/photo.jpg').
+     *
+     * @return bool True if the path is valid.
+     *
+     * @throws InvalidArgumentException If the path contains invalid characters or traversal attempts.
+     */
+
     public static function checkPath($path)
     {
         $path = urldecode($path);
 
-        if (self::checkCharValue($path) === false || strpos($path, '..') !== false) {
+        if (preg_match('#(^|/)\.\.(/|$)#', $path)) {
+            throw new InvalidArgumentException('Invalid path traversal');
+        }
+
+        if (self::checkCharValue($path) === false) {
             throw new InvalidArgumentException('Invalid path');
+        }
+
+        return true;
+    }
+
+    /**
+     * Validates a file or folder name for safe listing/display.
+     *
+     * Unlike checkPath(), this does NOT restrict the character set, so that legitimate
+     * files containing characters such as &, +, ',' or non-Latin scripts remain visible
+     * in the file browser (matching Joomla's own media listing behaviour). Output safety
+     * (XSS) is handled by HTML-encoding names at the point of rendering on the client.
+     *
+     * It still rejects the genuinely dangerous constructs:
+     * - Null bytes.
+     * - Directory traversal sequences (../).
+     * - Backslashes (Windows path separator / escape character).
+     *
+     * Intended for filtering items returned by the filesystem during listing, where the
+     * name is only used as data and never to build a filesystem path without a further
+     * checkPath()/checkPathAccess() guard at the point of use.
+     *
+     * @param string $name The file or folder name to validate.
+     *
+     * @return bool True if the name is safe to list.
+     *
+     * @throws InvalidArgumentException If the name contains a null byte, traversal or backslash.
+     */
+
+    public static function checkName($name)
+    {
+        $name = urldecode($name);
+
+        // Disallow null byte
+        if (strpos($name, "\x00") !== false) {
+            throw new InvalidArgumentException('Invalid name');
+        }
+
+        // Reject directory traversal
+        if (preg_match('#(^|/)\.\.(/|$)#', $name)) {
+            throw new InvalidArgumentException('Invalid path traversal');
+        }
+
+        // Reject backslashes (Windows path separator / escape character)
+        if (strpos($name, '\\') !== false) {
+            throw new InvalidArgumentException('Invalid name');
+        }
+
+        // Reject characters that cannot be used as a URL value in HTML without breaking out of the
+        // attribute/tag context (XSS). Names ultimately become src/href values. urldecode above also
+        // covers the encoded forms (eg. %22, %3C). Note: "&", "+", "$" and "'" are allowed
+        // Only "<", ">" and '"' are blocked as a server-side backstop - these never occur in valid filenames.
+        if (preg_match('#[<>"]#', $name)) {
+            throw new InvalidArgumentException('Invalid name');
         }
 
         return true;
@@ -262,58 +409,277 @@ abstract class WFUtility
         return self::cleanPath($a . $ds . $b, $ds);
     }
 
+    /**
+     * Converts UTF-8 encoded Latin-based characters with diacritics to their closest ASCII equivalents.
+     *
+     * - Uses `transliterator_transliterate()` (from the intl extension) if available for broad Unicode support.
+     * - Falls back to a static map of pre-defined Latin characters to ASCII equivalents if transliterator is not available.
+     * - Handles both single strings and arrays of strings recursively.
+     * - Only converts Latin-based accented characters; non-Latin scripts (e.g. Greek, Cyrillic) are not affected unless transliterator is used.
+     *
+     * Example:
+     *   "Crème brûlée" => "Creme brulee"
+     *   "Jürgen" => "Jurgen"
+     *
+     * @param string|array $subject The input string or array of strings to convert.
+     *
+     * @return string|array The ASCII-transliterated version of the input.
+     */
     private static function utf8_latin_to_ascii($subject)
     {
         static $CHARS = null;
 
         if (is_null($CHARS)) {
             $CHARS = array(
-                'À' => 'A', 'Á' => 'A', 'Â' => 'A', 'Ã' => 'A', 'Ä' => 'A', 'Å' => 'A', 'Æ' => 'AE',
-                'Ç' => 'C', 'È' => 'E', 'É' => 'E', 'Ê' => 'E', 'Ë' => 'E', 'Ì' => 'I', 'Í' => 'I', 'Î' => 'I', 'Ï' => 'I',
-                'Ð' => 'D', 'Ñ' => 'N', 'Ò' => 'O', 'Ó' => 'O', 'Ô' => 'O', 'Õ' => 'O', 'Ö' => 'O', 'Ø' => 'O',
-                'Ù' => 'U', 'Ú' => 'U', 'Û' => 'U', 'Ü' => 'U', 'Ý' => 'Y', 'ß' => 's',
-                'à' => 'a', 'á' => 'a', 'â' => 'a', 'ã' => 'a', 'ä' => 'a', 'å' => 'a', 'æ' => 'ae',
-                'ç' => 'c', 'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e', 'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
-                'ñ' => 'n', 'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'õ' => 'o', 'ö' => 'o', 'ø' => 'o', 'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ü' => 'u',
-                'ý' => 'y', 'ÿ' => 'y', 'Ā' => 'A', 'ā' => 'a', 'Ă' => 'A', 'ă' => 'a', 'Ą' => 'A', 'ą' => 'a',
-                'Ć' => 'C', 'ć' => 'c', 'Ĉ' => 'C', 'ĉ' => 'c', 'Ċ' => 'C', 'ċ' => 'c', 'Č' => 'C', 'č' => 'c', 'Ď' => 'D', 'ď' => 'd', 'Đ' => 'D', 'đ' => 'd',
-                'Ē' => 'E', 'ē' => 'e', 'Ĕ' => 'E', 'ĕ' => 'e', 'Ė' => 'E', 'ė' => 'e', 'Ę' => 'E', 'ę' => 'e', 'Ě' => 'E', 'ě' => 'e',
-                'Ĝ' => 'G', 'ĝ' => 'g', 'Ğ' => 'G', 'ğ' => 'g', 'Ġ' => 'G', 'ġ' => 'g', 'Ģ' => 'G', 'ģ' => 'g', 'Ĥ' => 'H', 'ĥ' => 'h', 'Ħ' => 'H', 'ħ' => 'h',
-                'Ĩ' => 'I', 'ĩ' => 'i', 'Ī' => 'I', 'ī' => 'i', 'Ĭ' => 'I', 'ĭ' => 'i', 'Į' => 'I', 'į' => 'i', 'İ' => 'I', 'ı' => 'i',
-                'Ĳ' => 'IJ', 'ĳ' => 'ij', 'Ĵ' => 'J', 'ĵ' => 'j', 'Ķ' => 'K', 'ķ' => 'k', 'Ĺ' => 'L', 'ĺ' => 'l', 'Ļ' => 'L', 'ļ' => 'l', 'Ľ' => 'L', 'ľ' => 'l', 'Ŀ' => 'L', 'ŀ' => 'l', 'Ł' => 'l', 'ł' => 'l',
-                'Ń' => 'N', 'ń' => 'n', 'Ņ' => 'N', 'ņ' => 'n', 'Ň' => 'N', 'ň' => 'n', 'ŉ' => 'n', 'Ō' => 'O', 'ō' => 'o', 'Ŏ' => 'O', 'ŏ' => 'o', 'Ő' => 'O', 'ő' => 'o', 'Œ' => 'OE', 'œ' => 'oe',
-                'Ŕ' => 'R', 'ŕ' => 'r', 'Ŗ' => 'R', 'ŗ' => 'r', 'Ř' => 'R', 'ř' => 'r', 'Ś' => 'S', 'ś' => 's', 'Ŝ' => 'S', 'ŝ' => 's', 'Ş' => 'S', 'ş' => 's', 'Š' => 'S', 'š' => 's',
-                'Ţ' => 'T', 'ţ' => 't', 'Ť' => 'T', 'ť' => 't', 'Ŧ' => 'T', 'ŧ' => 't', 'Ũ' => 'U', 'ũ' => 'u', 'Ū' => 'U', 'ū' => 'u', 'Ŭ' => 'U', 'ŭ' => 'u', 'Ů' => 'U', 'ů' => 'u', 'Ű' => 'U', 'ű' => 'u', 'Ų' => 'U', 'ų' => 'u',
-                'Ŵ' => 'W', 'ŵ' => 'w', 'Ŷ' => 'Y', 'ŷ' => 'y', 'Ÿ' => 'Y', 'Ź' => 'Z', 'ź' => 'z', 'Ż' => 'Z', 'ż' => 'z', 'Ž' => 'Z', 'ž' => 'z', 'ſ' => 's', 'ƒ' => 'f', 'Ơ' => 'O', 'ơ' => 'o', 'Ư' => 'U', 'ư' => 'u',
-                'Ǎ' => 'A', 'ǎ' => 'a', 'Ǐ' => 'I', 'ǐ' => 'i', 'Ǒ' => 'O', 'ǒ' => 'o', 'Ǔ' => 'U', 'ǔ' => 'u', 'Ǖ' => 'U', 'ǖ' => 'u', 'Ǘ' => 'U', 'ǘ' => 'u', 'Ǚ' => 'U', 'ǚ' => 'u', 'Ǜ' => 'U', 'ǜ' => 'u',
-                'Ǻ' => 'A', 'ǻ' => 'a', 'Ǽ' => 'AE', 'ǽ' => 'ae', 'Ǿ' => 'O', 'ǿ' => 'o',
+                'À' => 'A',
+                'Á' => 'A',
+                'Â' => 'A',
+                'Ã' => 'A',
+                'Ä' => 'A',
+                'Å' => 'A',
+                'Æ' => 'AE',
+                'Ç' => 'C',
+                'È' => 'E',
+                'É' => 'E',
+                'Ê' => 'E',
+                'Ë' => 'E',
+                'Ì' => 'I',
+                'Í' => 'I',
+                'Î' => 'I',
+                'Ï' => 'I',
+                'Ð' => 'D',
+                'Ñ' => 'N',
+                'Ò' => 'O',
+                'Ó' => 'O',
+                'Ô' => 'O',
+                'Õ' => 'O',
+                'Ö' => 'O',
+                'Ø' => 'O',
+                'Ù' => 'U',
+                'Ú' => 'U',
+                'Û' => 'U',
+                'Ü' => 'U',
+                'Ý' => 'Y',
+                'ß' => 's',
+                'à' => 'a',
+                'á' => 'a',
+                'â' => 'a',
+                'ã' => 'a',
+                'ä' => 'a',
+                'å' => 'a',
+                'æ' => 'ae',
+                'ç' => 'c',
+                'è' => 'e',
+                'é' => 'e',
+                'ê' => 'e',
+                'ë' => 'e',
+                'ì' => 'i',
+                'í' => 'i',
+                'î' => 'i',
+                'ï' => 'i',
+                'ñ' => 'n',
+                'ò' => 'o',
+                'ó' => 'o',
+                'ô' => 'o',
+                'õ' => 'o',
+                'ö' => 'o',
+                'ø' => 'o',
+                'ù' => 'u',
+                'ú' => 'u',
+                'û' => 'u',
+                'ü' => 'u',
+                'ý' => 'y',
+                'ÿ' => 'y',
+                'Ā' => 'A',
+                'ā' => 'a',
+                'Ă' => 'A',
+                'ă' => 'a',
+                'Ą' => 'A',
+                'ą' => 'a',
+                'Ć' => 'C',
+                'ć' => 'c',
+                'Ĉ' => 'C',
+                'ĉ' => 'c',
+                'Ċ' => 'C',
+                'ċ' => 'c',
+                'Č' => 'C',
+                'č' => 'c',
+                'Ď' => 'D',
+                'ď' => 'd',
+                'Đ' => 'D',
+                'đ' => 'd',
+                'Ē' => 'E',
+                'ē' => 'e',
+                'Ĕ' => 'E',
+                'ĕ' => 'e',
+                'Ė' => 'E',
+                'ė' => 'e',
+                'Ę' => 'E',
+                'ę' => 'e',
+                'Ě' => 'E',
+                'ě' => 'e',
+                'Ĝ' => 'G',
+                'ĝ' => 'g',
+                'Ğ' => 'G',
+                'ğ' => 'g',
+                'Ġ' => 'G',
+                'ġ' => 'g',
+                'Ģ' => 'G',
+                'ģ' => 'g',
+                'Ĥ' => 'H',
+                'ĥ' => 'h',
+                'Ħ' => 'H',
+                'ħ' => 'h',
+                'Ĩ' => 'I',
+                'ĩ' => 'i',
+                'Ī' => 'I',
+                'ī' => 'i',
+                'Ĭ' => 'I',
+                'ĭ' => 'i',
+                'Į' => 'I',
+                'į' => 'i',
+                'İ' => 'I',
+                'ı' => 'i',
+                'Ĳ' => 'IJ',
+                'ĳ' => 'ij',
+                'Ĵ' => 'J',
+                'ĵ' => 'j',
+                'Ķ' => 'K',
+                'ķ' => 'k',
+                'Ĺ' => 'L',
+                'ĺ' => 'l',
+                'Ļ' => 'L',
+                'ļ' => 'l',
+                'Ľ' => 'L',
+                'ľ' => 'l',
+                'Ŀ' => 'L',
+                'ŀ' => 'l',
+                'Ł' => 'l',
+                'ł' => 'l',
+                'Ń' => 'N',
+                'ń' => 'n',
+                'Ņ' => 'N',
+                'ņ' => 'n',
+                'Ň' => 'N',
+                'ň' => 'n',
+                'ŉ' => 'n',
+                'Ō' => 'O',
+                'ō' => 'o',
+                'Ŏ' => 'O',
+                'ŏ' => 'o',
+                'Ő' => 'O',
+                'ő' => 'o',
+                'Œ' => 'OE',
+                'œ' => 'oe',
+                'Ŕ' => 'R',
+                'ŕ' => 'r',
+                'Ŗ' => 'R',
+                'ŗ' => 'r',
+                'Ř' => 'R',
+                'ř' => 'r',
+                'Ś' => 'S',
+                'ś' => 's',
+                'Ŝ' => 'S',
+                'ŝ' => 's',
+                'Ş' => 'S',
+                'ş' => 's',
+                'Š' => 'S',
+                'š' => 's',
+                'Ţ' => 'T',
+                'ţ' => 't',
+                'Ť' => 'T',
+                'ť' => 't',
+                'Ŧ' => 'T',
+                'ŧ' => 't',
+                'Ũ' => 'U',
+                'ũ' => 'u',
+                'Ū' => 'U',
+                'ū' => 'u',
+                'Ŭ' => 'U',
+                'ŭ' => 'u',
+                'Ů' => 'U',
+                'ů' => 'u',
+                'Ű' => 'U',
+                'ű' => 'u',
+                'Ų' => 'U',
+                'ų' => 'u',
+                'Ŵ' => 'W',
+                'ŵ' => 'w',
+                'Ŷ' => 'Y',
+                'ŷ' => 'y',
+                'Ÿ' => 'Y',
+                'Ź' => 'Z',
+                'ź' => 'z',
+                'Ż' => 'Z',
+                'ż' => 'z',
+                'Ž' => 'Z',
+                'ž' => 'z',
+                'ſ' => 's',
+                'ƒ' => 'f',
+                'Ơ' => 'O',
+                'ơ' => 'o',
+                'Ư' => 'U',
+                'ư' => 'u',
+                'Ǎ' => 'A',
+                'ǎ' => 'a',
+                'Ǐ' => 'I',
+                'ǐ' => 'i',
+                'Ǒ' => 'O',
+                'ǒ' => 'o',
+                'Ǔ' => 'U',
+                'ǔ' => 'u',
+                'Ǖ' => 'U',
+                'ǖ' => 'u',
+                'Ǘ' => 'U',
+                'ǘ' => 'u',
+                'Ǚ' => 'U',
+                'ǚ' => 'u',
+                'Ǜ' => 'U',
+                'ǜ' => 'u',
+                'Ǻ' => 'A',
+                'ǻ' => 'a',
+                'Ǽ' => 'AE',
+                'ǽ' => 'ae',
+                'Ǿ' => 'O',
+                'ǿ' => 'o',
             );
         }
 
-        if (function_exists('transliterator_transliterate')) {
-            if (is_array($subject)) {
-                /*array_walk($subject, function (&$string) {
-                $string = WFUtility::utf8_latin_to_ascii($string);
-                });*/
-
-                for ($i = 0; $i < count($subject); $i++) {
-                    $subject[$i] = WFUtility::utf8_latin_to_ascii($subject[$i]);
-                }
-
-                return $subject;
+        if (is_array($subject)) {
+            foreach ($subject as $i => $string) {
+                $subject[$i] = self::utf8_latin_to_ascii($string);
             }
 
+            return $subject;
+        }
+
+        if (!is_string($subject)) {
+            return $subject;
+        }
+
+        if (function_exists('transliterator_transliterate')) {
             $transformed = transliterator_transliterate('Any-Latin; Latin-ASCII;', $subject);
 
             if ($transformed !== false) {
                 return $transformed;
             }
-
-            return str_replace(array_keys($CHARS), array_values($CHARS), $subject);
         }
 
-        return str_replace(array_keys($CHARS), array_values($CHARS), $subject);
+        return strtr($subject, $CHARS);
     }
+
+    /**
+     * Changes the case of a string or an array of strings using multibyte-safe functions.
+     *
+     * Supports 'lowercase' and 'uppercase' case transformations for UTF-8 encoded text.
+     * If the input is an array, the transformation is applied recursively to each element.
+     * Falls back to returning the original value if mbstring functions are not available.
+     *
+     * @param string|array $string The input string or array of strings to transform.
+     * @param string $case The case to apply: 'lowercase' or 'uppercase'.
+     *
+     * @return string|array The transformed string or array, or the original input if unsupported.
+     */
 
     protected static function changeCase($string, $case)
     {
@@ -321,44 +687,59 @@ abstract class WFUtility
             return $string;
         }
 
+        $encoding = 'UTF-8';
+
         if (is_array($string)) {
-            for ($i = 0; $i < count($string); $i++) {
-                $string[$i] = WFUtility::changeCase($string[$i], $case);
+            $result = [];
+
+            foreach ($string as $key => $value) {
+                $result[$key] = self::changeCase($value, $case);
             }
-        } else {
-            switch ($case) {
-                case 'lowercase':
-                    $string = mb_strtolower($string);
-                    break;
-                case 'uppercase':
-                    $string = mb_strtoupper($string);
-                    break;
-            }
+
+            return $result;
         }
 
-        return $string;
+        switch ($case) {
+            case 'lowercase':
+                return mb_strtolower($string, $encoding);
+
+            case 'uppercase':
+                return mb_strtoupper($string, $encoding);
+
+            default:
+                return $string;
+        }
     }
 
+    /**
+     * Cleans a UTF-8 string by removing disallowed characters.
+     *
+     * - Strips common punctuation, symbols, brackets, and currency characters.
+     * - Preserves Unicode letters (\p{L}), numbers (\p{N}), Unicode other-symbols (\p{So} — ©, ®, ™),
+     *   space, dot (.), dash (-), and underscore (_).
+     * - Returns a cleaned string suitable for filenames or sanitized text fields.
+     *
+     * @param string $string The UTF-8 encoded input string to clean.
+     * @return string The sanitized UTF-8 string with disallowed characters removed.
+     */
     private static function cleanUTF8($string)
     {
-        // remove some common characters
-        $string = preg_replace('#[\+\\\/\?\#%&<>"\'=\[\]\{\},;@\^\(\)£€$~]#', '', $string);
+        // Remove disallowed ASCII characters (punctuation, symbols)
+        // This also removes brackets, currency, etc.
+        $string = preg_replace('#[\\\+/\?\#%&<>"\'=\[\]\{\},;@\^\(\)£€$~]#u', '', $string);
 
         $result = '';
-        $length = strlen($string);
+        $length = mb_strlen($string, 'UTF-8');
 
         for ($i = 0; $i < $length; $i++) {
-            $char = $string[$i];
+            $char = mb_substr($string, $i, 1, 'UTF-8');
 
-            // only process on possible restricted characters or utf-8 letters/numbers
-            if (preg_match('#[^\w\.\-\s ]#', $char)) {
-                // skip any character less than 127, eg: &?@* etc.
-                if (ord($char) < 127) {
-                    continue;
-                }
+            // Keep: Unicode letters, numbers, other-symbols (©, ®, ™), space, dash, underscore, dot
+            if (preg_match('#[\p{L}\p{N}\p{So}\s\.\-_]#u', $char)) {
+                $result .= $char;
             }
 
-            $result .= $char;
+            // Everything else is skipped
         }
 
         return $result;
@@ -367,7 +748,10 @@ abstract class WFUtility
     /**
      * Makes file name safe to use.
      *
-     * @param mixed The name of the file (not full path)
+     * @param mixed $subject The name of the file (not full path)
+     * @param string $mode The encoding mode: 'utf-8' or 'ascii'
+     * @param string $spaces The character to replace spaces with
+     * @param string $case The case transformation: 'lowercase' or 'uppercase'
      *
      * @return mixed The sanitised string or array
      */
@@ -449,21 +833,26 @@ abstract class WFUtility
     }
 
     /**
-     * Format the file size, limits to Mb.
+     * Formats a raw file size (in bytes) as a human-readable string, limited to MB.
      *
-     * @param int $size the raw filesize
+     * - Bytes (< 1 KB): formatted as "123 bytes"
+     * - Kilobytes (< 1 MB): formatted as "12.34 KB"
+     * - Megabytes (≥ 1 MB): formatted as "1.23 MB"
      *
-     * @return string formated file size
+     * @param int $size The file size in bytes.
+     * @return string The formatted file size string.
      */
     public static function formatSize($size)
     {
         if ($size < 1024) {
             return $size . ' ' . WFText::_('WF_LABEL_BYTES');
-        } elseif ($size >= 1024 && $size < 1024 * 1024) {
-            return sprintf('%01.2f', $size / 1024.0) . ' ' . WFText::_('WF_LABEL_KB');
-        } else {
-            return sprintf('%01.2f', $size / (1024.0 * 1024)) . ' ' . WFText::_('WF_LABEL_MB');
         }
+
+        if ($size < 1048576) { // 1024 * 1024
+            return sprintf('%.2f', $size / 1024) . ' ' . WFText::_('WF_LABEL_KB');
+        }
+
+        return sprintf('%.2f', $size / 1048576) . ' ' . WFText::_('WF_LABEL_MB');
     }
 
     /**
@@ -515,9 +904,10 @@ abstract class WFUtility
     /**
      * Get the modified date of a file.
      *
-     * @return Formatted modified date
+     * @return string Formatted modified date
      *
      * @param string $file Absolute path to file
+     * @return string Formatted modified date
      */
     public static function getDate($file)
     {
@@ -527,7 +917,7 @@ abstract class WFUtility
     /**
      * Get the size of a file.
      *
-     * @return Formatted filesize value
+     * @return string Formatted filesize value
      *
      * @param string $file Absolute path to file
      */
@@ -541,23 +931,11 @@ abstract class WFUtility
      * https://gist.github.com/tcyrus/257a1ed93c5e115b7b33426d029b5c5f
      *
      * @param string $path A Path
-     * @param int $levels The number of parent directories to go up.
      * @return string The path of a parent directory.
      */
     public static function mb_dirname($path)
     {
-        // check if multibyte string, use dirname() if not
-        if (function_exists('mb_strlen')) {
-            $dir = dirname($path);
-
-            if ($dir == ".") {
-                return "";
-            }
-
-            return $dir;
-        }
-
-        // Normalize the path for non-multibyte environments
+        // Normalize the path
         $path = self::cleanPath($path, '/');
 
         // Get last slash position
@@ -578,14 +956,16 @@ abstract class WFUtility
 
         return $dir;
     }
-
+    
+    /**
+     * Get the basename of a file path, optionally stripping a given extension.
+     *
+     * @param string $path The file path.
+     * @param string $ext  The extension to strip, including leading dot (e.g. '.jpg').
+     * @return string The basename of the file.
+     */
     public static function mb_basename($path, $ext = '')
     {
-        // check if multibyte string, use basename() if not
-        if (function_exists('mb_strlen')) {
-            return basename($path, $ext);
-        }
-
         // clean
         $path = self::cleanPath($path, '/');
 
@@ -602,109 +982,130 @@ abstract class WFUtility
         return $path;
     }
 
+    /**
+     * Converts a string to UTF-8 encoding if it's not already UTF-8.
+     *
+     * - Uses mb_detect_encoding() if available.
+     * - Falls back to regex-based UTF-8 detection and utf8_encode() for Latin-1 strings if mbstring is unavailable.
+     * - If encoding cannot be determined, returns a sanitized ASCII-only version.
+     *
+     * @param string $string The input string to normalize.
+     * @return string UTF-8 encoded or sanitized string.
+     */
     public static function convertEncoding($string)
     {
-        if (!function_exists('mb_detect_encoding')) {
-            // From http://w3.org/International/questions/qa-forms-utf-8.html
+        if (!function_exists('mb_detect_encoding') || !function_exists('mb_convert_encoding')) {
+            // Regex-based UTF-8 detection (W3C)
             $isUTF8 = preg_match('%^(?:
-	              [\x09\x0A\x0D\x20-\x7E]          	 # ASCII
-	            | [\xC2-\xDF][\x80-\xBF]             # non-overlong 2-byte
-	            |  \xE0[\xA0-\xBF][\x80-\xBF]        # excluding overlongs
-	            | [\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}  # straight 3-byte
-	            |  \xED[\x80-\x9F][\x80-\xBF]        # excluding surrogates
-	            |  \xF0[\x90-\xBF][\x80-\xBF]{2}     # planes 1-3
-	            | [\xF1-\xF3][\x80-\xBF]{3}          # planes 4-15
-	            |  \xF4[\x80-\x8F][\x80-\xBF]{2}     # plane 16
-	        )*$%xs', $string);
+              [\x09\x0A\x0D\x20-\x7E]              # ASCII
+            | [\xC2-\xDF][\x80-\xBF]               # non-overlong 2-byte
+            |  \xE0[\xA0-\xBF][\x80-\xBF]          # excluding overlongs
+            | [\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}    # straight 3-byte
+            |  \xED[\x80-\x9F][\x80-\xBF]          # excluding surrogates
+            |  \xF0[\x90-\xBF][\x80-\xBF]{2}       # planes 1-3
+            | [\xF1-\xF3][\x80-\xBF]{3}            # planes 4-15
+            |  \xF4[\x80-\x8F][\x80-\xBF]{2}       # plane 16
+        )*$%xs', $string);
 
-            if (!$isUTF8) {
-                return utf8_encode($string);
-            }
-
-            return $string;
+            return $isUTF8 ? $string : utf8_encode($string);
         }
 
-        // get encoding
-        $encoding = mb_detect_encoding($string, "auto", true);
+        // Try to detect the encoding
+        $encoding = mb_detect_encoding($string, ['UTF-8', 'ISO-8859-1', 'Windows-1252', 'ASCII'], true);
 
-        // return existing string if it is already utf-8
+        // Return unchanged if already UTF-8
         if ($encoding === 'UTF-8') {
             return $string;
         }
 
-        // invalid encoding, so make a "safe" string
+        // If unknown encoding, fallback to stripped ASCII
         if ($encoding === false) {
-            return preg_replace('#[^a-zA-Z0-9_\.\-\s ]#', '', $string);
+            return preg_replace('#[^a-zA-Z0-9_\.\-\s ]#u', '', $string);
         }
 
-        // convert to utf-8 and return
+        // Convert from detected encoding to UTF-8
         return mb_convert_encoding($string, 'UTF-8', $encoding);
     }
 
+    /**
+     * Checks whether a string is valid UTF-8.
+     *
+     * Uses mb_detect_encoding() if available; otherwise falls back to a strict UTF-8 pattern check.
+     * Designed for safe operation even in environments without mbstring.
+     *
+     * @param string $string The input string to validate.
+     * @return bool True if the string is valid UTF-8, false otherwise.
+     */
     public static function isUtf8($string)
     {
         if (!function_exists('mb_detect_encoding')) {
-            // From http://w3.org/International/questions/qa-forms-utf-8.html
-            return preg_match('%^(?:
-	              [\x09\x0A\x0D\x20-\x7E]          	 # ASCII
-	            | [\xC2-\xDF][\x80-\xBF]             # non-overlong 2-byte
-	            |  \xE0[\xA0-\xBF][\x80-\xBF]        # excluding overlongs
-	            | [\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}  # straight 3-byte
-	            |  \xED[\x80-\x9F][\x80-\xBF]        # excluding surrogates
-	            |  \xF0[\x90-\xBF][\x80-\xBF]{2}     # planes 1-3
-	            | [\xF1-\xF3][\x80-\xBF]{3}          # planes 4-15
-	            |  \xF4[\x80-\x8F][\x80-\xBF]{2}     # plane 16
-	        )*$%xs', $string);
+            return (bool) preg_match(
+                '%^(?:
+                [\x09\x0A\x0D\x20-\x7E]              # ASCII
+              | [\xC2-\xDF][\x80-\xBF]               # non-overlong 2-byte
+              |  \xE0[\xA0-\xBF][\x80-\xBF]          # excluding overlongs
+              | [\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}    # straight 3-byte
+              |  \xED[\x80-\x9F][\x80-\xBF]          # excluding surrogates
+              |  \xF0[\x90-\xBF][\x80-\xBF]{2}       # planes 1-3
+              | [\xF1-\xF3][\x80-\xBF]{3}            # planes 4-15
+              |  \xF4[\x80-\x8F][\x80-\xBF]{2}       # plane 16
+            )*$%xs',
+                $string
+            );
         }
 
         return mb_detect_encoding($string, 'UTF-8', true);
     }
 
     /**
-     * Convert size value to bytes.
+     * Converts a human-readable size value (e.g., "2M", "512k", "1G") to bytes.
+     *
+     * Supports the following unit suffixes (case-insensitive):
+     * - K (kilobytes)
+     * - M (megabytes)
+     * - G (gigabytes)
+     *
+     * If no unit is specified, the value is assumed to be in bytes.
+     *
+     * @param string|int $value The size value to convert (e.g., "2M", "1024").
+     * @return int Size in bytes.
      */
     public static function convertSize($value)
     {
+        $value = trim((string) $value);
         $unit = '';
 
-        preg_match('#([0-9]+)\s?([a-z]*)#i', $value, $matches);
-
-        if (isset($matches[1])) {
-            $value = (int) $matches[1];
+        if (preg_match('#([\d\.]+)\s*([a-z]*)#i', $value, $matches)) {
+            $value = floatval($matches[1]);
+            $unit = strtolower(substr($matches[2], 0, 1));
         }
 
-        if (isset($matches[2])) {
-            $unit = $matches[2];
-
-            // extract first character only, eg: g, m, k
-            if ($unit) {
-                $unit = strtolower($unit[0]);
-            }
-        }
-
-        $value = intval($value);
-
-        // Convert to bytes
         switch ($unit) {
             case 'g':
-                $value = $value * 1073741824;
+                $value *= 1073741824; // 1024^3
                 break;
             case 'm':
-                $value = $value * 1048576;
+                $value *= 1048576; // 1024^2
                 break;
             case 'k':
-                $value = $value * 1024;
+                $value *= 1024; // 1024^1
                 break;
         }
 
-        return $value;
+        return (int) $value;
     }
 
     /**
-     * Checks an upload for suspicious naming, potential PHP contents, valid image and HTML tags.
+     * Defence-in-depth upload guard. The primary control is the extension allow-list;
+     * this function adds secondary checks for known-dangerous content patterns and image validity.
+     *
+     * @param array $file              The uploaded file array ($_FILES entry).
+     * @param array $allowedExtensions Extensions explicitly permitted by the profile.
+     * @return bool True if the file passes all checks.
+     * @throws InvalidArgumentException If the file is unsafe or cannot be read for inspection.
      */
-    public static function isSafeFile($file)
-    {        
+    public static function isSafeFile($file, $allowedExtensions = [])
+    {
         // null byte check
         if (strstr($file['name'], "\x00")) {
             @unlink($file['tmp_name']);
@@ -712,44 +1113,61 @@ abstract class WFUtility
         }
 
         // check name for invalid extensions
-        if (self::validateFileName($file['name']) === false) {
+        if (self::validateFileName($file['name'], $allowedExtensions) === false) {
             @unlink($file['tmp_name']);
             throw new InvalidArgumentException('Invalid file: The file name contains an invalid extension.');
-        }
-
-        // check file for <?php tags
-        $fp = @fopen($file['tmp_name'], 'r');
-
-        if ($fp !== false) {
-            $data = '';
-
-            while (!feof($fp)) {
-                $data .= @fread($fp, 131072);
-                // we can only reliably check for the full <?php tag here (short tags conflict with valid exif xml data), so users are reminded to disable short_open_tag
-                if (stripos($data, '<?php') !== false) {
-                    @unlink($file['tmp_name']);
-                    throw new InvalidArgumentException('Invalid file: The file contains PHP code.');
-                }
-
-                // check for `__HALT_COMPILER()` phar stub
-                if (stripos($data, '__HALT_COMPILER()') !== false) {
-                    @unlink($file['tmp_name']);
-                    throw new InvalidArgumentException('Invalid file: The file contains PHP code.');
-                }
-
-                $data = substr($data, -10);
-            }
-
-            fclose($fp);
         }
 
         // Get the file extension
         $extension = self::getExtension($file['name'], true);
 
-        // Check if the file extension is a common image
-        $isImage = in_array($extension, ['jpeg', 'jpg', 'jpe', 'png', 'apng', 'gif', 'bmp', 'tiff', 'tif', 'webp', 'psd', 'ico', 'xcf', 'odg'], true);
+        // PHP content scan applies to text-based formats only. Binary formats (images, pdf, office
+        // documents etc.) can contain <?php or __HALT_COMPILER() as coincidental byte sequences.
+        $textExtensions = ['svg', 'html', 'htm', 'xml', 'xhtml', 'txt'];
 
-        // validate image
+        if (in_array($extension, $textExtensions, true)) {
+            $fp = @fopen($file['tmp_name'], 'r');
+
+            if ($fp === false) {
+                @unlink($file['tmp_name']);
+                throw new InvalidArgumentException('Invalid file: The file could not be read for inspection.');
+            }
+
+            $data = '';
+
+            while (!feof($fp)) {
+                $data .= @fread($fp, 131072);
+
+                // <?php requires a whitespace token to open; <?= is the short echo tag.
+                // short <? alone is skipped: it conflicts with <?xml and <?xpacket processing instructions.
+                if (preg_match('#<\?php(?:\s|$)|<\?=#i', $data)) {
+                    @unlink($file['tmp_name']);
+                    fclose($fp);
+                    throw new InvalidArgumentException('Invalid file: The file contains PHP code.');
+                }
+
+                // __HALT_COMPILER() is the phar stub header (17 chars; carryover covers it)
+                if (stripos($data, '__HALT_COMPILER()') !== false) {
+                    @unlink($file['tmp_name']);
+                    fclose($fp);
+                    throw new InvalidArgumentException('Invalid file: The file contains PHP code.');
+                }
+
+                // carry over enough bytes to catch tokens that span a chunk boundary
+                $data = substr($data, -32);
+            }
+
+            fclose($fp);
+        }
+
+        if ($extension === 'svg') {
+            self::validateSvg($file['tmp_name']);
+        }
+
+        // getimagesize validates raster images structurally. xcf and odg are not supported
+        // by getimagesize and rely on the extension allow-list alone.
+        $isImage = in_array($extension, ['jpeg', 'jpg', 'jpe', 'png', 'apng', 'gif', 'bmp', 'tiff', 'tif', 'webp', 'psd', 'ico'], true);
+
         if ($isImage && @getimagesize($file['tmp_name']) === false) {
             @unlink($file['tmp_name']);
             throw new InvalidArgumentException('Invalid file: The file is not a valid image.');
@@ -759,13 +1177,106 @@ abstract class WFUtility
     }
 
     /**
+     * Check an SVG file for XSS vectors. Uses enshrined\svgSanitize\Sanitizer when available,
+     * falls back to a DOMDocument-based check. Deletes the temp file and throws on failure.
+     *
+     * @param  string $tmpPath Absolute path to the uploaded temp file.
+     * @return void
+     * @throws InvalidArgumentException If the SVG contains unsafe content.
+     */
+    private static function validateSvg($tmpPath)
+    {
+        $svgContent = @file_get_contents($tmpPath);
+
+        if ($svgContent === false) {
+            @unlink($tmpPath);
+            throw new InvalidArgumentException('Invalid file: The SVG file could not be read for inspection.');
+        }
+
+        if (class_exists('enshrined\\svgSanitize\\Sanitizer')) {
+            $sanitizer = new \enshrined\svgSanitize\Sanitizer();
+            $result    = $sanitizer->sanitize($svgContent);
+            $errors    = $sanitizer->getXmlIssues();
+
+            // Filter known false positives (mirrors Joomla's MediaHelper::isValidSvg)
+            foreach ($errors as $i => $error) {
+                if (
+                    ($error['message'] === 'Suspicious node \'#comment\'')
+                    || ($error['message'] === 'Suspicious attribute \'space\'')
+                    || ($error['message'] === 'Suspicious attribute \'enable-background\'')
+                    || ($error['message'] === 'Suspicious node \'svg\'')
+                ) {
+                    unset($errors[$i]);
+                }
+            }
+
+            if ($result === false || !empty($errors)) {
+                @unlink($tmpPath);
+                throw new InvalidArgumentException('Invalid file: The SVG file contains unsafe content.');
+            }
+        } else {
+            // DOMDocument fallback for environments without enshrined/svg-sanitize
+            $dom = new \DOMDocument();
+            libxml_use_internal_errors(true);
+            $loaded = $dom->loadXML($svgContent, LIBXML_NONET);
+            libxml_clear_errors();
+            libxml_use_internal_errors(false);
+
+            if (!$loaded) {
+                @unlink($tmpPath);
+                throw new InvalidArgumentException('Invalid file: The SVG file could not be parsed.');
+            }
+
+            $dangerousTags  = ['script', 'foreignobject'];
+            $dangerousAttrs = ['href', 'src', 'action', 'formaction', 'data', 'to', 'from'];
+
+            foreach ($dom->getElementsByTagName('*') as $element) {
+                $tag = strtolower($element->localName);
+
+                if (in_array($tag, $dangerousTags, true)) {
+                    @unlink($tmpPath);
+                    throw new InvalidArgumentException('Invalid file: The SVG file contains an unsafe element.');
+                }
+
+                if ($tag === 'style') {
+                    $text = strtolower($element->textContent);
+                    if (strpos($text, 'javascript:') !== false || strpos($text, '@import') !== false) {
+                        @unlink($tmpPath);
+                        throw new InvalidArgumentException('Invalid file: The SVG file contains unsafe CSS.');
+                    }
+                }
+
+                if ($element->hasAttributes()) {
+                    foreach ($element->attributes as $attr) {
+                        $attrName = strtolower($attr->localName);
+
+                        if (strncmp($attrName, 'on', 2) === 0) {
+                            @unlink($tmpPath);
+                            throw new InvalidArgumentException('Invalid file: The SVG file contains event handler attributes.');
+                        }
+
+                        if (in_array($attrName, $dangerousAttrs, true)) {
+                            $value = strtolower(trim($attr->value));
+                            if (strpos($value, 'javascript:') === 0 || strpos($value, 'data:') === 0) {
+                                @unlink($tmpPath);
+                                throw new InvalidArgumentException('Invalid file: The SVG file contains unsafe URL references.');
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Check file name for extensions.
      *
-     * @param type $name
+     * @param string $name               The file name to validate.
+     * @param array  $allowedExtensions  Extensions explicitly allowed by the profile (may lift the SVG block on the final extension).
      *
-     * @return bool
+     * @return bool True if the file name is valid, false otherwise.
      */
-    public static function validateFileName($name)
+    public static function validateFileName($name, $allowedExtensions = [])
     {
         if (empty($name) && (string) $name !== "0") {
             return false;
@@ -784,15 +1295,70 @@ abstract class WFUtility
 
         // list of invalid extensions
         $executable = array(
-            'php', 'php3', 'php4', 'php5', 'php6', 'php7', 'phar', 'js', 'exe', 'phtml', 'java', 'perl', 'py', 'asp', 'dll', 'go', 'ade', 'adp', 'bat', 'chm', 'cmd', 'com', 'cpl', 'hta', 'ins', 'isp',
-            'jse', 'lib', 'mde', 'msc', 'msp', 'mst', 'pif', 'scr', 'sct', 'shb', 'sys', 'vb', 'vbe', 'vbs', 'vxd', 'wsc', 'wsf', 'wsh', 'svg',
+            'php',
+            'php3',
+            'php4',
+            'php5',
+            'php6',
+            'php7',
+            'php8',
+            'phar',
+            'js',
+            'exe',
+            'phtml',
+            'java',
+            'perl',
+            'py',
+            'asp',
+            'dll',
+            'go',
+            'ade',
+            'adp',
+            'bat',
+            'chm',
+            'cmd',
+            'com',
+            'cpl',
+            'hta',
+            'ins',
+            'isp',
+            'jse',
+            'lib',
+            'mde',
+            'msc',
+            'msp',
+            'mst',
+            'pif',
+            'scr',
+            'sct',
+            'shb',
+            'sys',
+            'vb',
+            'vbe',
+            'vbs',
+            'vxd',
+            'wsc',
+            'wsf',
+            'wsh',
+            'svg',
+            'html',
+            'htm',
         );
 
         // get file parts, eg: ['image', 'php', 'jpg']
         $parts = explode('.', $name);
 
-        // remove extension
-        array_pop($parts);
+        // check and remove the final extension
+        $finalExt = array_pop($parts);
+
+        // svg, html, and htm are blocked by default but have legitimate CMS uses;
+        // allow them as the final extension only if the profile has explicitly permitted them
+        $profileBlockedButAllowable = ['svg', 'html', 'htm'];
+        $profileAllowed = in_array($finalExt, $profileBlockedButAllowable, true) && !empty($allowedExtensions) && in_array($finalExt, $allowedExtensions, true);
+
+        if ((!$profileAllowed && in_array($finalExt, $executable)) || preg_match('/^php\d+$/i', $finalExt)) {
+            return false;
+        }
 
         // remove name
         array_shift($parts);
@@ -800,14 +1366,21 @@ abstract class WFUtility
         // trim each $parts
         $parts = array_map('trim', $parts);
 
-        // no extensions in file name
+        // no intermediate extensions in file name
         if (empty($parts)) {
             return true;
         }
 
-        // check for extension in file name, eg: image.php.jpg
+        // check for executable extension embedded in file name, eg: image.php.jpg
         foreach ($executable as $extension) {
             if (in_array($extension, $parts)) {
+                return false;
+            }
+        }
+
+        // catch any phpN variant not in the explicit list (php9, php10, etc.)
+        foreach ($parts as $part) {
+            if (preg_match('/^php\d+$/i', $part)) {
                 return false;
             }
         }
@@ -818,7 +1391,7 @@ abstract class WFUtility
     /**
      * Method to determine if an array is an associative array.
      *
-     * @param    array        An array to test
+     * @param array $array An array to test
      *
      * @return bool True if the array is an associative array
      *
@@ -840,7 +1413,13 @@ abstract class WFUtility
 
         return false;
     }
-
+    
+    /**
+     * Method to determine if a value is a valid JSON string.
+     *
+     * @param mixed $value The value to check
+     * @return boolean True if the value is a valid JSON string, false otherwise
+     */
     public static function isJson($value)
     {
         // value must be a string

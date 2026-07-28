@@ -3,11 +3,13 @@
  * @package     JCE
  * @subpackage  Editor
  *
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
+
+use Joomla\CMS\Uri\Uri;
 
 class WFTemplateManagerPluginConfig
 {
@@ -23,7 +25,25 @@ class WFTemplateManagerPluginConfig
         $config['cdate_format'] = $wf->getParam('templatemanager.cdate_format', '%m/%d/%Y : %H:%M:%S', '%m/%d/%Y : %H:%M:%S');
         $config['mdate_format'] = $wf->getParam('templatemanager.mdate_format', '%m/%d/%Y : %H:%M:%S', '%m/%d/%Y : %H:%M:%S');
 
-        $config['content_url'] = $wf->getParam('templatemanager.content_url', '');
+        $contentUrl = $wf->getParam('templatemanager.content_url', '');
+
+        // check the url is valid and the file exists
+        if ($contentUrl) {
+            $contentUrl = trim($contentUrl);
+
+            if (strpos($contentUrl, '://') === false && strpos($contentUrl, 'index.php') === false) {
+                // remove leading and trailing slashes
+                $contentUrl = trim($contentUrl, '/');
+                
+                if (!file_exists(JPATH_ROOT . '/' . $contentUrl)) {
+                    $contentUrl = '';
+                }
+            }
+
+            if ($contentUrl) {
+                $config['content_url'] = $contentUrl;
+            }
+        }
 
         require_once __DIR__ . '/templatemanager.php';
 
@@ -35,9 +55,9 @@ class WFTemplateManagerPluginConfig
 
         $config['dialog'] = (bool) $wf->getParam('templatemanager.template_dialog', 1);
 
-        if ($plugin->getParam('inline_upload', 1)) {
+        if ($plugin->getParam('inline_upload', 0)) {
             $config['upload'] = array(
-                'max_size' => $plugin->getParam('max_size', 1024),
+                'max_size' => $plugin->getParam('max_size', 10240),
                 'filetypes' => $plugin->getFileTypes(),
                 'inline' => true,
             );

@@ -265,6 +265,19 @@ class RsformViewDirectory extends HtmlView
 		return Route::_('index.php?option=com_rsform&view=directory&layout=view&id=' . $id . '&format=pdf');
 	}
 
+	protected function getDirectoryFieldProperties($fieldName)
+	{
+		foreach ($this->fields as $field)
+		{
+			if ($field->FieldName == $fieldName)
+			{
+				return $field;
+			}
+		}
+
+		return false;
+	}
+
 	protected function getFieldComponentId($fieldName, $formId)
 	{
 		$headers = RSFormProHelper::getDirectoryStaticHeaders();

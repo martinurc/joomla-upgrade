@@ -12,19 +12,12 @@ namespace HelixUltimate\Framework\HttpResponse;
 use HelixUltimate\Framework\Platform\Builders\MegaMenuBuilder;
 use HelixUltimate\Framework\Platform\Helper;
 use HelixUltimate\Framework\System\JoomlaBridge;
-use Joomla\CMS\Application\ApplicationHelper;
-use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\Path;
-use Joomla\CMS\Filter\InputFilter;
-use Joomla\CMS\Form\Form;
-use Joomla\CMS\Language\Associations;
-use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Menu\SiteMenu;
 use Joomla\CMS\Table\Table;
-use Joomla\CMS\Uri\Uri;
+use Joomla\Database\DatabaseInterface;
 
 defined('_JEXEC') or die();
 
@@ -79,7 +72,7 @@ class Response
 				$db->updateObject('#__menu', $data, 'id');
 
 				$itemModel->rebuild();
-			} catch (Exception $e) {
+			} catch (\Exception $e) {
 				echo $e->getMessage();
 			}
 		}
@@ -152,7 +145,7 @@ class Response
 		$items = [];
 
 		try {
-			$db 	= Factory::getDbo();
+			$db 	= Factory::getContainer()->get(DatabaseInterface::class);
 			$query 	= $db->getQuery(true);
 
 			$query->select('id, title, menutype, alias, parent_id, level, lft, rgt, published')
@@ -164,7 +157,7 @@ class Response
 			$db->setQuery($query);
 
 			$items = $db->loadObjectList();
-		} catch (Exception $e) {
+		} catch (\Exception $e) {
 			echo $e->getMessage();
 		}
 
@@ -196,12 +189,14 @@ class Response
 			$count = count($items) ?? 0;
 
 			foreach ($items as $key => $item) {
-				$html[] = '<li class="hu-menu-tree-branch hu-branch-level-' . $item->level . ' ' . ((int) $item->published === 0 ? 'hu-megamenu-branch-muted' : '') . '" data-alias="' .  $item->alias . '" data-itemid="' . $item->id . '" data-parent="' . $item->parent_id . '" style="z-index: ' . (max(1, $count - $key)) . '" >';
+				$safeTitle = htmlspecialchars($item->title, ENT_QUOTES, 'UTF-8');
+				$safeAlias = htmlspecialchars($item->alias, ENT_QUOTES, 'UTF-8');
+				$html[] = '<li class="hu-menu-tree-branch hu-branch-level-' . $item->level . ' ' . ((int) $item->published === 0 ? 'hu-megamenu-branch-muted' : '') . '" data-alias="' .  $safeAlias . '" data-itemid="' . $item->id . '" data-parent="' . $item->parent_id . '" style="z-index: ' . (max(1, $count - $key)) . '" >';
 				$html[] = '	<div class="hu-menu-tree-contents">';
 				$html[] = '		<span class="hu-menu-branch-path"></span>';
 				$html[] = '		<div class="hu-branch-drag-handler">';
 				$html[] = '			<span class="hu-branch-icon"><svg width="6" height="10" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx=".904" cy=".904" r=".904" /><circle cx=".904" cy="4.7" r=".904" /><circle cx=".904" cy="8.496" r=".904" /><circle cx="4.7" cy=".904" r=".904" /><circle cx="4.7" cy="4.7" r=".904" /><circle cx="4.7" cy="8.496" r=".904" /></svg></span>';
-				$html[] = '			<span class="hu-branch-title">' . $item->title . '</span>';
+				$html[] = '			<span class="hu-branch-title">' . $safeTitle . '</span>';
 
 				if ((int) $item->published === 0) {
 					$html[] = '<span class="hu-branch-unpublished far fa-eye-slash" title="' . Text::_('Unpublished') . '"></span>';
@@ -257,7 +252,7 @@ class Response
 	public static function saveMegaMenuSettings()
 	{
 		$input = Factory::getApplication()->input;
-		$settings = $input->post->get('settings', [], 'ARRAY');
+		$settings = Helper::sanitizeMegaMenuSettings($input->post->get('settings', [], 'ARRAY'));
 		$itemId = $input->post->get('id', 0, 'INT');
 
 		$menu = new SiteMenu;
@@ -283,7 +278,7 @@ class Response
 			$db->updateObject('#__menu', $data, 'id', true);
 
 			return true;
-		} catch (Exception $e) {
+		} catch (\Exception $e) {
 			return $e->getMessage();
 		}
 	}

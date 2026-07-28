@@ -1,0 +1,1 @@
+DELETE FROM #__action_logs_extensions WHERE extension = 'com_rsform';

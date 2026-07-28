@@ -165,13 +165,13 @@ class SppagebuilderAddonImage_layouts extends SppagebuilderAddons
 		$btn_class .= (isset($settings->button_size) && $settings->button_size) ? ' sppb-btn-' . $settings->button_size : '';
 		$btn_class .= (isset($settings->btn_size) && $settings->btn_size) ? ' sppb-btn-' . $settings->btn_size : '';
 		$btn_class .= (isset($settings->button_shape) && $settings->button_shape) ? ' sppb-btn-' . $settings->button_shape : ' sppb-btn-rounded';
-		$btn_class .= (isset($settings->btn_shape) && $settings->btn_shape) ? ' sppb-btn-' . $settings->btn_shape : ' sppb-btn-rounded';
 		$btn_class .= (isset($settings->button_appearance) && $settings->button_appearance) ? ' sppb-btn-' . $settings->button_appearance : '';
 		$btn_class .= (isset($settings->btn_appearance) && $settings->btn_appearance) ? ' sppb-btn-' . $settings->btn_appearance : '';
 		$btn_class .= (isset($settings->button_block) && $settings->button_block) ? ' ' . $settings->button_block : '';
 		$attribs = ' id="btn-' . $this->addon->id . '"';
 		$btn_icon = (isset($settings->button_icon) && $settings->button_icon) ? $settings->button_icon : '';
 		$btn_icon_position = (isset($settings->button_icon_position) && $settings->button_icon_position) ? $settings->button_icon_position : 'left';
+		$btn_aria_label = (isset($settings->button_aria_label) && $settings->button_aria_label) ? $settings->button_aria_label : '';
 
 		list($buttonLink, $buttonTarget) = AddonHelper::parseLink($settings, 'button_url', ['url' => 'btn_url', 'new_tab' => 'btn_target']);
 
@@ -323,7 +323,8 @@ class SppagebuilderAddonImage_layouts extends SppagebuilderAddons
 
 			if ($btn_text)
 			{
-				$output .= '<a href="' . $buttonLink . '" ' . $buttonTarget . ' ' . $attribs . ' class="sppb-btn ' . $btn_class . '">' . $btn_text . '</a>';
+				$aria_label_attr = $btn_aria_label ? ' aria-label="' . $btn_aria_label . '"' : '';
+				$output .= '<a href="' . $buttonLink . '" ' . $buttonTarget . ' ' . $attribs . ' class="sppb-btn ' . $btn_class . '" role="button"' . $aria_label_attr . '>' . $btn_text . '</a>';
 			}
 
 			$output .= '</div>'; //.sppb-addon-image-layout-content
@@ -1090,7 +1091,7 @@ class SppagebuilderAddonImage_layouts extends SppagebuilderAddons
 				}
 
 			#>
-				<a href=\'{{ buttonUrl }}\' id="btn-{{ data.id }}" target="{{buttonTarget}}" rel=\'{{buttonRel}}\' class="sppb-btn {{ classList }}"><# if( (data.btn_icon_position == "left" || data.button_icon_position == "left" ) && !_.isEmpty(data.btn_icon || data.button_icon)) { #><i class="{{ finial_icon_name }}"></i> <# } #>{{ buttonText }}<# if( (data.btn_icon_position == "right" || data.button_icon_position == "right") && !_.isEmpty(data.btn_icon || data.button_icon)) { #> <i class="{{ finial_icon_name }}"></i><# } #></a>
+				<a href=\'{{ buttonUrl }}\' id="btn-{{ data.id }}" target="{{buttonTarget}}" rel=\'{{buttonRel}}\' class="sppb-btn {{ classList }}" role="button"<# if(!_.isEmpty(data.button_aria_label)) { #> aria-label="{{data.button_aria_label}}"<# } #>><# if( (data.btn_icon_position == "left" || data.button_icon_position == "left" ) && !_.isEmpty(data.btn_icon || data.button_icon)) { #><i class="{{ finial_icon_name }}"></i> <# } #>{{ buttonText }}<# if( (data.btn_icon_position == "right" || data.button_icon_position == "right") && !_.isEmpty(data.btn_icon || data.button_icon)) { #> <i class="{{ finial_icon_name }}"></i><# } #></a>
 			<# } #>
 			</div>
 

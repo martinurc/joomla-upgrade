@@ -272,6 +272,35 @@ class CSSHelper extends HelperBase
 		return $css_output;
 	}
 
+	public function getTypographyPresetValue($preset)
+	{
+		if (empty($preset) || !is_string($preset) || !preg_match('/^\d+\.\d+$/', $preset)) {
+			return null;
+		}
+
+		$elementNumber = (int) explode('.', $preset)[0];
+		$elementIndex = (int) explode('.', $preset)[1];
+
+		$db = Factory::getDbo();
+		$query = $db->getQuery(true);
+		$query->select('*')
+			->from('#__sppagebuilder_typography');
+		$db->setQuery($query);
+		$result = $db->loadObjectList();
+
+		if (empty($result)) {
+			return null;
+		}
+
+		$result = !empty(json_decode(!empty($result[$elementNumber]->typography) ? $result[$elementNumber]->typography : '[]')) ? json_decode(!empty($result[$elementNumber]->typography) ? $result[$elementNumber]->typography : '[]')[$elementIndex] : null;
+
+		if (empty($result)) {
+			return null;
+		}
+
+		return $result;
+	}
+
 	/**
 	 * Typography style generation by using the settings and fallback array.
 	 *
@@ -312,6 +341,11 @@ class CSSHelper extends HelperBase
 		if (!isset($settings->$prop)) return '';
 
 		$typography = $settings->$prop;
+
+		if (!empty($typography->preset)) {
+			$typography = $this->getTypographyPresetValue($typography->preset) ?? $typography;
+		}
+
 		$objectKeys = ["letter_spacing", "line_height", "size"];
 
 		foreach ($objectKeys as $key)
@@ -678,7 +712,7 @@ class CSSHelper extends HelperBase
 				$prop = $originalProp;
 			}
 
-			$_unit      = \is_array($unit) ? ($unit[$primitiveProp] ?? 'px') : $unit;
+			$_unit      = \is_array($unit) ? ($unit[$primitiveProp] ?? (isset($settings->$prop->unit) ? $settings->$prop->unit : ($unit[$primitiveProp] ?? 'px'))) : $unit;
 			$_important = \is_array($important) ? ($important[$primitiveProp] ?? false) : $important;
 			$_default   = \is_array($default) ? ($default[$primitiveProp] ?? null) : $default;
 
@@ -859,56 +893,112 @@ class CSSHelper extends HelperBase
 	public function generateTransformStyle(string $selector, $settings, $prop): string
 	{
 		$selector = $this->generateSelector($selector);
+		$originalProp = $prop . '_original';
+		$prop = isset($settings->$originalProp) ? $originalProp : $prop;
 		$transform = isset($settings->$prop) ? $settings->$prop : null;
 
 		if (!isset($transform)) {
 			return '';
 		}
 
-		// Define an array to store transform functions
-		$transformFunctions = [];
-		$transformFunctionMap = [
-			'move' => 'translate',
-			'rotate' => 'rotate',
-			'scale' => 'scale',
-			'skew' => 'skew',
-		];
+		$getTransformDeclarations = function ($transformValue) {
+			if (!
+				isset($transformValue)
+				|| (!
+					\is_object($transformValue)
+					&& !\is_array($transformValue)
+				)
+			) {
+				return '';
+			}
 
-		foreach ($transformFunctionMap as $transformFunction => $transformFunctionCssValue) {
-			if (!empty($transform->$transformFunction)) {
-				$unitWithValue = $this->getFormattedValue($transformFunctionCssValue, $transform->$transformFunction);
+			$transformValue = (object) $transformValue;
+			$transformFunctions = [];
+			$transformFunctionMap = [
+				'move' => 'translate',
+				'rotate' => 'rotate',
+				'scale' => 'scale',
+				'skew' => 'skew',
+			];
 
-				if(!empty($unitWithValue)) {
-					$transformFunctions[] = $unitWithValue;
+			foreach ($transformFunctionMap as $transformFunction => $transformFunctionCssValue) {
+				if (!empty($transformValue->$transformFunction)) {
+					$unitWithValue = $this->getFormattedValue($transformFunctionCssValue, $transformValue->$transformFunction);
+
+					if (!empty($unitWithValue)) {
+						$transformFunctions[] = $unitWithValue;
+					}
 				}
 			}
-		}
 
-		$transformOriginValue = '';
-		if(!empty($transform->transform_origin)) {
-			$value = $this->getFormattedValue('transform_origin', $transform->transform_origin);
+			$transformOriginValue = '';
+			if (!empty($transformValue->transform_origin)) {
+				$value = $this->getFormattedValue('transform_origin', $transformValue->transform_origin);
 
-			if(!empty($value)) {
-				$transformOriginValue = 'transform-origin: ' . $value . ';';
-			}
-		}
-
-		$finalCssStyle = '';
-		if (!empty($transformFunctions) || !empty($transformOriginValue)) {
-			$finalCssStyle .= $selector . '{ ';
-				
-			if(!empty($transformFunctions)) {
-				$finalCssStyle .= 'transform: ' .  implode(' ', $transformFunctions) . '; ';
+				if (!empty($value)) {
+					$transformOriginValue = 'transform-origin: ' . $value . ';';
+				}
 			}
 
-			if(!empty($transformOriginValue)) {
-				$finalCssStyle .= $transformOriginValue;
+			$declarations = '';
+			if (!empty($transformFunctions)) {
+				$declarations .= 'transform: ' .  implode(' ', $transformFunctions) . '; ';
 			}
 
-			$finalCssStyle .= ' }';
+			if (!empty($transformOriginValue)) {
+				$declarations .= $transformOriginValue;
+			}
+
+			return trim($declarations);
+		};
+
+		if (self::hasMultiDeviceSettings($transform)) {
+			$defaultDevice = SpPgaeBuilderBase::$defaultDevice;
+			$deviceList = $this->deviceList;
+			$baseTransform = isset($transform->$defaultDevice) ? $transform->$defaultDevice : null;
+			$fallbackTransform = null;
+
+			foreach ($deviceList as $deviceKey) {
+				if (isset($transform->$deviceKey)) {
+					$fallbackTransform = $transform->$deviceKey;
+					break;
+				}
+			}
+
+			if (!isset($baseTransform)) {
+				$baseTransform = $fallbackTransform;
+			}
+
+			$css = '';
+			$baseDeclarations = $getTransformDeclarations($baseTransform);
+			if (!empty($baseDeclarations)) {
+				$css .= $selector . '{ ' . $baseDeclarations . ' }';
+			}
+
+			foreach ($this->getDeviceListExcludeDefault() as $deviceKey) {
+				if (!isset($transform->$deviceKey)) {
+					continue;
+				}
+
+				$deviceDeclarations = $getTransformDeclarations($transform->$deviceKey);
+				if (empty($deviceDeclarations)) {
+					continue;
+				}
+
+				$css .= AddonHelper::mediaQuery($deviceKey);
+				$css .= $selector . '{ ' . $deviceDeclarations . ' }';
+				$css .= '}';
+			}
+
+			return $css;
 		}
 
-		return $finalCssStyle;
+		$finalDeclarations = $getTransformDeclarations($transform);
+		if (empty($finalDeclarations)) {
+			return '';
+		}
+
+		return $selector . '{ ' . $finalDeclarations . ' }';
 	}
 
 	/**
@@ -983,6 +1073,311 @@ class CSSHelper extends HelperBase
 
 		return $parsedValue;
 	}
+
+	/**
+	 * Parse the grid gap value and generate the column-gap and row-gap CSS properties.
+	 *
+	 * @param 	object 	$value	The grid gap value object.
+	 *
+	 * @return 	string 	The generated CSS properties for grid gap.
+	 * @since 	6.5.0
+	 */
+	private function formatGridGapValue($value): string
+	{
+		if (!	is_object($value))
+		{
+			return '';
+		}
+
+		$column = isset($value->column) ? trim((string) $value->column) : '';
+		$row = isset($value->row) ? trim((string) $value->row) : '';
+		$unit = isset($value->unit) ? trim((string) $value->unit) : '';
+
+		$styles = [];
+
+		if ($column !== '')
+		{
+			$styles[] = 'column-gap: ' . $column . $unit . ';';
+		}
+
+		if ($row !== '')
+		{
+			$styles[] = 'row-gap: ' . $row . $unit . ';';
+		}
+
+		return implode("\r\n", $styles);
+	}
+
+	/**
+	 * Parse the grid template value and generate the grid-template-columns or grid-template-rows CSS property.
+	 *
+	 * @param 	object 	$value	The grid template value object.
+	 *
+	 * @return 	string 	The generated CSS property for grid template.
+	 * @since 	6.5.0
+	 */
+	private function formatGridTemplateValue($value): string
+	{
+		if (!	is_object($value) || empty($value->entries) || !is_array($value->entries))
+		{
+			return '';
+		}
+
+		$tracks = [];
+
+		foreach ($value->entries as $entry)
+		{
+			if (!is_object($entry))
+			{
+				continue;
+			}
+
+			$trackValue = isset($entry->value) ? trim((string) $entry->value) : '';
+
+			if ($trackValue === '')
+			{
+				continue;
+			}
+
+			$trackUnit = isset($entry->unit) ? trim((string) $entry->unit) : '';
+			$tracks[] = $trackValue . $trackUnit;
+		}
+
+		return implode(' ', $tracks);
+	}
+
+	/**
+	 * Build responsive CSS for grid properties based on the provided device-specific CSS.
+	 *
+	 * @param 	string 	$selector	The CSS selector to which the styles will be applied.
+	 * @param 	array 	$deviceCss An associative array where keys are device identifiers and values are CSS strings.
+	 *
+	 * @return 	string 	The generated responsive CSS string.
+	 * @since 	6.5.0
+	 */
+	private function buildGridResponsiveCss(string $selector, array $deviceCss): string
+	{
+		$generatedSelector = $this->generateSelector($selector);
+		$defaultDevice = SpPgaeBuilderBase::$defaultDevice;
+		$output = '';
+
+		foreach (AddonHelper::$deviceList as $device)
+		{
+			if (empty($deviceCss[$device]))
+			{
+				continue;
+			}
+
+			$deviceSelector = $generatedSelector . '{' . $deviceCss[$device] . '}';
+
+			if ($device === $defaultDevice)
+			{
+				$output .= $deviceSelector;
+			}
+			else
+			{
+				$output .= AddonHelper::mediaQuery($device) . $deviceSelector . '}';
+			}
+		}
+
+		return $output;
+	}
+
+	/**
+	 * Parse the grid gap settings and generate the corresponding CSS properties, including responsive styles if applicable.
+	 *
+	 * @param 	string 	$selector	The CSS selector to which the styles will be applied.
+	 * @param 	object 	$settings	The settings object containing the grid gap values.
+	 * @param 	string 	$prop		The property name in the settings object for grid gap.
+	 *
+	 * @return 	string 	The generated CSS string for grid gap.
+	 * @since 	6.5.0
+	 */
+	public function parseGridGap(string $selector, $settings, string $prop): string
+	{
+		$value = $this->getFallbackValue($settings, $prop);
+
+		if (empty($value))
+		{
+			return '';
+		}
+
+		if (self::hasMultiDeviceSettings($value))
+		{
+			$deviceCss = [];
+
+			foreach (AddonHelper::$deviceList as $device)
+			{
+				if (!isset($value->$device))
+				{
+					continue;
+				}
+
+				$css = $this->formatGridGapValue($value->$device);
+
+				if (!empty($css))
+				{
+					$deviceCss[$device] = $css;
+				}
+			}
+
+			return $this->buildGridResponsiveCss($selector, $deviceCss);
+		}
+
+		$css = $this->formatGridGapValue($value);
+
+		if (empty($css))
+		{
+			return '';
+		}
+
+		return $this->generateSelector($selector) . '{' . $css . '}';
+	}
+
+	/**
+	 * Parse the grid template settings and generate the corresponding CSS property, including responsive styles if applicable.
+	 *
+	 * @param 	string 	$selector	The CSS selector to which the styles will be applied.
+	 * @param 	object 	$settings	The settings object containing the grid template values.
+	 * @param 	string 	$prop		The property name in the settings object for grid template.
+	 * @param 	string 	$cssProperty The CSS property to be generated (e.g., 'grid-template-columns' or 'grid-template-rows').
+	 *
+	 * @return 	string 	The generated CSS string for grid template.
+	 * @since 	6.5.0
+	 */
+	public function parseGridTemplate(string $selector, $settings, string $prop, string $cssProperty): string
+	{
+		$value = $this->getFallbackValue($settings, $prop);
+
+		if (empty($value))
+		{
+			return '';
+		}
+
+		if (self::hasMultiDeviceSettings($value))
+		{
+			$deviceCss = [];
+
+			foreach (AddonHelper::$deviceList as $device)
+			{
+				if (!isset($value->$device))
+				{
+					continue;
+				}
+
+				$tracks = $this->formatGridTemplateValue($value->$device);
+
+				if (!empty($tracks))
+				{
+					$deviceCss[$device] = $cssProperty . ': ' . $tracks . ';';
+				}
+			}
+
+			return $this->buildGridResponsiveCss($selector, $deviceCss);
+		}
+
+		$tracks = $this->formatGridTemplateValue($value);
+
+		if (empty($tracks))
+		{
+			return '';
+		}
+
+		return $this->generateSelector($selector) . '{' . $cssProperty . ': ' . $tracks . ';}';
+	}
+
+	    /**
+     * Parse responsive property and return value for the current device
+     *
+     * @param  mixed $property   The responsive property object or value
+     * @param  string $device    Optional - specific device to target (defaults to current device)
+     * @return mixed             The value for the current or specified device
+     * @since  5.5.8
+     */
+    public static function getResponsiveValue($property, $device = null)
+    {
+        if (empty($property)) {
+            return '';
+        }
+        
+        if ($device === null) {
+            $device = self::$device;
+        }
+        
+        if (!is_object($property)) {
+            return $property;
+        }
+        
+        $deviceKeys = ['xl', 'lg', 'md', 'sm', 'xs'];
+        $hasResponsiveValues = false;
+        
+        foreach ($deviceKeys as $key) {
+            if (isset($property->$key)) {
+                $hasResponsiveValues = true;
+                break;
+            }
+        }
+        
+        if (!$hasResponsiveValues) {
+            if (isset($property->value)) {
+                return isset($property->unit) ? $property->value . $property->unit : $property->value;
+            }
+            
+            return $property;
+        }
+        
+        if (isset($property->$device)) {
+            $deviceValue = $property->$device;
+            
+            if (!is_object($deviceValue)) {
+                return $deviceValue;
+            }
+            
+            if (isset($deviceValue->value)) {
+                return isset($deviceValue->unit) ? $deviceValue->value . $deviceValue->unit : $deviceValue->value;
+            }
+            
+            return $deviceValue;
+        }
+        
+        $deviceIndex = array_search($device, $deviceKeys);
+        
+        for ($i = $deviceIndex - 1; $i >= 0; $i--) {
+            $largerDevice = $deviceKeys[$i];
+            if (isset($property->$largerDevice)) {
+                $value = $property->$largerDevice;
+                
+                if (!is_object($value)) {
+                    return $value;
+                }
+                
+                if (isset($value->value)) {
+                    return isset($value->unit) ? $value->value . $value->unit : $value->value;
+                }
+                
+                return $value;
+            }
+        }
+        
+        for ($i = $deviceIndex + 1; $i < count($deviceKeys); $i++) {
+            $smallerDevice = $deviceKeys[$i];
+            if (isset($property->$smallerDevice)) {
+                $value = $property->$smallerDevice;
+                
+                if (!is_object($value)) {
+                    return $value;
+                }
+                
+                if (isset($value->value)) {
+                    return isset($value->unit) ? $value->value . $value->unit : $value->value;
+                }
+                
+                return $value;
+            }
+        }
+        
+        return '';
+    }
 
 	/**
 	 * Generate missing break points of field width for old layouts.

@@ -9,6 +9,7 @@
 //no direct access
 defined('_JEXEC') or die('Restricted access');
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Layout\FileLayout;
 
@@ -255,8 +256,8 @@ class SppagebuilderAddonFeature extends SppagebuilderAddons
 		// Output
 		$output = '';
 
-		$feature_layout_path = JPATH_ROOT . '/components/com_sppagebuilder/layouts';
-		$content_path = new FileLayout('addon.html.feature', $feature_layout_path);
+		// $feature_layout_path = JPATH_ROOT . '/components/com_sppagebuilder/layouts';
+		$content_path = new FileLayout('addon.html.feature', AddonParser::getLayoutBasePath('addon.html.feature'));
 
 		$imageProps = [
 			'feature_image_margin' => 'margin',
@@ -270,6 +271,61 @@ class SppagebuilderAddonFeature extends SppagebuilderAddons
 		$output .= $content_path->render(array('icon_image_position' => $icon_image_position, 'media' => $media, 'title' => $title, 'feature_title' => $feature_title, 'visually_hidden_text' => $visually_hidden_text, 'second_visually_hidden_text' => $second_visually_hidden_text, 'attribs' => $attribs, 'second_attribs' => $second_attribs, 'btn_class' => $btn_class, 'second_btn_class' => $second_btn_class, 'btn_text' => $btn_text, 'second_btn_text' => $second_btn_text, 'feature_text' => $feature_text, 'is_second_button' => $is_second_button, 'addon_id' => '#sppb-addon-' . $this->addon->id, 'class' => $class, 'settings' => $settings, 'imageProps' => $imageProps, 'imageUnits' => $imageUnits));
 
 		return $output;
+	}
+
+	public function js()
+	{
+		$model = new SppagebuilderModelPopup();
+
+		$settings = $this->addon->settings;
+
+		$doc = Factory::getDocument();
+		$popupScripts = [];
+		$jquery = '';
+		
+		$settings->url = isset($settings->btn_url) ? $settings->btn_url : '';
+		$scriptsArrayBtn1 = $model->generatePopup('#btn-' . $this->addon->id, $settings);
+		$settings->url = isset($settings->second_btn_url) ? $settings->second_btn_url : '';
+		$scriptsArrayBtn2 = $model->generatePopup('#btn-' . $this->addon->id . '-2', $settings);
+
+		if (!is_array($scriptsArrayBtn1)) {
+			$jquery .= ' ' . $scriptsArrayBtn1;
+		} else {
+			$popupScripts = $scriptsArrayBtn1;
+
+			$doc->addScriptDeclaration('
+			window.htmlAddContent = !window?.htmlAddContent ? `' . $popupScripts[0] . '` : window.htmlAddContent += `' . $popupScripts[0] . '`;
+		');
+		}
+
+		if (is_array($scriptsArrayBtn2)) {
+			$popupScripts2 = $scriptsArrayBtn2;
+
+			$doc->addScriptDeclaration('
+			window.htmlAddContent = !window?.htmlAddContent ? `' . $popupScripts2[0] . '` : window.htmlAddContent += `' . $popupScripts2[0] . '`;
+		');
+		} else {
+			$jquery .= ' ' . $scriptsArrayBtn2;
+		}
+
+
+		if (!empty($popupScripts)) {
+			$doc->addScriptDeclaration($popupScripts[1]);
+			$doc->addStyleDeclaration($popupScripts[2]);
+			$doc->addScriptDeclaration($popupScripts[3]);
+			$doc->addScriptDeclaration($popupScripts[4]);
+		}
+
+		if(!empty($popupScripts2)) {
+			$doc->addScriptDeclaration($popupScripts2[1]);
+			$doc->addStyleDeclaration($popupScripts2[2]);
+			$doc->addScriptDeclaration($popupScripts2[3]);
+			$doc->addScriptDeclaration($popupScripts2[4]);
+		}
+		
+		if (!empty($jquery)) return $jquery;
+		
+		return '';
 	}
 
 	/**
@@ -441,11 +497,29 @@ class SppagebuilderAddonFeature extends SppagebuilderAddons
 					$settings,
 					'image_transform',
 				);
+				$imageHoverStyle .= $cssHelper->generateStyle(
+					'.sppb-img-container:hover img',
+					$settings,
+					['image_radius' => 'border-radius'],
+				);
+
+				if(isset($settings->preserve_border_radius) && $settings->preserve_border_radius) {
+					$settings->image_radius = !empty($settings->image_radius) ? $settings->image_radius : 0;
+					$imageHoverStyle .= $cssHelper->generateStyle(
+						'.sppb-img-container',
+						$settings,
+						['image_radius' => 'border-radius'],
+					);
+					$imageHoverStyle .= $cssHelper->generateStyle(
+						'.sppb-img-container img',
+						[],[],[],[],[],[], 'width: 100%;'
+					);
+				}
 			}
 
 			$settings->image_radius = !empty($settings->image_radius) ? $settings->image_radius : 0;
 
-			$imageRadiusStyle = $cssHelper->generateStyle('.sppb-img-container', $settings, ['image_radius' => 'border-radius']);
+			$imageRadiusStyle = $cssHelper->generateStyle('.sppb-img-container img', $settings, ['image_radius' => 'border-radius']);
 
 			$css .= !empty($featureImageStyle) ? $featureImageStyle : '';
 			$css .= !empty($mediaBodyStyle) ? $mediaBodyStyle : '';

@@ -1,8 +1,10 @@
 <?php
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Response\JsonResponse;
+use Joomla\CMS\Session\Session;
 
 /**
  * @package SP Page Builder
@@ -19,6 +21,32 @@ require_once JPATH_ROOT . '/administrator/components/com_sppagebuilder/editor/tr
 class SppagebuilderControllerImage_shapes extends FormController
 {
     use ImageShapesTrait;
+
+    public function __construct($config = [])
+	{
+		parent::__construct($config);
+
+		$user = Factory::getUser();
+		$authorised = $user->authorise('core.admin', 'com_sppagebuilder') || $user->authorise('core.manage', 'com_sppagebuilder');
+
+		if (!$authorised)
+		{
+			$response['message'] = Text::_('COM_SPPAGEBUILDER_EDITOR_ADMIN_ACCESS_REQUIRED');
+			$this->sendResponse($response, 403, true);
+		}
+
+		if (!$user->id)
+		{
+			$response['message'] = Text::_('COM_SPPAGEBUILDER_EDITOR_LOGIN_SESSION_EXPIRED');
+			$this->sendResponse($response, 401, true);
+		}
+
+		if (!Session::checkToken())
+		{
+			$response['message'] = Text::_('COM_SPPAGEBUILDER_EDITOR_SESSION_MISMATCHED');
+			$this->sendResponse($response, 403, true);
+		}
+	}
 
     public function getImageShapesAPI()
     {

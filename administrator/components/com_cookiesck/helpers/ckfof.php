@@ -8,7 +8,12 @@
 
 namespace Cookiesck;
 
-defined('_JEXEC') or die('Restricted access');
+defined('_JEXEC') or die;
+
+use \Joomla\CMS\Factory;
+use \Joomla\CMS\Plugin\PluginHelper;
+use Cookiesck\CKInput;
+use Cookiesck\CKText;
 
 const EXTENSION_NAME = 'cookiesck';
 const ADMIN_PATH = JPATH_ROOT . '/administrator/components/com_' . EXTENSION_NAME;
@@ -25,11 +30,32 @@ class CKFof {
 
 	static protected $environment = 'com_' . EXTENSION_NAME; // for joomla only
 
+	static protected $application;
+
+	static protected $document;
+
 	static protected $input;
 
+	public static function getApplication() {
+		if (empty(self::$application)) {
+			return \Joomla\CMS\Factory::getApplication();
+		}
+	}
+
+	public static function getDocument() {
+		if (empty(self::$document)) {
+			return \Joomla\CMS\Factory::getDocument();
+		}
+	}
+
 	public static function getInput() {
+		$app = CKFof::getApplication();
 		if (empty(self::$input)) {
-			self::$input = CKFactory::getApplication()->input;
+			if (JVERSION >= 6) {
+				self::$input = $app->getInput();
+			} else {
+				self::$input = $app->input;
+			}
 		}
 		return self::$input;
 	}
@@ -61,19 +87,30 @@ class CKFof {
 	}
 
 	public static function getUser($id = 0) {
-		if ($id) {
-			return $user = CKFactory::getUser($id); // TODO : find new J5 way to get a user by ID
+		if (JVERSION >= 6) {
+			if ($id) {
+				// Get the UserFactory 
+				$userFactory = Factory::getContainer()->get(\Joomla\CMS\User\UserFactoryInterface::class);
+				// to get User object for user with id = 99
+				$user = $userFactory->loadUserById($id);
+				return $user;
+			}
+			return Factory::getApplication()->getIdentity();
+
+		} else {
+			if ($id) {
+				return Factory::getUser($id);
+			}
+			return Factory::getUser();
 		}
-		$userClass = new CKUSer();
-		return $userClass->getCurrent();
 	}
 
 	public static function isAdmin() {
-		return CKFactory::getApplication()->isClient('administrator') ;
+		return CKFof::getApplication()->isClient('administrator') ;
 	}
 
 	public static function isSite() {
-		return CKFactory::getApplication()->isClient('site') ;
+		return CKFof::getApplication()->isClient('site') ;
 	}
 
 	// public static function _die($msg = '') {
@@ -82,7 +119,8 @@ class CKFof {
 	// }
 
 	public static function getCurrentUri() {
-		$uri = CKUri::getInstance();
+//		$uri = \Joomla\CMS\Factory::getURI();
+		$uri = \Joomla\CMS\Uri\Uri::getInstance();
 		return $uri->toString();
 	}
 
@@ -93,7 +131,7 @@ class CKFof {
 		if ($msg) {
 			self::enqueueMessage($msg, $type);
 		}
-		CKFactory::getApplication()->redirect($url);
+		CKFof::getApplication()->redirect($url);
 		// If the headers have been sent, then we cannot send an additional location header
 		// so we will output a javascript redirect statement.
 		/*if (headers_sent())
@@ -113,7 +151,7 @@ class CKFof {
 
 	public static function enqueueMessage($msg, $type = 'message') {
 		// add the information message
-		CKFactory::getApplication()->enqueueMessage(CKText::_($msg), $type);
+		CKFof::getApplication()->enqueueMessage(CKText::_($msg), $type);
 	}
 
 	public static function displayMessages() {
@@ -122,7 +160,7 @@ class CKFof {
 	}
 
 	public static function getToken($name = '') {
-		return CKFactory::getSession()->getFormToken() . '=1';
+		return \Joomla\CMS\Factory::getSession()->getFormToken() . '=1';
 	}
 
 	public static function renderToken($name = '') {
@@ -154,12 +192,19 @@ class CKFof {
 	}
 
 	public static function getDbo() {
-		return CKFactory::getDbo();
+		return \Joomla\CMS\Factory::getDbo();
 	}
 
-	public static function dbQuote($name) {
+	// For SQL identifier : table name for example
+	public static function dbQuoteName($name) {
 		$db = self::getDbo();
 		return $db->quoteName($name);
+	}
+
+	// for SQL value
+	public static function dbQuote($name) {
+		$db = self::getDbo();
+		return $db->quote($name);
 	}
 
 	public static function dbLoadObjectList($query) {
@@ -475,7 +520,7 @@ class CKFof {
 	}
 
 	public static function addScript($file) {
-		$doc = CKFactory::getDocument();
+		$doc = \Joomla\CMS\Factory::getDocument();
 		$doc->addScript($file);
 	}
 
@@ -484,7 +529,7 @@ class CKFof {
 	}
 
 	public static function addStyleDeclaration($css) {
-		$doc = CKFactory::getDocument();
+		$doc = \Joomla\CMS\Factory::getDocument();
 		$doc->addStyleDeclaration($css);
 	}
 
@@ -493,7 +538,7 @@ class CKFof {
 	}
 
 	public static function addStylesheet($file) {
-		$doc = CKFactory::getDocument();
+		$doc = \Joomla\CMS\Factory::getDocument();
 		$doc->addStylesheet($file);
 	}
 
@@ -505,12 +550,16 @@ class CKFof {
 		throw new \Exception($msg, $code);
 	}
 
+	public static function raiseWarning($code, $msg) {
+		throw new \Exception($msg, $code);
+	}
+
 	public static function triggerEvent($name, $e = array()) {
 		if (version_compare(JVERSION,'4') < 1) {
 			$dispatcher = \JEventDispatcher::getInstance();
 			return $dispatcher->trigger($name, $e);
 		} else {
-			return CKFactory::getApplication()->triggerEvent($name, $e);
+			return CKFof::getApplication()->triggerEvent($name, $e);
 		}
 	}
 
@@ -524,19 +573,19 @@ class CKFof {
 
 	public static function getModel($modelName, $classPrefix = '') {
 		$classPrefix = $classPrefix ? $classPrefix : ucfirst(EXTENSION_NAME);
-		require_once ADMIN_PATH . '/helpers/ckmodel.php';
+		include_once ADMIN_PATH . '/helpers/ckmodel.php';
 		return CKModel::getInstance($modelName, $classPrefix);
 	}
 
 	public static function getUserState($name, $default = '', $type = 'string') {
-		$session = CKFactory::getSession();
+		$session = \Joomla\CMS\Factory::getSession();
 		$state = $session->get(self::$environment . '.' . $name, $default);
 
 		return $state;
 	}
 
 	public static function setUserState($name, $value) {
-		$session = CKFactory::getSession();
+		$session = \Joomla\CMS\Factory::getSession();
 		$session->set(self::$environment . '.' . $name, $value);
 	}
 
@@ -581,7 +630,7 @@ class CKFof {
 
 	public static function jquery() {
 		if (version_compare(JVERSION, '5') >= 0) {
-			$wa = CKFactory::getDocument()->getWebAssetManager();
+			$wa = \Joomla\CMS\Factory::getDocument()->getWebAssetManager();
 			$wa->useScript('jquery');
 		} else {
 			\JHtml::_('jquery.framework', true);
@@ -660,7 +709,7 @@ class CKController {
 			// If the controller file path exists, include it.
 			if (file_exists($path))
 			{
-				require_once $path;
+				include_once $path;
 			}
 			else
 			{
@@ -698,11 +747,11 @@ class CKController {
 		return $filename;
 	}
 
-	// public function getModel($base = '\Pagebuilderck\CKModel') {
+	// public function getModel($base = '\Cookiesck\CKModel') {
 		// if (empty($this->model)) {
 			// $name = $this->getName();
-			// require_once(BASE_PATH . '/helpers/ckmodel.php');
-			// require_once(BASE_PATH . '/models/' . strtolower($name) . '.php');
+			// include_once(BASE_PATH . '/helpers/ckmodel.php');
+			// include_once(BASE_PATH . '/models/' . strtolower($name) . '.php');
 			// $className = ucfirst($base) . ucfirst($name);
 			// $this->model = new $className;
 		// }
@@ -760,7 +809,7 @@ class CKController {
 				return null;
 			}
 
-			require_once $path;
+			include_once $path;
 
 			if (!class_exists($viewClass))
 			{
@@ -1021,7 +1070,7 @@ class CKModel {
 
 	function __construct() {
 		$this->input = CKFof::getInput();
-		$this->state = new \Joomla\CMS\Object\CMSObject();
+		$this->state = new \Cookiesck\CKObject();
 	}
 
 	static function getInstance($name, $prefix, $config = array()) {
@@ -1049,7 +1098,7 @@ class CKModel {
 			// If the controller file path exists, include it.
 			if (file_exists($path))
 			{
-				require_once $path;
+				include_once $path;
 			}
 			else
 			{
@@ -1105,20 +1154,21 @@ class CKModel {
 
 	protected function populateState()
 	{
-		$config = CKFactory::getConfig();
+		$config = \Joomla\CMS\Factory::getConfig();
 		$state = CKFof::getUserState(self::$prefix . '.' . self::$name, null);
 
 		// first request, or custom user request
 		if ($state === null || $this->input->get('state_request', 0, 'int') === 1) {
+			$this->state = new CKObject();
 			$this->state->set('filter_order', $this->input->get('filter_order', 'a.id'));
 			$this->state->set('filter_order_Dir', $this->input->get('filter_order_Dir', 'asc'));
 			$this->state->set('filter_search', $this->input->get('filter_search', '', 'string'));
 			$this->state->set('limitstart', $this->input->get('limitstart', 0));
 			$this->state->set('limit_total', $this->input->get('limittotal', 0));
 			$this->state->set('limit', $this->input->get('limit', $config->get('list_limit')));
-			$state = CKFof::setUserState(self::$prefix . '.' . self::$name, $this->state);
+			$state = CKFof::setUserState(self::$prefix . '.' . self::$name, $this->state->getData());
 		} else {
-			$this->state = $state;
+			$this->state = new CKObject($state);
 		}
 	}
 
@@ -1241,7 +1291,7 @@ class CKView {
 		}
 
 		$tpl = $this->input->get('layout', $tpl);
-		require_once BASE_PATH . '/views/' . strtolower($this->name) . '/tmpl/' . $tpl . '.php';
+		include_once BASE_PATH . '/views/' . strtolower($this->name) . '/tmpl/' . $tpl . '.php';
 	}
 
 	public function setName($name) {
@@ -1263,7 +1313,7 @@ class CKView {
 		if (empty($this->model)) {
 			$file = BASE_PATH . '/models/' . strtolower($this->name) . '.php';
 			if (! file_exists($file)) return false;
-			require_once($file);
+			include_once($file);
 			$className = '\\' . ucfirst(EXTENSION_NAME) . '\CKModel' . ucfirst($this->name);
 			$this->model = new $className;
 		}
@@ -1271,140 +1321,3 @@ class CKView {
 	}
 }
 
-
-/*************************************
-*** List Classes for the Framework ***
-**************************************/
-
-if (class_exists('Joomla\CMS\Filesystem\File')) {
-	class CKFile extends \Joomla\CMS\Filesystem\File {
-		
-	}
-} else {
-	class CKFile extends \Joomla\CMS\Filesystem\File {
-		
-	}
-}
-
-if (class_exists('Joomla\CMS\Filesystem\Folder')) {
-	class CKFolder extends \Joomla\CMS\Filesystem\Folder {
-		
-	}
-} else {
-	class CKFolder extends \Joomla\CMS\Filesystem\Folder {
-		
-	}
-}
-
-if (class_exists('CKText')) {
-	class CKText extends \JText {
-		
-	}
-} else {
-	class CKText extends \Joomla\CMS\Language\Text {
-		
-	}
-}
-
-if (class_exists('JInput')) {
-	class CKInput extends \JInput {
-		
-	}
-} else {
-	class CKInput {
-		// TODO : JInput shall not be used anymore ?
-	}
-}
-
-if (class_exists('JPath')) {
-	class CKPath extends \JPath {
-		
-	}
-} else {
-	class CKPath extends \Joomla\Filesystem\Path {
-		
-	}
-}
-
-if (class_exists('JUri')) {
-	class CKUri extends \JUri {
-		
-	}
-} else {
-	class CKUri extends \Joomla\CMS\Uri\Uri {
-		
-	}
-}
-
-if (class_exists('JFactory')) {
-	class CKFactory extends \JFactory {
-		
-	}
-} else {
-	class CKFactory extends \Joomla\CMS\Factory {
-		
-	}
-}
-
-if (class_exists('Joomla\CMS\Session\Session')) {
-	class CKSession extends \Joomla\CMS\Session\Session {
-		
-	}
-} else {
-	class CKSession extends \Joomla\CMS\Session\Session {
-		
-	}
-}
-
-if (class_exists('JObject')) {
-	class CKObject extends \JObject {
-		
-	}
-} else {
-	class CKObject extends \Joomla\CMS\Object\CMSObject {
-		
-	}
-}
-
-if (class_exists('JPagination')) {
-	class CKPagination extends \JPagination {
-		
-	}
-} else {
-	class CKPagination extends \Joomla\CMS\Pagination\Pagination {
-		
-	}
-}
-
-if (class_exists('JFormField')) {
-	class CKFormField extends \JFormField {
-		
-	}
-} else {
-	class CKFormField extends \Joomla\CMS\Form\FormField {
-		
-	}
-}
-
-/**
- * Class to get the user data
- * needed since Joomla 5 because Factory->getUser() is deprecated
- */
-
-if (interface_exists('Joomla\CMS\User\CurrentUserInterface')) {
-	class CKUser implements \Joomla\CMS\User\CurrentUserInterface {
-		use \Joomla\CMS\User\CurrentUserTrait;
-
-		function getCurrent($userId = null) {
-			// $user   = $userId ? $this->getUserFactory()->loadUserById($userId) : $this->getCurrentUser();
-			$user   = $this->getCurrentUser();
-			return $user;
-		}
-	}
-} else {
-	class CKUser {
-		static function getCurrent($id = null) {
-			return CKFactory::getUser($id);
-		}
-	}
-}

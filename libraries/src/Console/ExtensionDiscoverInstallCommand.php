@@ -20,7 +20,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 // phpcs:disable PSR1.Files.SideEffects
-\defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
 /**
@@ -121,39 +121,32 @@ class ExtensionDiscoverInstallCommand extends AbstractCommand
      */
     public function processDiscover($eid): int
     {
-        $jInstaller = new Installer();
-        $jInstaller->setDatabase($this->getDatabase());
-        $count = 0;
+        if ($eid !== -1) {
+            $jInstaller = new Installer();
+            $jInstaller->setDatabase($this->getDatabase());
+            return $jInstaller->discover_install($eid) ? 1 : -1;
+        }
 
-        if ($eid === -1) {
-            $db    = $this->getDatabase();
-            $query = $db->getQuery(true)
-                ->select($db->quoteName(['extension_id']))
-                ->from($db->quoteName('#__extensions'))
-                ->where($db->quoteName('state') . ' = -1');
-            $db->setQuery($query);
-            $eidsToDiscover = $db->loadObjectList();
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['extension_id']))
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('state') . ' = -1');
+        $db->setQuery($query);
+        $eidsToDiscover = $db->loadObjectList();
+        if (empty($eidsToDiscover)) {
+            return 0;
+        }
 
-            foreach ($eidsToDiscover as $eidToDiscover) {
-                if (!$jInstaller->discover_install($eidToDiscover->extension_id)) {
-                    return -1;
-                }
-
-                $count++;
-            }
-
-            if (empty($eidsToDiscover)) {
-                return 0;
-            }
-        } else {
-            if ($jInstaller->discover_install($eid)) {
-                return 1;
-            } else {
+        foreach ($eidsToDiscover as $eidToDiscover) {
+            $jInstaller = new Installer();
+            $jInstaller->setDatabase($this->getDatabase());
+            if (!$jInstaller->discover_install($eidToDiscover->extension_id)) {
                 return -1;
             }
         }
 
-        return $count;
+        return \count($eidsToDiscover);
     }
 
     /**
@@ -170,19 +163,29 @@ class ExtensionDiscoverInstallCommand extends AbstractCommand
     {
         if ($count < 0 && $eid >= 0) {
             return 'Unable to install the extension with ID ' . $eid;
-        } elseif ($count < 0 && $eid < 0) {
-            return 'Unable to install discovered extensions.';
-        } elseif ($count === 0) {
-            return 'There are no pending discovered extensions for install. Perhaps you need to run extension:discover first?';
-        } elseif ($count === 1 && $eid > 0) {
-            return 'Extension with ID ' . $eid . ' installed successfully.';
-        } elseif ($count === 1 && $eid < 0) {
-            return $count . ' discovered extension has been installed.';
-        } elseif ($count > 1 && $eid < 0) {
-            return $count . ' discovered extensions have been installed.';
-        } else {
-            return 'The return value is not possible and has to be checked.';
         }
+
+        if ($count < 0 && $eid < 0) {
+            return 'Unable to install discovered extensions.';
+        }
+
+        if ($count === 0) {
+            return 'There are no pending discovered extensions for install. Perhaps you need to run extension:discover first?';
+        }
+
+        if ($count === 1 && $eid > 0) {
+            return 'Extension with ID ' . $eid . ' installed successfully.';
+        }
+
+        if ($count === 1 && $eid < 0) {
+            return $count . ' discovered extension has been installed.';
+        }
+
+        if ($count > 1 && $eid < 0) {
+            return $count . ' discovered extensions have been installed.';
+        }
+
+        return 'The return value is not possible and has to be checked.';
     }
 
     /**
@@ -200,34 +203,17 @@ class ExtensionDiscoverInstallCommand extends AbstractCommand
         $this->configureIO($input, $output);
         $this->ioStyle->title('Install Discovered Extensions');
 
-        if ($eid = $this->cliInput->getOption('eid')) {
-            $result = $this->processDiscover($eid);
+        $eid    = $this->cliInput->getOption('eid') ?: -1;
+        $result = $this->processDiscover($eid);
 
-            if ($result === -1) {
-                $this->ioStyle->error($this->getNote($result, $eid));
+        if ($result === -1) {
+            $this->ioStyle->error($this->getNote($result, $eid));
 
-                return Command::FAILURE;
-            } else {
-                $this->ioStyle->success($this->getNote($result, $eid));
-
-                return Command::SUCCESS;
-            }
-        } else {
-            $result = $this->processDiscover(-1);
-
-            if ($result < 0) {
-                $this->ioStyle->error($this->getNote($result, -1));
-
-                return Command::FAILURE;
-            } elseif ($result === 0) {
-                $this->ioStyle->note($this->getNote($result, -1));
-
-                return Command::SUCCESS;
-            } else {
-                $this->ioStyle->note($this->getNote($result, -1));
-
-                return Command::SUCCESS;
-            }
+            return Command::FAILURE;
         }
+
+        $this->ioStyle->success($this->getNote($result, $eid));
+
+        return Command::SUCCESS;
     }
 }

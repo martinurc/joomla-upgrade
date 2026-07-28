@@ -3,11 +3,11 @@
  * @package     JCE
  * @subpackage  Editor
  *
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 class WFLinkPluginConfig
 {
@@ -18,9 +18,12 @@ class WFLinkPluginConfig
         $plugin = new WFLinkPlugin();
         $attributes = $plugin->getDefaults();
 
+        $custom_classes = (array) $plugin->getParam('custom_classes', []);
+        $custom_classes = array_filter($custom_classes);
+
         $config = array(
             'attributes' => $plugin->getDefaults(),
-            'custom_classes' => $plugin->getParam('link.custom_classes', []),
+            'custom_classes' => $custom_classes,
         );
 
         // expose globally for use by Autolink and Clipboard
@@ -40,6 +43,7 @@ class WFLinkPluginConfig
 
             $config['target_ctrl']  = $plugin->getParam('attributes_target', 1, 1, 'boolean');
             $config['title_ctrl']   = $plugin->getParam('attributes_title', 1, 1, 'boolean');
+            $config['classes_ctrl']   = $plugin->getParam('attributes_classes', 1, 1, 'boolean');
         }
 
         $settings['link'] = $config;

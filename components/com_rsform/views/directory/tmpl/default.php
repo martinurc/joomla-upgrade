@@ -78,8 +78,9 @@ if ($this->directory->AllowCSVFullDownload)
             foreach ($this->dynamicFilters['name'] as $index => $fieldName)
             {
                 $this->componentId = $this->getFieldComponentId($fieldName, $this->formId);
+                $this->directoryProperties = $this->getDirectoryFieldProperties($fieldName);
 
-                if ($this->componentId === null)
+                if ($this->directoryProperties === false)
                 {
                     Factory::getApplication()->enqueueMessage(Text::sprintf('COM_RSFORM_DIRECTORY_DYNAMIC_FIELD_NOT_FOUND', $fieldName, $this->formId), 'warning');
                     continue;
@@ -87,19 +88,8 @@ if ($this->directory->AllowCSVFullDownload)
 
 	            $this->fieldId = OutputFilter::stringURLSafe($fieldName);
 	            $this->fieldName = $this->fieldLabel = $fieldName;
-                if ($this->componentId > 0)
-                {
-	                $this->fieldProperties = RSFormProHelper::getComponentProperties($this->componentId);
-	                if (isset($this->fieldProperties['CAPTION']))
-	                {
-		                $this->fieldLabel = $this->fieldProperties['CAPTION'];
-	                }
-                }
-                else
-                {
-                    $this->fieldLabel = Text::_('RSFP_' . $fieldName);
-                }
-
+                $this->fieldLabel = $this->directoryProperties->FieldCaption;
+                $this->fieldProperties = $this->componentId > 0 ? RSFormProHelper::getComponentProperties($this->componentId) : array();
 	            $this->fieldValues = array(HTMLHelper::_('select.option', '', Text::_('COM_RSFORM_DIRECTORY_FILTER_PLEASE_SELECT')));
                 $this->selectedValue = isset($this->dynamicSearch[$fieldName]) ? $this->dynamicSearch[$fieldName] : '';
 	            $tmpValues = RSFormProHelper::explode(RSFormProHelper::isCode($this->dynamicFilters['value'][$index]));

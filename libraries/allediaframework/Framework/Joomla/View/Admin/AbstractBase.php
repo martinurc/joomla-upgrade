@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2021-2023 Joomlashack.com. All rights reserved
+ * @copyright 2021-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -25,14 +26,18 @@ namespace Alledia\Framework\Joomla\View\Admin;
 
 use Alledia\Framework\Extension;
 use Alledia\Framework\Joomla\AbstractView;
-use Joomla\CMS\Filesystem\File;
 
+// phpcs:disable PSR1.Files.SideEffects
 defined('_JEXEC') or die();
+
+// phpcs:enable PSR1.Files.SideEffects
+
 
 class AbstractBase extends AbstractView
 {
     /**
      * @inheritDoc
+     * @throws \Throwable
      */
     protected function displayFooter(?Extension $extension = null)
     {
@@ -45,6 +50,7 @@ class AbstractBase extends AbstractView
      * @param ?Extension $extension
      *
      * @return string
+     * @throws \Throwable
      */
     protected function displayAdminFooter(?Extension $extension = null): string
     {
@@ -57,11 +63,11 @@ class AbstractBase extends AbstractView
                 // Use alternative if no custom footer field
                 $layoutPath = $extension->getExtensionPath() . '/views/footer/tmpl/default.php';
 
-                if (!File::exists($layoutPath)) {
+                if (is_file($layoutPath) == false) {
                     $layoutPath = $extension->getExtensionPath() . '/alledia_views/footer/tmpl/default.php';
                 }
 
-                if (File::exists($layoutPath)) {
+                if (is_file($layoutPath)) {
                     ob_start();
                     include $layoutPath;
                     $output = ob_get_contents();

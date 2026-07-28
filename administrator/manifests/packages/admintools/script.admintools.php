@@ -1,120 +1,94 @@
 <?php
 /**
  * @package   admintools
- * @copyright Copyright (c)2010-2023 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright (c)2010-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
-// Protect from unauthorized access
-use Joomla\CMS\Application\ApplicationHelper;
-use Joomla\CMS\Cache\Cache;
+/** @noinspection PhpUnused */
+
+defined('_JEXEC') || die;
+
+use Akeeba\Component\AdminTools\Administrator\Helper\TemplateEmails;
+use Akeeba\Component\AdminTools\Administrator\Model\UpgradeModel;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\Folder;
-use Joomla\CMS\Installer\Adapter\ComponentAdapter;
 use Joomla\CMS\Installer\Adapter\PackageAdapter;
-use Joomla\CMS\Installer\Installer;
-use Joomla\CMS\Installer\InstallerHelper as JInstallerHelper;
-use Joomla\CMS\Language\Text;
+use Joomla\CMS\Installer\InstallerAdapter;
+use Joomla\CMS\Installer\InstallerScript;
 use Joomla\CMS\Log\Log;
+use Joomla\Database\DatabaseDriver;
+use Joomla\Database\DatabaseInterface;
 
-defined('_JEXEC') || die();
-
-class Pkg_AdmintoolsInstallerScript
+/**
+ * Admin Tools package extension installation script file.
+ *
+ * @see https://docs.joomla.org/Manifest_files#Script_file
+ * @see \Akeeba\Component\AdminTools\Administrator\Model\UpgradeModel
+ */
+class Pkg_AdmintoolsInstallerScript extends InstallerScript
 {
 	/**
-	 * The name of our package, e.g. pkg_example. Used for dependency tracking.
-	 *
-	 * @var  string
+	 * @var   DatabaseDriver|DatabaseInterface|null
+	 * @since 7.2.0
 	 */
-	protected $packageName = 'pkg_admintools';
+	protected $dbo;
+
+	protected $minimumPhp = '7.4.0';
+
+	protected $minimumJoomla = '4.3.0';
+
+	protected $allowDowngrades = true;
 
 	/**
-	 * The name of our component, e.g. com_example. Used for dependency tracking.
+	 * @param   string          $type
+	 * @param   PackageAdapter  $parent
 	 *
-	 * @var  string
-	 */
-	protected $componentName = 'com_admintools';
-
-	/**
-	 * The minimum PHP version required to install this extension
+	 * @return  bool
 	 *
-	 * @var   string
-	 */
-	protected $minimumPHPVersion = '7.2.0';
-
-	/**
-	 * The minimum Joomla! version required to install this extension
-	 *
-	 * @var   string
-	 */
-	protected $minimumJoomlaVersion = '3.9.0';
-
-	/**
-	 * The maximum Joomla! version this extension can be installed on
-	 *
-	 * @var   string
-	 */
-	protected $maximumJoomlaVersion = '4.0.999';
-
-	/**
-	 * A list of extensions (modules, plugins) to enable after installation. Each item has four values, in this order:
-	 * type (plugin, module, ...), name (of the extension), client (0=site, 1=admin), group (for plugins).
-	 *
-	 * @var array
-	 */
-	protected $extensionsToEnable = [
-		['plugin', 'admintools', 1, 'system'],
-	];
-
-	/**
-	 * Like above, but enable these extensions on installation OR update. Use this sparringly. It overrides the
-	 * preferences of the user. Ideally, this should only be used for installer plugins.
-	 *
-	 * @var array
-	 */
-	protected $extensionsToAlwaysEnable = [
-		['plugin', 'admintools', 1, 'installer'],
-		['plugin', 'akversioncheck', 1, 'system'],
-	];
-
-	/**
-	 * We remove some plugins' files. If Joomla fails to update them correctly you'd end up with an inaccessible site.
-	 * These will be updated / installed right after the preflight event so you don't ever lose their functionality.
-	 *
-	 * @var string[]
-	 */
-	protected $preRemoveFolders = [
-		// Current plugins
-		'plugins/actionlog/admintools',
-		'plugins/installer/admintools',
-		'plugins/system/admintools/admintools',
-		// Obsolete plugins
-		'plugins/system/atoolsjupdatecheck',
-		'plugins/system/atoolsupdatecheck',
-		'plugins/system/oneclickaction',
-	];
-
-	/**
-	 * =================================================================================================================
-	 * DO NOT EDIT BELOW THIS LINE
-	 * =================================================================================================================
-	 */
-	/**
-	 * Joomla! pre-flight event. This runs before Joomla! installs or updates the package. This is our last chance to
-	 * tell Joomla! if it should abort the installation.
-	 *
-	 * In here we'll try to install FOF. We have to do that before installing the component since it's using an
-	 * installation script extending FOF's InstallScript class. We can't use a <file> tag in the manifest to install
-	 * FOF
-	 * since the FOF installation is expected to fail if a newer version of FOF is already installed on the site.
-	 *
-	 * @param   string                                        $type    Installation type (install, update,
-	 *                                                                 discover_install)
-	 * @param   PackageAdapter  $parent  Parent object
-	 *
-	 * @return  boolean  True to let the installation proceed, false to halt the installation
+	 * @since   7.0.0
 	 */
 	public function preflight($type, $parent)
+	{
+		if (!parent::preflight($type, $parent))
+		{
+			return false;
+		}
+
+		$this->setDboFromAdapter($parent);
+
+		// Do not run on uninstall.
+		if ($type === 'uninstall')
+		{
+			return true;
+		}
+
+		define(
+			'ADMINTOOLS_INSTALLATION_PRO', is_file($parent->getParent()->getPath('source') . '/com_admintools-pro.zip')
+		);
+
+		// Prevent users from installing this on Joomla 3
+		if (version_compare(JVERSION, '3.999.999', 'le'))
+		{
+			$msg = "<p>This version of Admin Tools cannot run on Joomla 3. Please download and install Admin Tools 6 instead. Kindly note that our site's Downloads page clearly indicates which version of our software is compatible with Joomla 3 and which version is compatible with Joomla 4.</p>";
+
+			Log::add($msg, Log::WARNING, 'jerror');
+
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Called after any type of installation / uninstallation action.
+	 *
+	 * @param   string          $type    Which action is happening (install|uninstall|discover_install|update)
+	 * @param   PackageAdapter  $parent  The object responsible for running this script
+	 *
+	 * @return  bool
+	 * @since   7.0.0
+	 */
+	public function postflight($type, $parent)
 	{
 		// Do not run on uninstall.
 		if ($type === 'uninstall')
@@ -122,569 +96,375 @@ class Pkg_AdmintoolsInstallerScript
 			return true;
 		}
 
-		// Check the minimum PHP version
-		if (!version_compare(PHP_VERSION, $this->minimumPHPVersion, 'ge'))
+		// Forcibly create the autoload_psr4.php file afresh.
+		if (class_exists(JNamespacePsr4Map::class))
 		{
-			$msg = "<p>You need PHP $this->minimumPHPVersion or later to install this package</p>";
-			Log::add($msg, Log::WARNING, 'jerror');
+			try
+			{
+				$nsMap = new JNamespacePsr4Map();
 
-			return false;
+				@clearstatcache(JPATH_CACHE . '/autoload_psr4.php');
+
+				if (function_exists('opcache_invalidate'))
+				{
+					@opcache_invalidate(JPATH_CACHE . '/autoload_psr4.php');
+				}
+
+				@clearstatcache(JPATH_CACHE . '/autoload_psr4.php');
+				$nsMap->create();
+
+				if (function_exists('opcache_invalidate'))
+				{
+					@opcache_invalidate(JPATH_CACHE . '/autoload_psr4.php');
+				}
+
+				$nsMap->load();
+			}
+			catch (\Throwable $e)
+			{
+				// In case of failure, just try to delete the old autoload_psr4.php file
+				if (function_exists('opcache_invalidate'))
+				{
+					@opcache_invalidate(JPATH_CACHE . '/autoload_psr4.php');
+				}
+
+				@unlink(JPATH_CACHE . '/autoload_psr4.php');
+				@clearstatcache(JPATH_CACHE . '/autoload_psr4.php');
+			}
 		}
 
-		// Check the minimum Joomla! version
-		if (!version_compare(JVERSION, $this->minimumJoomlaVersion, 'ge'))
-		{
-			$msg = "<p>You need Joomla! $this->minimumJoomlaVersion or later to install this component</p>";
-			Log::add($msg, Log::WARNING, 'jerror');
+		$this->invalidateFiles();
 
-			return false;
+		$this->setDboFromAdapter($parent);
+
+		$model = $this->getUpgradeModel();
+
+		if (!empty($model))
+		{
+			try
+			{
+				if (!$model->postflight($type, $parent))
+				{
+					return false;
+				}
+			}
+			catch (Exception $e)
+			{
+				return false;
+			}
 		}
 
-		// Check the maximum Joomla! version
-		if (!version_compare(JVERSION, $this->maximumJoomlaVersion, 'le'))
-		{
-			$msg = "<p>You need Joomla! $this->maximumJoomlaVersion or earlier to install this component</p>";
-			Log::add($msg, Log::WARNING, 'jerror');
+		$this->updateEmails();
 
-			return false;
+		return true;
+	}
+
+	/**
+	 * Get the UpgradeModel of the installed component
+	 *
+	 * @return  UpgradeModel|null  The upgrade Model. NULL if it cannot be loaded.
+	 * @since   7.0.0
+	 */
+	private function getUpgradeModel(): ?UpgradeModel
+	{
+		// Make sure the latest version of the Model file will be loaded, regardless of the OPcache state.
+		$filePath = JPATH_ADMINISTRATOR . '/components/com_admintools/src/Model/UpgradeModel.php';
+
+		if (function_exists('opcache_invalidate'))
+		{
+			opcache_invalidate($filePath, true);
 		}
 
-		// HHVM made sense in 2013, now PHP 7 is a way better solution than an hybrid PHP interpreter
-		if (defined('HHVM_VERSION'))
+		// Can I please load the model?
+		if (!class_exists('\Akeeba\Component\AdminTools\Administrator\Model\UpgradeModel'))
 		{
-			$msg = "<p>We have detected that you are running HHVM instead of PHP. This software WILL NOT WORK properly on HHVM. Please switch to PHP 7 instead.</p>";
-			Log::add($msg, Log::WARNING, 'jerror');
+			if (!file_exists($filePath) || !is_readable($filePath))
+			{
+				return null;
+			}
 
-			return false;
+			include_once $filePath;
 		}
 
-		/**
-		 * Try to install FOF. We need to do this in preflight to make sure that FOF is available when we install our
-		 * component. The reason being that the component's installation script extends FOF's InstallScript class.
-		 * We can't use a <file> tag in our package manifest because FOF's package is *supposed* to fail to install if
-		 * a newer version is already installed. This would unfortunately cancel the installation of the entire package,
-		 * so we have to get a bit tricky.
-		 */
-		$this->installOrUpdateFOF($parent);
-
-		// Remove plugins' files which load outside of the component. If any is not fully updated your site won't crash.
-		@clearstatcache(true);
-
-		foreach ($this->preRemoveFolders as $folder)
+		if (!class_exists('\Akeeba\Component\AdminTools\Administrator\Model\UpgradeModel'))
 		{
-			$f = JPATH_ROOT . '/' . $folder;
+			return null;
+		}
 
-			if (!@file_exists($f) || !is_dir($f) || is_link($f))
+		try
+		{
+			$upgradeModel = new UpgradeModel();
+		}
+		catch (Throwable $e)
+		{
+			return null;
+		}
+
+		if (method_exists($upgradeModel, 'setDatabase'))
+		{
+			$upgradeModel->setDatabase($this->dbo ?? Factory::getContainer()->get(DatabaseInterface::class));
+		}
+		elseif (method_exists($upgradeModel, 'setDbo'))
+		{
+			$upgradeModel->setDbo($this->dbo ?? Factory::getContainer()->get(DatabaseInterface::class));
+		}
+
+		if (method_exists($upgradeModel, 'init'))
+		{
+			$upgradeModel->init();
+		}
+
+		return $upgradeModel;
+	}
+
+	private function updateEmails(): void
+	{
+		// Make sure the latest version of the Helper file will be loaded, regardless of the OPcache state.
+		$filePath = JPATH_ADMINISTRATOR . '/components/com_admintools/src/Helper/TemplateEmails.php';
+
+		if (function_exists('opcache_invalidate'))
+		{
+			opcache_invalidate($filePath, true);
+		}
+
+		if (!class_exists('\Akeeba\Component\AdminTools\Administrator\Helper\TemplateEmails'))
+		{
+			if (!file_exists($filePath) || !is_readable($filePath))
+			{
+				return;
+			}
+
+			include_once $filePath;
+		}
+
+		if (!class_exists('\Akeeba\Component\AdminTools\Administrator\Helper\TemplateEmails'))
+		{
+			return;
+		}
+
+		try
+		{
+			TemplateEmails::updateAllTemplates();
+		}
+		catch (Exception $e)
+		{
+		}
+	}
+
+	/**
+	 * Set the database object from the installation adapter, if possible
+	 *
+	 * @param   InstallerAdapter|mixed  $adapter  The installation adapter, hopefully.
+	 *
+	 * @return  void
+	 * @since   7.2.0
+	 */
+	private function setDboFromAdapter($adapter): void
+	{
+		$this->dbo = null;
+
+		if (class_exists(InstallerAdapter::class) && ($adapter instanceof InstallerAdapter))
+		{
+			/**
+			 * If this is Joomla 4.2+ the adapter has a protected getDatabase() method which we can access with the
+			 * magic property $adapter->db. On Joomla 4.1 and lower this is not available. So, we have to first figure
+			 * out if we can actually use the magic property...
+			 */
+
+			try
+			{
+				$refObj = new ReflectionObject($adapter);
+
+				if ($refObj->hasMethod('getDatabase'))
+				{
+					$this->dbo = $adapter->db;
+
+					return;
+				}
+			}
+			catch (Throwable $e)
+			{
+				// If something breaks we will fall through
+			}
+		}
+
+		$this->dbo = Factory::getContainer()->get(DatabaseInterface::class);
+	}
+
+	private function invalidateFiles()
+	{
+		$extensionsFromPackage = $this->invF_getExtensionsFromManifest($this->invF_getManifestXML(__CLASS__));
+
+		foreach ($extensionsFromPackage as $element)
+		{
+			$paths = [];
+
+			if (strpos($element, 'plg_') === 0)
+			{
+				[$dummy, $folder, $plugin] = explode('_', $element);
+
+				$paths = [
+					sprintf('%s/%s/%s/services', JPATH_PLUGINS, $folder, $plugin),
+					sprintf('%s/%s/%s/src', JPATH_PLUGINS, $folder, $plugin),
+				];
+			}
+			elseif (strpos($element, 'com_') === 0)
+			{
+				$paths = [
+					sprintf('%s/components/%s/services', JPATH_ADMINISTRATOR, $element),
+					sprintf('%s/components/%s/src', JPATH_ADMINISTRATOR, $element),
+					sprintf('%s/components/%s/src', JPATH_SITE, $element),
+					sprintf('%s/components/%s/src', JPATH_API, $element),
+				];
+			}
+			elseif (strpos($element, 'mod_') === 0)
+			{
+				$paths = [
+					sprintf('%s/modules/%s/services', JPATH_ADMINISTRATOR, $element),
+					sprintf('%s/modules/%s/src', JPATH_ADMINISTRATOR, $element),
+					sprintf('%s/modules/%s/services', JPATH_SITE, $element),
+					sprintf('%s/modules/%s/src', JPATH_SITE, $element),
+				];
+			}
+			else
 			{
 				continue;
 			}
 
-			Folder::delete($f);
-		}
-
-		return true;
-	}
-
-	/**
-	 * Runs after install, update or discover_update. In other words, it executes after Joomla! has finished installing
-	 * or updating your component. This is the last chance you've got to perform any additional installations, clean-up,
-	 * database updates and similar housekeeping functions.
-	 *
-	 * @param   string                                          $type    install, update or discover_update
-	 * @param   ComponentAdapter  $parent  Parent object
-	 */
-	public function postflight($type, $parent)
-	{
-		// Do not run on uninstall.
-		if ($type === 'uninstall')
-		{
-			return;
-		}
-
-		// Always enable these extensions
-		if (isset($this->extensionsToAlwaysEnable) && !empty($this->extensionsToAlwaysEnable))
-		{
-			$this->enableExtensions($this->extensionsToAlwaysEnable);
-		}
-
-		/**
-		 * Try to install FEF. We only need to do this in postflight. A failure, while detrimental to the display of the
-		 * extension, is non-fatal to the installation and can be rectified by manual installation of the FEF package.
-		 * We can't use a <file> tag in our package manifest because FEF's package is *supposed* to fail to install if
-		 * a newer version is already installed. This would unfortunately cancel the installation of the entire package,
-		 * so we have to get a bit tricky.
-		 */
-		$this->installOrUpdateFEF($parent);
-
-		/**
-		 * Clean the cache after installing the package.
-		 *
-		 * See bug report https://github.com/joomla/joomla-cms/issues/16147
-		 */
-		$conf         = Factory::getConfig();
-		$clearGroups  = ['_system', 'com_modules', 'mod_menu', 'com_plugins', 'com_modules'];
-		$cacheClients = [0, 1];
-
-		foreach ($clearGroups as $group)
-		{
-			foreach ($cacheClients as $client_id)
+			foreach ($paths as $path)
 			{
-				try
-				{
-					$options = [
-						'defaultgroup' => $group,
-						'cachebase'    => ($client_id) ? JPATH_ADMINISTRATOR . '/cache' : $conf->get('cache_path', JPATH_SITE . '/cache'),
-					];
-
-					/** @var Cache $cache */
-					$cache = Cache::getInstance('callback', $options);
-					$cache->clean();
-				}
-				catch (Exception $exception)
-				{
-					$options['result'] = false;
-				}
-
-				// Trigger the onContentCleanCache event.
-				try
-				{
-					Factory::getApplication()->triggerEvent('onContentCleanCache', $options);
-				}
-				catch (Exception $e)
-				{
-					// Suck it up
-				}
+				$this->invF_recursiveClearCache($path);
 			}
 		}
+
+		$this->invF_clearFileInOPCache(JPATH_CACHE . '/autoload_psr4.php');
 	}
 
-	/**
-	 * Runs on installation (but not on upgrade). This happens in install and discover_install installation routes.
-	 *
-	 * @param   PackageAdapter  $parent  Parent object
-	 *
-	 * @return  bool
-	 */
-	public function install($parent)
+	private function invF_getManifestXML($class): ?SimpleXMLElement
 	{
-		// Enable the extensions we need to install
-		$this->enableExtensions();
+		// Get the package element name
+		$myPackage = strtolower(str_replace('InstallerScript', '', $class));
 
-		return true;
+		// Get the package's manifest file
+		$filePath = JPATH_MANIFESTS . '/packages/' . $myPackage . '.xml';
+
+		if (!@file_exists($filePath) || !@is_readable($filePath))
+		{
+			return null;
+		}
+
+		$xmlContent = @file_get_contents($filePath);
+
+		if (empty($xmlContent))
+		{
+			return null;
+		}
+
+		return new SimpleXMLElement($xmlContent);
 	}
 
-	/**
-	 * Runs on uninstallation
-	 *
-	 * @param   PackageAdapter  $parent  Parent object
-	 *
-	 * @return  bool
-	 */
-	public function uninstall($parent)
+	private function invF_xmlNodeToExtensionName(SimpleXMLElement $fileField): ?string
 	{
-		// Preload FOF classes required for the InstallScript. This is required since we'll be trying to uninstall FOF
-		// before uninstalling the component itself. The component has an uninstallation script which uses FOF, so...
-		@include_once(JPATH_LIBRARIES . '/fof40/include.php');
-		class_exists('FOF40\\Utils\\InstallScript\\BaseInstaller', true);
-		class_exists('FOF40\\Utils\\InstallScript\\Component', true);
-		class_exists('FOF40\\Utils\\InstallScript\\Module', true);
-		class_exists('FOF40\\Utils\\InstallScript\\Plugin', true);
-		class_exists('FOF40\\Utils\\InstallScript', true);
-		class_exists('FOF40\\Database\\Installer', true);
-
-		/**
-		 * uninstall() is called before the component is uninstalled. Therefore there is a dependency to FOF 3 which
-		 * prevents FOF 3 from being removed at this point. Therefore we have to remove the dependency before removing
-		 * the component and hope nothing goes wrong.
-		 */
-		$this->removeDependency('fof40', $this->componentName);
-
-		/**
-		 * uninstall() is called before the component is uninstalled. Therefore there is a dependency to FEF which
-		 * prevents FEF from being removed at this point. Therefore we have to remove the dependency before removing
-		 * the component and hope nothing goes wrong.
-		 */
-		$this->removeDependency('file_fef', $this->componentName);
-
-		// The try to uninstall FEF. The uninstallation might fail if there are other extensions depending
-		// on it. That would cause the entire package uninstallation to fail, hence the need for special handling.
-		$this->uninstallFEF($parent);
-
-		// Then try to uninstall the FOF library. The uninstallation might fail if there are other extensions depending
-		// on it. That would cause the entire package uninstallation to fail, hence the need for special handling.
-		$this->uninstallFOF($parent);
-
-		return true;
-	}
-
-	/**
-	 * Tries to install or update FOF. The FOF library package installation can fail if there's a newer version
-	 * installed. In this case we raise no error. If, however, the FOF library package installation failed AND we can
-	 * not load FOF then we raise an error: this means that FOF installation really failed (e.g. unwritable folder) and
-	 * we can't install this package.
-	 *
-	 * @param   PackageAdapter  $parent
-	 */
-	private function installOrUpdateFOF($parent)
-	{
-		// Get the path to the FOF package
-		$sourcePath    = $parent->getParent()->getPath('source');
-		$sourcePackage = $sourcePath . '/lib_fof40.zip';
-
-		// Extract and install the package
-		$package      = JInstallerHelper::unpack($sourcePackage);
-		$tmpInstaller = new Installer;
-		$error        = null;
-
-		try
-		{
-			$installResult = $tmpInstaller->install($package['dir']);
-		}
-		catch (Exception $e)
-		{
-			$installResult = false;
-			$error         = $e->getMessage();
-		}
-
-		// Try to include FOF. If that fails then the FOF package isn't installed because its installation failed, not
-		// because we had a newer version already installed. As a result we have to abort the entire package's
-		// installation.
-		if (!defined('FOF40_INCLUDED') && !@include_once(JPATH_LIBRARIES . '/fof40/include.php'))
-		{
-			if (empty($error))
-			{
-				$error = Text::sprintf(
-					'JLIB_INSTALLER_ABORT_PACK_INSTALL_ERROR_EXTENSION',
-					Text::_('JLIB_INSTALLER_' . strtoupper($parent->get('route'))),
-					basename($sourcePackage)
-				);
-			}
-
-			throw new RuntimeException($error);
-		}
-	}
-
-	/**
-	 * Try to uninstall the FOF library. We don't go through the Joomla! package uninstallation since we can expect the
-	 * uninstallation of the FOF library to fail if other software depends on it.
-	 *
-	 * @param   PackageAdapter  $parent
-	 */
-	private function uninstallFOF($parent)
-	{
-		// Check dependencies on FOF
-		$dependencyCount = count($this->getDependencies('fof40'));
-
-		if ($dependencyCount)
-		{
-			$msg = "<p>You have $dependencyCount extension(s) depending on this version of FOF. The package cannot be uninstalled unless these extensions are uninstalled first.</p>";
-
-			Log::add($msg, Log::WARNING, 'jerror');
-
-			return;
-		}
-
-		$tmpInstaller = new Installer;
-
-		$db = $parent->getParent()->getDbo();
-
-		$query = $db->getQuery(true)
-			->select('extension_id')
-			->from('#__extensions')
-			->where('type = ' . $db->quote('library'))
-			->where('element = ' . $db->quote('lib_fof40'));
-
-		$db->setQuery($query);
-		$id = $db->loadResult();
-
-		if (!$id)
-		{
-			return;
-		}
-
-		try
-		{
-			$tmpInstaller->uninstall('library', $id);
-		}
-		catch (Exception $e)
-		{
-			// We can expect the uninstallation to fail if there are other extensions depending on the FOF library.
-		}
-	}
-
-	/**
-	 * Tries to install or update FEF. The FEF files package installation can fail if there's a newer version
-	 * installed.
-	 *
-	 * @param   PackageAdapter  $parent
-	 */
-	private function installOrUpdateFEF($parent)
-	{
-		// Get the path to the FOF package
-		$sourcePath    = $parent->getParent()->getPath('source');
-		$sourcePackage = $sourcePath . '/file_fef.zip';
-
-		// Extract and install the package
-		$package      = JInstallerHelper::unpack($sourcePackage);
-		$tmpInstaller = new Installer;
-		$error        = null;
-
-		try
-		{
-			$installResult = $tmpInstaller->install($package['dir']);
-		}
-		catch (Exception $e)
-		{
-			$installResult = false;
-			$error         = $e->getMessage();
-		}
-	}
-
-	/**
-	 * Try to uninstall the FEF package. We don't go through the Joomla! package uninstallation since we can expect the
-	 * uninstallation of the FEF library to fail if other software depends on it.
-	 *
-	 * @param   PackageAdapter  $parent
-	 */
-	private function uninstallFEF($parent)
-	{
-		// Check dependencies on FOF
-		$dependencyCount = count($this->getDependencies('file_fef'));
-
-		if ($dependencyCount)
-		{
-			$msg = "<p>You have $dependencyCount extension(s) depending on this version of Akeeba FEF. The package cannot be uninstalled unless these extensions are uninstalled first.</p>";
-
-			Log::add($msg, Log::WARNING, 'jerror');
-
-			return;
-		}
-
-		$tmpInstaller = new Installer;
-
-		$db = $parent->getParent()->getDbo();
-
-		$query = $db->getQuery(true)
-			->select('extension_id')
-			->from('#__extensions')
-			->where('type = ' . $db->quote('file'))
-			->where('element = ' . $db->quote('file_fef'));
-
-		$db->setQuery($query);
-		$id = $db->loadResult();
-
-		if (!$id)
-		{
-			return;
-		}
-
-		try
-		{
-			$tmpInstaller->uninstall('file', $id);
-		}
-		catch (Exception $e)
-		{
-			// We can expect the uninstallation to fail if there are other extensions depending on the FOF library.
-		}
-	}
-
-
-	/**
-	 * Enable modules and plugins after installing them
-	 */
-	private function enableExtensions($extensions = [])
-	{
-		if (empty($extensions))
-		{
-			$extensions = $this->extensionsToEnable;
-		}
-
-		foreach ($extensions as $ext)
-		{
-			$this->enableExtension($ext[0], $ext[1], $ext[2], $ext[3]);
-		}
-	}
-
-	/**
-	 * Enable an extension
-	 *
-	 * @param   string   $type    The extension type.
-	 * @param   string   $name    The name of the extension (the element field).
-	 * @param   integer  $client  The application id (0: Joomla CMS site; 1: Joomla CMS administrator).
-	 * @param   string   $group   The extension group (for plugins).
-	 */
-	private function enableExtension($type, $name, $client = 1, $group = null)
-	{
-		try
-		{
-			$db    = Factory::getDbo();
-			$query = $db->getQuery(true)
-				->update('#__extensions')
-				->set($db->qn('enabled') . ' = ' . $db->q(1))
-				->where('type = ' . $db->quote($type))
-				->where('element = ' . $db->quote($name));
-		}
-		catch (Exception $e)
-		{
-			return;
-		}
-
+		$type = (string) $fileField->attributes()->type;
+		$id   = (string) $fileField->attributes()->id;
 
 		switch ($type)
 		{
-			case 'plugin':
-				// Plugins have a folder but not a client
-				$query->where('folder = ' . $db->quote($group));
+			case 'component':
+			case 'file':
+			case 'library':
+				$extension = $id;
 				break;
 
-			case 'language':
+			case 'plugin':
+				$group     = (string) $fileField->attributes()->group ?? 'system';
+				$extension = 'plg_' . $group . '_' . $id;
+				break;
+
 			case 'module':
-			case 'template':
-				// Languages, modules and templates have a client but not a folder
-				$client = ApplicationHelper::getClientInfo($client, true);
-				$query->where('client_id = ' . (int) $client->id);
+				$client    = (string) $fileField->attributes()->client ?? 'site';
+				$extension = (($client != 'site') ? 'a' : '') . $id;
 				break;
 
 			default:
-			case 'library':
-			case 'package':
-			case 'component':
-				// Components, packages and libraries don't have a folder or client.
-				// Included for completeness.
+				$extension = null;
 				break;
 		}
 
-		try
-		{
-			$db->setQuery($query);
-			$db->execute();
-		}
-		catch (Exception $e)
-		{
-		}
+		return $extension;
 	}
 
-	/**
-	 * Get the dependencies for a package from the #__akeeba_common table
-	 *
-	 * @param   string  $package  The package
-	 *
-	 * @return  array  The dependencies
-	 */
-	private function getDependencies($package)
+	private function invF_getExtensionsFromManifest(?SimpleXMLElement $xml): array
 	{
-		$db = Factory::getDbo();
-
-		$query = $db->getQuery(true)
-			->select($db->qn('value'))
-			->from($db->qn('#__akeeba_common'))
-			->where($db->qn('key') . ' = ' . $db->q($package));
-
-		try
+		if (empty($xml))
 		{
-			$dependencies = $db->setQuery($query)->loadResult();
-			$dependencies = json_decode($dependencies, true);
+			return [];
+		}
 
-			if (empty($dependencies))
+		$extensions = [];
+
+		foreach ($xml->xpath('//files/file') as $fileField)
+		{
+			$extensions[] = $this->invF_xmlNodeToExtensionName($fileField);
+		}
+
+		return array_filter($extensions);
+	}
+
+	private function invF_clearFileInOPCache(string $file): bool
+	{
+		static $hasOpCache = null;
+
+		if (is_null($hasOpCache))
+		{
+			$hasOpCache = ini_get('opcache.enable')
+			              && function_exists('opcache_invalidate')
+			              && (!ini_get('opcache.restrict_api')
+			                  || stripos(
+				                     realpath($_SERVER['SCRIPT_FILENAME']), ini_get('opcache.restrict_api')
+			                     ) === 0);
+		}
+
+		if ($hasOpCache && (strtolower(substr($file, -4)) === '.php'))
+		{
+			$ret = opcache_invalidate($file, true);
+
+			@clearstatcache($file);
+
+			return $ret;
+		}
+
+		return false;
+	}
+
+	private function invF_recursiveClearCache(string $path): void
+	{
+		if (!@is_dir($path))
+		{
+			return;
+		}
+
+		/** @var DirectoryIterator $file */
+		foreach (new DirectoryIterator($path) as $file)
+		{
+			if ($file->isDot() || $file->isLink())
 			{
-				$dependencies = [];
+				continue;
 			}
+
+			if ($file->isDir())
+			{
+				$this->invF_recursiveClearCache($file->getPathname());
+
+				continue;
+			}
+
+			if (!$file->isFile())
+			{
+				continue;
+			}
+
+			$this->invF_clearFileInOPCache($file->getPathname());
 		}
-		catch (Exception $e)
-		{
-			$dependencies = [];
-		}
-
-		return $dependencies;
-	}
-
-	/**
-	 * Sets the dependencies for a package into the #__akeeba_common table
-	 *
-	 * @param   string  $package       The package
-	 * @param   array   $dependencies  The dependencies list
-	 */
-	private function setDependencies($package, array $dependencies)
-	{
-		$db = Factory::getDbo();
-
-		$query = $db->getQuery(true)
-			->delete('#__akeeba_common')
-			->where($db->qn('key') . ' = ' . $db->q($package));
-
-		try
-		{
-			$db->setQuery($query)->execute();
-		}
-		catch (Exception $e)
-		{
-			// Do nothing if the old key wasn't found
-		}
-
-		$object = (object) [
-			'key'   => $package,
-			'value' => json_encode($dependencies),
-		];
-
-		try
-		{
-			$db->insertObject('#__akeeba_common', $object, 'key');
-		}
-		catch (Exception $e)
-		{
-			// Do nothing if the old key wasn't found
-		}
-	}
-
-	/**
-	 * Adds a package dependency to #__akeeba_common
-	 *
-	 * @param   string  $package     The package
-	 * @param   string  $dependency  The dependency to add
-	 */
-	private function addDependency($package, $dependency)
-	{
-		$dependencies = $this->getDependencies($package);
-
-		if (!in_array($dependency, $dependencies))
-		{
-			$dependencies[] = $dependency;
-
-			$this->setDependencies($package, $dependencies);
-		}
-	}
-
-	/**
-	 * Removes a package dependency from #__akeeba_common
-	 *
-	 * @param   string  $package     The package
-	 * @param   string  $dependency  The dependency to remove
-	 */
-	private function removeDependency($package, $dependency)
-	{
-		$dependencies = $this->getDependencies($package);
-
-		if (in_array($dependency, $dependencies))
-		{
-			$index = array_search($dependency, $dependencies);
-			unset($dependencies[$index]);
-
-			$this->setDependencies($package, $dependencies);
-		}
-	}
-
-	/**
-	 * Do I have a dependency for a package in #__akeeba_common
-	 *
-	 * @param   string  $package     The package
-	 * @param   string  $dependency  The dependency to check for
-	 *
-	 * @return bool
-	 */
-	private function hasDependency($package, $dependency)
-	{
-		$dependencies = $this->getDependencies($package);
-
-		return in_array($dependency, $dependencies);
 	}
 }

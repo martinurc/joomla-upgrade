@@ -213,7 +213,11 @@ class SppagebuilderAddonTable_advanced extends SppagebuilderAddons
 				'search_border_color' => false,
 				'search_border' => false
 			],
-			['search_padding' => 'spacing']
+			[],
+			null,
+			[
+				'search_padding' => true,
+			]
 		);
 
 		$searchTextStyle = $cssHelper->generateStyle('.sppb-addon-table-search-wrap i, .sppb-addon-table input[type="text"].sppb-addon-table-search::placeholder, .sppb-addon-table input[type="text"].sppb-addon-table-search:focus', $settings, ['search_text_color' => 'color'], false);
@@ -386,7 +390,7 @@ class SppagebuilderAddonTable_advanced extends SppagebuilderAddons
 			background: {{data.search_bg_color}};
 			color: {{data.search_text_color}};
 			<# if(_.trim(data.search_padding)) { #>
-				padding: {{data.search_padding}};
+				padding: {{data.search_padding}} !important;
 			<# } #>
 			border-color: {{data.search_border_color}};
 			border-width: {{data.search_border}};

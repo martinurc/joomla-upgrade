@@ -34,23 +34,11 @@ SpAddonsConfig::addonConfig([
 					'std' => 'ticker',
 				],
 
-				'resource' => [
-					'type'   => 'select',
-					'title'  => Text::_('COM_SPPAGEBUILDER_ADDON_ARTICLE_RESOURCE'),
-					'desc'   => Text::_('COM_SPPAGEBUILDER_ADDON_ARTICLE_RESOURCE_DESC'),
-					'values' => [
-						'article' => Text::_('COM_SPPAGEBUILDER_ADDON_ARTICLE_RESOURCE_ARTICLE'),
-						'k2'      => Text::_('COM_SPPAGEBUILDER_ADDON_ARTICLE_RESOURCE_K2'),
-					],
-					'std' => 'article',
-				],
-
 				'catid' => [
 					'type'     => 'category',
 					'title'    => Text::_('COM_SPPAGEBUILDER_ADDON_ARTICLES_CATID'),
 					'desc'     => Text::_('COM_SPPAGEBUILDER_ADDON_ARTICLES_CATID_DESC'),
 					'multiple' => true,
-					'depends'  => [['resource', '=', 'article']],
 				],
 
 				'tagids' => [
@@ -59,16 +47,6 @@ SpAddonsConfig::addonConfig([
 					'desc' => Text::_('COM_SPPAGEBUILDER_ADDON_ARTICLES_TAGS_DESC'),
 					'values' => SpPgaeBuilderBase::getArticleTags(),
 					'multiple' => true,
-					'depends' => [['resource', '=', 'article']],
-				],
-
-				'k2catid' => [
-					'type'     => 'select',
-					'title'    => Text::_('COM_SPPAGEBUILDER_ADDON_K2_CATID'),
-					'desc'     => Text::_('COM_SPPAGEBUILDER_ADDON_K2_CATID_DESC'),
-					'values'   => SpPgaeBuilderBase::k2CatList(),
-					'multiple' => true,
-					'depends'  => [['resource', '=', 'k2']],
 				],
 
 				'post_type' => [
@@ -85,7 +63,6 @@ SpAddonsConfig::addonConfig([
 						'quote' => Text::_('COM_SPPAGEBUILDER_ADDON_POST_TYPE_QUOTE'),
 						'status' => Text::_('COM_SPPAGEBUILDER_ADDON_POST_TYPE_STATUS'),
 					],
-					'depends' => [['resource', '=', 'article']],
 				],
 
 				'ordering' => [
@@ -214,7 +191,6 @@ SpAddonsConfig::addonConfig([
 					'std'     => 1,
 					'depends' => [
 						['addon_style', '!=', 'ticker'],
-						['addon_style', '!=', 'carousel'],
 					],
 				],
 

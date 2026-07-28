@@ -36,6 +36,8 @@ class SppagebuilderAddonVideo extends SppagebuilderAddons
 		$video_title 	= "";
 		$no_cookie 		= (isset($settings->no_cookie) && $settings->no_cookie) ? $settings->no_cookie : 0;
 		$show_rel_video = (isset($settings->show_rel_video) && $settings->show_rel_video) ? '&rel=1' : '&rel=0';
+		$start_time 	= (isset($settings->start_time) && $settings->start_time) ? ('&start=' . $settings->start_time) : '';
+		$end_time 		= (isset($settings->end_time) && $settings->end_time) ? ('&end=' . $settings->end_time) : '';
 		$youtube_shorts = (isset($settings->youtube_shorts) && $settings->youtube_shorts) ? $settings->youtube_shorts : 0;
 		$aspect_ratio   = (isset($settings->aspect_ratio) && $settings->aspect_ratio && $youtube_shorts) ? $settings->aspect_ratio : '16by9';
 
@@ -49,6 +51,7 @@ class SppagebuilderAddonVideo extends SppagebuilderAddons
 		$vimeo_mute_video  			= (isset($settings->vimeo_mute_video) && $settings->vimeo_mute_video) ? "muted=1" : "muted=0";
 		$vimeo_show_video_title  	= (isset($settings->vimeo_show_video_title) && $settings->vimeo_show_video_title) ? "title=1" : "title=0";
 		$vimeo_show_author_profile  = (isset($settings->vimeo_show_author_profile) && $settings->vimeo_show_author_profile) ? "portrait=1" : "portrait=0";
+		$preload = (isset($settings->video_preload) && $settings->video_preload) ? 'preload="'. $settings->video_preload .'"' : '';
 
 		if ($mp4_video_src && (strpos($mp4_video_src, "http://") !== false || strpos($mp4_video_src, "https://") !== false))
 		{
@@ -77,6 +80,24 @@ class SppagebuilderAddonVideo extends SppagebuilderAddons
 			}
 		}
 
+		$video_subtitle = (isset($settings->video_subtitle) && $settings->video_subtitle) ? $settings->video_subtitle : '';
+		$video_subtitle_src = isset($video_subtitle->src) ? $video_subtitle->src : $video_subtitle;
+
+		if ($video_subtitle_src && (strpos($video_subtitle_src, "http://") !== false || strpos($video_subtitle_src, "https://") !== false))
+		{
+			$video_subtitle = $video_subtitle_src;
+		}
+		else
+		{
+			if (!empty($video_subtitle))
+			{
+				$video_subtitle = Uri::base(true) . '/' . ltrim($video_subtitle_src, '/');
+			}
+		}
+
+		$video_subtitle_srclang = (isset($settings->video_subtitle_srclang) && $settings->video_subtitle_srclang) ? $settings->video_subtitle_srclang : 'en';
+		$video_subtitle_label = (isset($settings->video_subtitle_label) && $settings->video_subtitle_label) ? $settings->video_subtitle_label : 'English';
+
 		$show_control = (isset($settings->show_control) && $settings->show_control) ? $settings->show_control : 0;
 		$enable_download = (isset($settings->download_video) && $settings->download_video) ? $settings->download_video : 0;
 		$video_loop = (isset($settings->video_loop) && $settings->video_loop) ? $settings->video_loop : 0;
@@ -90,9 +111,11 @@ class SppagebuilderAddonVideo extends SppagebuilderAddons
 		}
 		else
 		{
-			if (!empty($video_poster))
+			if (!empty($video_poster) && $video_poster_src)
 			{
 				$video_poster = Uri::base(true) . '/' . $video_poster_src;
+			} else {
+				$video_poster = '';
 			}
 		}
 
@@ -115,7 +138,7 @@ class SppagebuilderAddonVideo extends SppagebuilderAddons
 				{
 					case 'youtu.be':
 						$id 		 = trim($video['path'], '/');
-						$src 		 = '//www.youtube' . $youtube_no_cookie . '.com/embed/' . $id . '?iv_load_policy=3' . $show_rel_video;
+						$src 		 = '//www.youtube' . $youtube_no_cookie . '.com/embed/' . $id . '?iv_load_policy=3' . $show_rel_video . $start_time . $end_time;
 						$video_title = (isset($settings->video_title) && $settings->video_title) ? $settings->video_title : Text::_("COM_SPPAGEBUILDER_ADDON_VIDEO_TITLE_DEFAULT_TEXT");
 						break;
 
@@ -140,7 +163,7 @@ class SppagebuilderAddonVideo extends SppagebuilderAddons
 							$src 	 = '//www.youtube.com/embed/?listType=playlist&list=' . $playlist_id;
 						} else {
 							$id  		 = ($youtube_shorts) ? str_replace('/shorts/', "", $video['path']) : $query['v'];
-							$src 	 = '//www.youtube' . $youtube_no_cookie . '.com/embed/' . $id . '?iv_load_policy=3' . $show_rel_video;
+							$src 	 = '//www.youtube' . $youtube_no_cookie . '.com/embed/' . $id . '?iv_load_policy=3' . $show_rel_video . $start_time . $end_time;
 						}
 
 						$video_title = (isset($settings->video_title) && $settings->video_title) ? $settings->video_title : Text::_("COM_SPPAGEBUILDER_ADDON_VIDEO_TITLE_DEFAULT_TEXT");
@@ -180,7 +203,7 @@ class SppagebuilderAddonVideo extends SppagebuilderAddons
 			if ($mp4_video || $ogv_video)
 			{
 				$output .= '<div class="sppb-addon-video-local-video-wrap">';
-				$output .= '<video class="sppb-addon-video-local-source' . ($placeholder ? ' sppb-element-lazy' : '') . '"' . (!empty($video_aria_label) ? ' aria-label="' . $video_aria_label . '"' : '') . (!empty($video_aria_described_by) ? ' aria-describedby="' . $video_aria_described_by . '"' : '') . ($video_loop != 0 ? ' loop' : '') . '' . ($autoplay_video != 0 ? ' autoplay' : '') . '' . ($show_control != 0 ? ' controls' : '') . '' . ($video_mute != 0 ? ' muted' : '') . ' ' . ($lazyload ? 'data-poster="' . $video_poster . '"' : ' poster="' . $video_poster . '"') . ($enable_download ? '' : ' controlsList="nodownload" oncontextmenu="return false;"') . ' playsinline>';
+				$output .= '<video ' . $preload . ' class="sppb-addon-video-local-source' . ($placeholder ? ' sppb-element-lazy' : '') . '"' . (!empty($video_aria_label) ? ' aria-label="' . $video_aria_label . '"' : '') . (!empty($video_aria_described_by) ? ' aria-describedby="' . $video_aria_described_by . '"' : '') . ($video_loop != 0 ? ' loop' : '') . '' . ($autoplay_video != 0 ? ' autoplay' : '') . '' . ($show_control != 0 ? ' controls' : '') . '' . ($video_mute != 0 ? ' muted' : '') . ' ' . ($lazyload ? ($video_poster ? 'data-poster="' . $video_poster . '"' : '') : ($video_poster ? ' poster="' . $video_poster . '"' : '')) . ($enable_download ? '' : ' controlsList="nodownload" oncontextmenu="return false;"') . ' playsinline>';
 				if (!empty($mp4_video))
 				{
 					$output .= '<source ' . ($lazyload ? 'data-large="' . $mp4_video . '"' : 'src="' . $mp4_video . '"') . ' type="video/mp4">';
@@ -188,6 +211,10 @@ class SppagebuilderAddonVideo extends SppagebuilderAddons
 				if (!empty($ogv_video))
 				{
 					$output .= '<source ' . ($lazyload ? 'data-large="' . $ogv_video . '"' : 'src="' . $ogv_video . '"') . ' type="video/ogg">';
+				}
+				if (!empty($video_subtitle))
+				{
+					$output .= '<track src="' . htmlspecialchars($video_subtitle, ENT_QUOTES, 'UTF-8') . '" kind="subtitles" srclang="' . htmlspecialchars($video_subtitle_srclang, ENT_QUOTES, 'UTF-8') . '" label="' . htmlspecialchars($video_subtitle_label, ENT_QUOTES, 'UTF-8') . '" default>';
 				}
 				$output .= '</video>';
 				$output .= '</div>';
@@ -206,6 +233,14 @@ class SppagebuilderAddonVideo extends SppagebuilderAddons
 		$cssHelper = new CSSHelper($addon_id);
 
 		$css = $cssHelper->generateTransformStyle('.sppb-addon-video', $settings, 'transform');
+
+		if((isset($settings->mp4_enable) && $settings->mp4_enable) && (isset($settings->enable_vertical_video) && $settings->enable_vertical_video)) {
+			$css .= $addon_id. ' .sppb-addon-video-local-source{
+					width: auto;
+					left: 50%;
+					transform: translateX(-50%);
+				}';
+		}
 
 		return $css;
 	}

@@ -10,7 +10,6 @@
 
 namespace Joomla\Plugin\Multifactorauth\Email\Extension;
 
-use Exception;
 use Joomla\CMS\Encrypt\Totp;
 use Joomla\CMS\Event\MultiFactor\BeforeDisplayMethods;
 use Joomla\CMS\Event\MultiFactor\Captive;
@@ -36,7 +35,6 @@ use Joomla\Component\Users\Administrator\Helper\Mfa as MfaHelper;
 use Joomla\Component\Users\Administrator\Table\MfaTable;
 use Joomla\Event\SubscriberInterface;
 use PHPMailer\PHPMailer\Exception as phpMailerException;
-use RuntimeException;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -175,7 +173,7 @@ class Email extends CMSPlugin implements SubscriberInterface
 
         try {
             $this->sendCode($key, $user);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return;
         }
 
@@ -478,7 +476,7 @@ class Email extends CMSPlugin implements SubscriberInterface
                     'user_id' => $user->id,
                 ]
             );
-        } catch (\Exception $event) {
+        } catch (\Exception) {
             // Fail gracefully
         }
     }
@@ -521,7 +519,7 @@ class Email extends CMSPlugin implements SubscriberInterface
         static $alreadySent = false;
 
         // Make sure we have a user
-        if (!is_object($user) || !($user instanceof User)) {
+        if (!\is_object($user) || !($user instanceof User)) {
             $user = $this->getApplication()->getIdentity() ?: $this->getUserFactory()->loadUserById(0);
         }
 
@@ -558,7 +556,7 @@ class Email extends CMSPlugin implements SubscriberInterface
             try {
                 Log::add(Text::_($exception->getMessage()), Log::WARNING, 'jerror');
             } catch (\RuntimeException $exception) {
-                $this->getApplication()->enqueueMessage(Text::_($exception->errorMessage()), 'warning');
+                $this->getApplication()->enqueueMessage(Text::_($exception->getMessage()), 'warning');
             }
         }
 
@@ -584,7 +582,7 @@ class Email extends CMSPlugin implements SubscriberInterface
             try {
                 Log::add(Text::_($exception->getMessage()), Log::WARNING, 'jerror');
             } catch (\RuntimeException $exception) {
-                $this->getApplication()->enqueueMessage(Text::_($exception->errorMessage()), 'warning');
+                $this->getApplication()->enqueueMessage(Text::_($exception->getMessage()), 'warning');
             }
         }
     }

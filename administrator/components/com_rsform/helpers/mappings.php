@@ -10,6 +10,7 @@ defined('_JEXEC') or die;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Factory;
 
 define('RSFP_MAPPINGS_INSERT', 0);
 define('RSFP_MAPPINGS_UPDATE', 1);
@@ -31,11 +32,11 @@ class RSFormProMappings
 		return $model;
 	}
 
-	public static function getMappingQuery($row)
+	public static function getMappingQuery($row, $config = null)
 	{
 		$model = static::getModel();
 		
-		$config = array(
+		$dbConfig = array(
 			'connection' => $row->connection,
 			'host' 		 => $row->host,
 			'driver'	 => $row->driver,
@@ -44,8 +45,15 @@ class RSFormProMappings
 			'password' 	 => $row->password,
 			'database'   => $row->database
 		);
-		
-		$db 	= $model->getMappingDbo($config);
+
+		if (array_key_exists('remote', $config) && $config['remote'] === false)
+		{
+			$db = Factory::getDbo();
+		}
+		else
+		{
+			$db 	= $model->getMappingDbo($dbConfig);
+		}
 		$query 	= $db->getQuery(true);
 		
 		// Get the fields

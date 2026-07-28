@@ -14,6 +14,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\CMS\MVC\Model\AdminModel;
+use Joomla\CMS\Form\FormHelper;
 
 JLoader::register('SppagebuilderHelperRoute', JPATH_ROOT . '/components/com_sppagebuilder/helpers/route.php');
 
@@ -27,6 +28,8 @@ class SppagebuilderModelPage extends AdminModel
 
     public function getForm($data = array(), $loadData = true)
     {
+        FormHelper::addFieldPath(JPATH_ADMINISTRATOR . '/components/com_sppagebuilder/models/fields');
+        
         $form = $this->loadForm('com_sppagebuilder.page', 'page', array('control' => 'jform', 'load_data' => $loadData));
 
         if (empty($form))

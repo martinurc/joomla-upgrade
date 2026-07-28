@@ -360,7 +360,7 @@ class RsformModelDirectory extends BaseDatabaseModel
 					}
 
 					// If we're searching, add the field to the having() query.
-					if ($search && $field->searchable)
+					if (strlen($search) && $field->searchable)
 					{
 						// Datetime fields don't play well with LIKE
 						if (in_array($field->FieldId, array(RSFORM_STATIC_DATESUBMITTED, RSFORM_STATIC_CONFIRMEDDATE)) && preg_match('#([^0-9\-: ])#', $search))
@@ -470,11 +470,11 @@ class RsformModelDirectory extends BaseDatabaseModel
 				'dynamic'   => array()
 			);
 
-			if ($allFields = RSFormProHelper::getComponents($this->params->get('formId')))
+			if ($this->fields)
 			{
-				foreach ($allFields as $field)
+				foreach ($this->fields as $field)
 				{
-					$fields['dynamic'][] = $field->name;
+					$fields['dynamic'][] = $field->FieldName;
 				}
 			}
 		}
@@ -713,11 +713,6 @@ class RsformModelDirectory extends BaseDatabaseModel
 
 		$this->validation =& $validation;
 
-		if (!empty($validation))
-		{
-			return false;
-		}
-
 		$formFields 	= RSFormProHelper::getDirectoryFields($formId);
 		$headers 		= RSFormProHelper::getDirectoryStaticHeaders();
 		$staticFields   = array();
@@ -761,6 +756,11 @@ class RsformModelDirectory extends BaseDatabaseModel
 		catch (Throwable $e)
 		{
 			Factory::getApplication()->enqueueMessage(htmlspecialchars($e->getMessage(), ENT_COMPAT, 'utf-8'), 'warning');
+		}
+
+		if (!empty($validation))
+		{
+			return false;
 		}
 
 		// Handle file uploads first
@@ -1134,7 +1134,7 @@ class RsformModelDirectory extends BaseDatabaseModel
 
 	public function getSearch()
 	{
-		return $this->_app->getUserStateFromRequest($this->context.'.filter.search', 'filter_search', '', 'string');
+		return (string) $this->_app->getUserStateFromRequest($this->context.'.filter.search', 'filter_search', '', 'string');
 	}
 
 	public function getDynamicFiltersOperators()

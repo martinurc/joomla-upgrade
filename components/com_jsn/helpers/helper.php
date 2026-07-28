@@ -66,21 +66,6 @@ class JsnHelper
 		$session = JFactory::getSession();
 		$session->set('jsn_profile_item_id_'.$user->id, JFactory::getApplication()->input->get('Itemid','') );
 		
-		/*
-		// User Data from Model
-		$userData = $model->getData();
-
-		// Load User Plugins from version 3.7
-		$version = new JVersion();
-		if($version->getShortVersion() >= '3.7' || true)
-		{
-			$dispatcher = JEventDispatcher::getInstance();
-			JPluginHelper::importPlugin('user');
-			$results = $dispatcher->trigger('onContentPrepareData', array('com_users.profile', $userData));
-		}
-		
-		$view->excludeFromProfile=JsnHelper::excludeFromProfile($userData); // Conditions
-		*/
 		$view->excludeFromProfile = JsnHelper::excludeFromProfile($user); // Conditions
 		$view->config=JComponentHelper::getParams('com_jsn');
 		
@@ -561,52 +546,6 @@ class JsnUser extends JUser
 	private $excludeFromProfile;
 	
 	function __construct( $id = null ){
-		
-		/*$app=JFactory::getApplication();
-
-		if( !$id ) $id = JFactory::getUser()->id;
-		
-		// Override Current Var
-		$currentId=$app->getUserState('com_users.edit.profile.id','');
-		$app->setUserState('com_users.edit.profile.id',$id);
-
-		require_once(JPATH_ADMINISTRATOR . '/components/com_jsn/defines.php');
-		if($app->isClient('administrator'))
-		{
-			if (file_exists(JPATH_SITE . '/administrator/components/com_users/models/user.php')) {
-				require_once(JPATH_SITE . '/administrator/components/com_users/models/user.php');
-			}
-			$model = new UsersModelUser();
-			$userData=$model->getItem($id);
-		}
-		else
-		{
-			if (file_exists(JPATH_SITE . '/components/com_users/models/profile.php')) {
-				require_once(JPATH_SITE . '/components/com_users/models/profile.php');
-			}
-			$model = new UsersModelProfile();
-			$userData=$model->getData();
-		}
-
-		// Load User Plugins from version 3.7
-		$version = new JVersion();
-		if($version->getShortVersion() >= '3.7' || true)
-		{
-			$dispatcher = JEventDispatcher::getInstance();
-			JPluginHelper::importPlugin('user');
-			$results = $dispatcher->trigger('onContentPrepareData', array('com_users.profile', $userData));
-		}
-		
-		$exclude=array('email1','email2');
-		foreach($userData as $key => $value)
-		{
-			if(!isset($this->$key) && !in_array($key, $exclude)) $this->$key=$value;
-		}
-
-		// Replace Original Current Var
-		$app->setUserState('com_users.edit.profile.id',$currentId);
-		
-		$this->excludeFromProfile=JsnHelper::excludeFromProfile($this,true);*/
 		$exclude = array();
 		$user=JFactory::getUser($id);
 		foreach($user as $key => $value)
@@ -615,31 +554,44 @@ class JsnUser extends JUser
 		}
 
 
-		$dispatcher = JEventDispatcher::getInstance();
+		//$dispatcher = JEventDispatcher::getInstance();
 		JPluginHelper::importPlugin('user');
-		$results = $dispatcher->trigger('onContentPrepareData', array('com_users.profile', $this));
-		
+		// Código corregido para Joomla 5
+		$app = \Joomla\CMS\Factory::getApplication();
+		// 1. Asegurar que $userData no sea null (convertir a objeto si está vacío)
+        if (empty($userData) || !is_object($userData)) {
+          $userData = (object) [];
+        }
+
+// 2. Disparar el evento con la estructura de parámetros requerida por Joomla 5
+        $results = (array) $app->triggerEvent('onContentPrepareData', ['com_users.profile', $userData]);
 		$this->excludeFromProfile=JsnHelper::excludeFromProfile($this,true);
 		
 	}
 	
-	public function getLink($params = array()) {
-		$query_params = '';
-		if(count($params)){
-			foreach ($params as $key => $value) {
-				if(!empty($value))$query_params .= '&' . ($key . '=' . $value);
-			}
-		}
-		if(empty($params['Itemid'])) {
-			$profileMenu=JFactory::getApplication()->getMenu()->getItems('link','index.php?option=com_jsn&view=profile', true);
-			if(isset($profileMenu->id)) $Itemid='&Itemid='.$profileMenu->id;
-			else $Itemid='&Itemid=';
-		}
-		else {
-			$Itemid='';
-		}
-		return JRoute::_('index.php?option=com_jsn&view=profile'.$Itemid.'&id='.$this->id.$query_params,false);
-	}
+public function getLink($params = array()) 
+{
+    $userId = (int) ($this->id ?? 0);
+
+    if ($userId === 0) {
+        return '#';
+    }
+
+    $itemId = !empty($params['Itemid']) ? (int) $params['Itemid'] : '';
+    $back   = !empty($params['back']) ? 1 : 0;
+
+    $url = 'index.php?option=com_jsn&view=profile&id=' . $userId;
+
+    if ($itemId) {
+        $url .= '&Itemid=' . $itemId;
+    }
+
+    if ($back) {
+        $url .= '&back=1';
+    }
+
+    return \Joomla\CMS\Router\Route::_($url);
+}
 	
 	public function getValue($name) {
 		if(($name == 'avatar' || $name == 'avatar_mini') && empty($this->$name)) return JsnHelper::defaultAvatar();

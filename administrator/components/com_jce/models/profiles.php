@@ -4,17 +4,17 @@
  * @subpackage  Admin
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\ListModel;
-use Joomla\CMS\Table\Table;
+use Joomla\Event\DispatcherAwareInterface;
 
 require_once JPATH_COMPONENT_ADMINISTRATOR . '/helpers/profiles.php';
 
@@ -30,6 +30,10 @@ class JceModelProfiles extends ListModel
      */
     public function __construct($config = array())
     {
+        if ($this instanceof DispatcherAwareInterface) {
+            $this->setDispatcher(Factory::getApplication()->getDispatcher());
+        }
+        
         if (empty($config['filter_fields'])) {
             $config['filter_fields'] = array(
                 'id', 'id',
@@ -208,60 +212,17 @@ class JceModelProfiles extends ListModel
             return false;
         }
 
-        $xml = simplexml_load_file($file);
-
-        if (!$xml) {
+        if (!JceProfilesHelper::processImport($file)) {
             $this->setError(Text::_('WF_PROFILES_REPAIR_ERROR'));
             return false;
         }
 
-        foreach ($xml->profiles->children() as $profile) {
-            $groups = JceProfilesHelper::getUserGroups((int) $profile->children('area'));
-
-            $table = Table::getInstance('Profiles', 'JceTable');
-
-            foreach ($profile->children() as $item) {
-                switch ((string) $item->getName()) {
-                    case 'description':
-                        $table->description = Text::_((string) $item);
-                    case 'types':
-                        $table->types = implode(',', $groups);
-                        break;
-                    case 'area':
-                        $table->area = (int) $item;
-                        break;
-                    case 'rows':
-                        $table->rows = (string) $item;
-                        break;
-                    case 'plugins':
-                        $table->plugins = (string) $item;
-                        break;
-                    default:
-                        $key = $item->getName();
-                        $table->$key = (string) $item;
-
-                        break;
-                }
-            }
-
-            // default
-            $table->checked_out = 0;
-            $table->checked_out_time = '0000-00-00 00:00:00';
-
-            // Check the data.
-            if (!$table->check()) {
-                $this->setError($table->getError());
-
-                return false;
-            }
-
-            // Store the data.
-            if (!$table->store()) {
-                $this->setError($table->getError());
-
-                return false;
-            }
-        }
+        // publish the "Default" profile as per its manifest setting
+        $db = $this->getDbo();
+        $query = $db->getQuery(true);
+        $query->update('#__wf_profiles')->set('published = 1')->where('name = ' . $db->quote('Default'));
+        $db->setQuery($query);
+        $db->execute();
 
         return true;
     }

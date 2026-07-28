@@ -12,6 +12,8 @@ namespace Joomla\Plugin\SampleData\MultiLanguage\Extension;
 
 use Joomla\CMS\Application\ApplicationHelper;
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Event\Plugin\AjaxEvent;
+use Joomla\CMS\Event\SampleData\GetOverviewEvent;
 use Joomla\CMS\Extension\ExtensionHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\Installer;
@@ -25,6 +27,7 @@ use Joomla\CMS\Workflow\Workflow;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\Exception\ExecutionFailureException;
 use Joomla\Database\ParameterType;
+use Joomla\Event\SubscriberInterface;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -35,7 +38,7 @@ use Joomla\Database\ParameterType;
  *
  * @since  4.0.0
  */
-final class MultiLanguage extends CMSPlugin
+final class MultiLanguage extends CMSPlugin implements SubscriberInterface
 {
     use DatabaseAwareTrait;
 
@@ -63,13 +66,37 @@ final class MultiLanguage extends CMSPlugin
     protected $adminId;
 
     /**
+     * Returns an array of events this subscriber will listen to.
+     *
+     * @return  array
+     *
+     * @since 5.3.0
+     */
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            'onSampledataGetOverview'    => 'onSampledataGetOverview',
+            'onAjaxSampledataApplyStep1' => 'onAjaxSampledataApplyStep1',
+            'onAjaxSampledataApplyStep2' => 'onAjaxSampledataApplyStep2',
+            'onAjaxSampledataApplyStep3' => 'onAjaxSampledataApplyStep3',
+            'onAjaxSampledataApplyStep4' => 'onAjaxSampledataApplyStep4',
+            'onAjaxSampledataApplyStep5' => 'onAjaxSampledataApplyStep5',
+            'onAjaxSampledataApplyStep6' => 'onAjaxSampledataApplyStep6',
+            'onAjaxSampledataApplyStep7' => 'onAjaxSampledataApplyStep7',
+            'onAjaxSampledataApplyStep8' => 'onAjaxSampledataApplyStep8',
+        ];
+    }
+
+    /**
      * Get an overview of the proposed sampledata.
      *
-     * @return  \stdClass|void  Will be converted into the JSON response to the module.
+     * @param  GetOverviewEvent $event Event instance
+     *
+     * @return  void
      *
      * @since   4.0.0
      */
-    public function onSampledataGetOverview()
+    public function onSampledataGetOverview(GetOverviewEvent $event): void
     {
         if (!$this->getApplication()->getIdentity()->authorise('core.create', 'com_content')) {
             return;
@@ -82,30 +109,42 @@ final class MultiLanguage extends CMSPlugin
         $data->icon        = 'wifi';
         $data->steps       = 8;
 
-        return $data;
+        $event->addResult($data);
     }
 
     /**
      * First step to enable the Language filter plugin.
      *
-     * @return  array|void  Will be converted into the JSON response to the module.
+     * @param AjaxEvent $event Event instance
+     *
+     * @return  void
      *
      * @since   4.0.0
      */
-    public function onAjaxSampledataApplyStep1()
+    public function onAjaxSampledataApplyStep1(AjaxEvent $event): void
     {
         if (!Session::checkToken('get') || $this->getApplication()->getInput()->get('type') != $this->_name) {
             return;
         }
 
+        if (!$this->getApplication()->getIdentity()->authorise('core.manage', 'com_installer')) {
+            $response            = [];
+            $response['success'] = false;
+            $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_ERROR_LANGFILTER', 1, Text::_('JERROR_ALERTNOAUTHOR'));
+
+            $event->addResult($response);
+            return;
+        }
+
         $languages = LanguageHelper::getContentLanguages([0, 1]);
 
-        if (count($languages) < 2) {
+        if (\count($languages) < 2) {
             $response            = [];
             $response['success'] = false;
             $response['message'] = $this->getApplication()->getLanguage()->_('PLG_SAMPLEDATA_MULTILANG_MISSING_LANGUAGE');
 
-            return $response;
+            $event->addResult($response);
+            return;
         }
 
         if (!$this->enablePlugin('plg_system_languagefilter')) {
@@ -118,24 +157,27 @@ final class MultiLanguage extends CMSPlugin
 
             $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_ERROR_LANGFILTER', 2, $message);
 
-            return $response;
+            $event->addResult($response);
+            return;
         }
 
         $response            = [];
         $response['success'] = true;
         $response['message'] = $this->getApplication()->getLanguage()->_('PLG_SAMPLEDATA_MULTILANG_STEP1_SUCCESS');
 
-        return $response;
+        $event->addResult($response);
     }
 
     /**
      * Second step to add a language switcher module
      *
-     * @return  array|void  Will be converted into the JSON response to the module.
+     * @param AjaxEvent $event Event instance
+     *
+     * @return  void
      *
      * @since   4.0.0
      */
-    public function onAjaxSampledataApplyStep2()
+    public function onAjaxSampledataApplyStep2(AjaxEvent $event): void
     {
         if (!Session::checkToken('get') || $this->getApplication()->getInput()->get('type') != $this->_name) {
             return;
@@ -146,7 +188,8 @@ final class MultiLanguage extends CMSPlugin
             $response['success'] = true;
             $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_STEP_SKIPPED', 2, 'com_modules');
 
-            return $response;
+            $event->addResult($response);
+            return;
         }
 
         if (!$this->addModuleLanguageSwitcher()) {
@@ -159,26 +202,38 @@ final class MultiLanguage extends CMSPlugin
 
             $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_ERROR_SWITCHER', 2, $message);
 
-            return $response;
+            $event->addResult($response);
+            return;
         }
 
         $response            = [];
         $response['success'] = true;
         $response['message'] = $this->getApplication()->getLanguage()->_('PLG_SAMPLEDATA_MULTILANG_STEP2_SUCCESS');
 
-        return $response;
+        $event->addResult($response);
     }
 
     /**
      * Third step to make sure all content languages are published
      *
-     * @return  array|void  Will be converted into the JSON response to the module.
+     * @param AjaxEvent $event Event instance
+     *
+     * @return  void
      *
      * @since   4.0.0
      */
-    public function onAjaxSampledataApplyStep3()
+    public function onAjaxSampledataApplyStep3(AjaxEvent $event): void
     {
         if (!Session::checkToken('get') || $this->getApplication()->getInput()->get('type') != $this->_name) {
+            return;
+        }
+
+        if (!$this->getApplication()->getIdentity()->authorise('core.edit', 'com_languages')) {
+            $response            = [];
+            $response['success'] = false;
+            $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_ERROR_CONTENTLANGUAGES', 3);
+
+            $event->addResult($response);
             return;
         }
 
@@ -187,7 +242,8 @@ final class MultiLanguage extends CMSPlugin
             $response['success'] = true;
             $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_STEP_SKIPPED', 3, 'com_languages');
 
-            return $response;
+            $event->addResult($response);
+            return;
         }
 
         if (!$this->publishContentLanguages()) {
@@ -195,24 +251,27 @@ final class MultiLanguage extends CMSPlugin
             $response['success'] = false;
             $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_ERROR_CONTENTLANGUAGES', 3);
 
-            return $response;
+            $event->addResult($response);
+            return;
         }
 
         $response            = [];
         $response['success'] = true;
         $response['message'] = $this->getApplication()->getLanguage()->_('PLG_SAMPLEDATA_MULTILANG_STEP3_SUCCESS');
 
-        return $response;
+        $event->addResult($response);
     }
 
     /**
      * Fourth step to create Menus and list all categories menu items
      *
-     * @return  array|void  Will be converted into the JSON response to the module.
+     * @param AjaxEvent $event Event instance
+     *
+     * @return  void
      *
      * @since   4.0.0
      */
-    public function onAjaxSampledataApplyStep4()
+    public function onAjaxSampledataApplyStep4(AjaxEvent $event): void
     {
         if (!Session::checkToken('get') || $this->getApplication()->getInput()->get('type') != $this->_name) {
             return;
@@ -223,7 +282,8 @@ final class MultiLanguage extends CMSPlugin
             $response['success'] = true;
             $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_STEP_SKIPPED', 4, 'com_menus');
 
-            return $response;
+            $event->addResult($response);
+            return;
         }
 
         $siteLanguages = $this->getInstalledlangsFrontend();
@@ -234,7 +294,8 @@ final class MultiLanguage extends CMSPlugin
                 $response['success'] = false;
                 $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_ERROR_MENUS', 4, $siteLang->language);
 
-                return $response;
+                $event->addResult($response);
+                return;
             }
 
             if (!$tableMenuItem = $this->addAllCategoriesMenuItem($siteLang)) {
@@ -242,7 +303,8 @@ final class MultiLanguage extends CMSPlugin
                 $response['success'] = false;
                 $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_ERROR_ALLCATEGORIES', 4, $siteLang->language);
 
-                return $response;
+                $event->addResult($response);
+                return;
             }
 
             $groupedAssociations['com_menus.item'][$siteLang->language] = $tableMenuItem->id;
@@ -253,24 +315,27 @@ final class MultiLanguage extends CMSPlugin
             $response['success'] = false;
             $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_ERROR_ASSOC_ALLCATEGORIES', 4);
 
-            return $response;
+            $event->addResult($response);
+            return;
         }
 
         $response            = [];
         $response['success'] = true;
         $response['message'] = $this->getApplication()->getLanguage()->_('PLG_SAMPLEDATA_MULTILANG_STEP4_SUCCESS');
 
-        return $response;
+        $event->addResult($response);
     }
 
     /**
      * Fifth step to add menu modules
      *
-     * @return  array|void  Will be converted into the JSON response to the module.
+     * @param AjaxEvent $event Event instance
+     *
+     * @return  void
      *
      * @since   4.0.0
      */
-    public function onAjaxSampledataApplyStep5()
+    public function onAjaxSampledataApplyStep5(AjaxEvent $event): void
     {
         if (!Session::checkToken('get') || $this->getApplication()->getInput()->get('type') != $this->_name) {
             return;
@@ -281,7 +346,8 @@ final class MultiLanguage extends CMSPlugin
             $response['success'] = true;
             $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_STEP_SKIPPED', 5, 'com_modules');
 
-            return $response;
+            $event->addResult($response);
+            return;
         }
 
         $siteLanguages = $this->getInstalledlangsFrontend();
@@ -292,7 +358,8 @@ final class MultiLanguage extends CMSPlugin
                 $response['success'] = false;
                 $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_ERROR_MENUMODULES', 5, $siteLang->language);
 
-                return $response;
+                $event->addResult($response);
+                return;
             }
         }
 
@@ -300,17 +367,19 @@ final class MultiLanguage extends CMSPlugin
         $response['success'] = true;
         $response['message'] = $this->getApplication()->getLanguage()->_('PLG_SAMPLEDATA_MULTILANG_STEP5_SUCCESS');
 
-        return $response;
+        $event->addResult($response);
     }
 
     /**
      * Sixth step to add workflow, categories, articles and blog menu items
      *
-     * @return  array|void  Will be converted into the JSON response to the module.
+     * @param AjaxEvent $event Event instance
+     *
+     * @return  void
      *
      * @since   4.0.0
      */
-    public function onAjaxSampledataApplyStep6()
+    public function onAjaxSampledataApplyStep6(AjaxEvent $event): void
     {
         if (!Session::checkToken('get') || $this->getApplication()->getInput()->get('type') != $this->_name) {
             return;
@@ -321,7 +390,8 @@ final class MultiLanguage extends CMSPlugin
             $response['success'] = true;
             $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_STEP_SKIPPED', 6, 'com_content');
 
-            return $response;
+            $event->addResult($response);
+            return;
         }
 
         if (!ComponentHelper::isEnabled('com_categories') || !$this->getApplication()->getIdentity()->authorise('core.create', 'com_content.category')) {
@@ -329,7 +399,8 @@ final class MultiLanguage extends CMSPlugin
             $response['success'] = true;
             $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_STEP_SKIPPED', 6, 'com_categories');
 
-            return $response;
+            $event->addResult($response);
+            return;
         }
 
         $siteLanguages = $this->getInstalledlangsFrontend();
@@ -342,7 +413,8 @@ final class MultiLanguage extends CMSPlugin
                 $response['success'] = false;
                 $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_ERROR_CATEGORY', 6, $siteLang->language);
 
-                return $response;
+                $event->addResult($response);
+                return;
             }
 
             $groupedAssociations['com_categories.item'][$siteLang->language] = $tableCategory->id;
@@ -352,7 +424,8 @@ final class MultiLanguage extends CMSPlugin
                 $response['success'] = false;
                 $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_ERROR_ARTICLE', 6, $siteLang->language);
 
-                return $response;
+                $event->addResult($response);
+                return;
             }
 
             $groupedAssociations['com_content.item'][$siteLang->language] = $tableArticle->id;
@@ -362,7 +435,8 @@ final class MultiLanguage extends CMSPlugin
                 $response['success'] = false;
                 $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_ERROR_BLOG', 6, $siteLang->language);
 
-                return $response;
+                $event->addResult($response);
+                return;
             }
 
             $groupedAssociations['com_menus.item'][$siteLang->language] = $tableMenuItem->id;
@@ -373,26 +447,38 @@ final class MultiLanguage extends CMSPlugin
             $response['success'] = false;
             $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_ERROR_ASSOC_VARIOUS', 6);
 
-            return $response;
+            $event->addResult($response);
+            return;
         }
 
         $response            = [];
         $response['success'] = true;
         $response['message'] = $this->getApplication()->getLanguage()->_('PLG_SAMPLEDATA_MULTILANG_STEP6_SUCCESS');
 
-        return $response;
+        $event->addResult($response);
     }
 
     /**
      * Seventh step to disable the mainmenu module whose home page is set to All languages.
      *
-     * @return  array|void  Will be converted into the JSON response to the module.
+     * @param AjaxEvent $event Event instance
+     *
+     * @return  void
      *
      * @since   4.0.0
      */
-    public function onAjaxSampledataApplyStep7()
+    public function onAjaxSampledataApplyStep7(AjaxEvent $event): void
     {
         if (!Session::checkToken('get') || $this->getApplication()->getInput()->get('type') != $this->_name) {
+            return;
+        }
+
+        if (!$this->getApplication()->getIdentity()->authorise('core.edit.state', 'com_modules')) {
+            $response            = [];
+            $response['success'] = false;
+            $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_ERROR_MAINMENU_MODULE', 7);
+
+            $event->addResult($response);
             return;
         }
 
@@ -401,7 +487,8 @@ final class MultiLanguage extends CMSPlugin
             $response['success'] = true;
             $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_STEP_SKIPPED', 7, 'com_modules');
 
-            return $response;
+            $event->addResult($response);
+            return;
         }
 
         if (!$this->disableModuleMainMenu()) {
@@ -409,24 +496,27 @@ final class MultiLanguage extends CMSPlugin
             $response['success'] = false;
             $response['message'] = Text::sprintf('PLG_SAMPLEDATA_MULTILANG_ERROR_MAINMENU_MODULE', 7);
 
-            return $response;
+            $event->addResult($response);
+            return;
         }
 
         $response            = [];
         $response['success'] = true;
         $response['message'] = $this->getApplication()->getLanguage()->_('PLG_SAMPLEDATA_MULTILANG_STEP7_SUCCESS');
 
-        return $response;
+        $event->addResult($response);
     }
 
     /**
      * Final step to show completion of sampledata.
      *
-     * @return  array|void  Will be converted into the JSON response to the module.
+     * @param AjaxEvent $event Event instance
+     *
+     * @return  void
      *
      * @since  4.0.0
      */
-    public function onAjaxSampledataApplyStep8()
+    public function onAjaxSampledataApplyStep8(AjaxEvent $event): void
     {
         if ($this->getApplication()->getInput()->get('type') !== $this->_name) {
             return;
@@ -435,7 +525,7 @@ final class MultiLanguage extends CMSPlugin
         $response['success'] = true;
         $response['message'] = $this->getApplication()->getLanguage()->_('PLG_SAMPLEDATA_MULTILANG_STEP8_SUCCESS');
 
-        return $response;
+        $event->addResult($response);
     }
 
     /**
@@ -464,7 +554,7 @@ final class MultiLanguage extends CMSPlugin
 
         try {
             $db->execute();
-        } catch (ExecutionFailureException $e) {
+        } catch (ExecutionFailureException) {
             return false;
         }
 
@@ -490,7 +580,7 @@ final class MultiLanguage extends CMSPlugin
 
             try {
                 $db->execute();
-            } catch (ExecutionFailureException $e) {
+            } catch (ExecutionFailureException) {
                 return false;
             }
         }
@@ -527,7 +617,7 @@ final class MultiLanguage extends CMSPlugin
 
         try {
             $db->execute();
-        } catch (ExecutionFailureException $e) {
+        } catch (ExecutionFailureException) {
             return false;
         }
 
@@ -859,7 +949,7 @@ final class MultiLanguage extends CMSPlugin
 
             try {
                 $db->execute();
-            } catch (\RuntimeException $e) {
+            } catch (\RuntimeException) {
                 return false;
             }
         }
@@ -893,7 +983,7 @@ final class MultiLanguage extends CMSPlugin
 
         try {
             $db->execute();
-        } catch (\RuntimeException $e) {
+        } catch (\RuntimeException) {
             return false;
         }
 
@@ -1069,7 +1159,7 @@ final class MultiLanguage extends CMSPlugin
             if ($stage_id) {
                 $workflow->createAssociation($newId, $stage_id);
             }
-        } catch (ExecutionFailureException $e) {
+        } catch (ExecutionFailureException) {
             return false;
         }
 
@@ -1154,7 +1244,7 @@ final class MultiLanguage extends CMSPlugin
             $row           = new \stdClass();
             $row->language = $lang;
 
-            if (!is_array($info)) {
+            if (!\is_array($info)) {
                 continue;
             }
 

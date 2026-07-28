@@ -9,13 +9,14 @@
 //no direct access
 defined('_JEXEC') or die('Restricted access');
 
+use Joomla\CMS\Application\ConsoleApplication;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\Folder;
-use Joomla\CMS\Filesystem\Path;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Uri\Uri;
+use Joomla\Filesystem\Folder;
+use Joomla\Filesystem\Path;
 
 require_once JPATH_ROOT . '/components/com_sppagebuilder/builder/classes/base.php';
 
@@ -971,6 +972,10 @@ class SppagebuilderHelperSite
 
     private static function isLegacyDataStructure($content)
     {
+        if (empty($content)) {
+            return false;
+        }
+
         foreach ($content as $row) {
             $settings = $row->settings;
 
@@ -1585,10 +1590,11 @@ class SppagebuilderHelperSite
 
         /** @var CMSApplication */
         $app = Factory::getApplication();
-        $template = $app->getTemplate();
 
-        if ($app->isClient('administrator')) {
+        if($app instanceof ConsoleApplication || $app->isClient('administrator')) {
             $template = self::getTemplate();
+        } else {
+            $template = $app->getTemplate();
         }
 
         $com_option = $app->input->get('option', '', 'STR');
@@ -1637,7 +1643,7 @@ class SppagebuilderHelperSite
     private static function setPluginsAddonsLanguage()
     {
         $path = JPATH_PLUGINS . '/sppagebuilder';
-        if (!Folder::exists($path)) {
+        if (!is_dir($path)) {
             return;
         }
 
@@ -1936,7 +1942,10 @@ class SppagebuilderHelperSite
 
         if (!$params->get('disablecss', 0)) {
             SppagebuilderHelperSite::addStylesheet('sppagebuilder.css');
-            SppagebuilderHelperSite::addStylesheet('animate.min.css');
+            if (!$params->get('disableanimatecss', 0))
+            {
+                SppagebuilderHelperSite::addStylesheet('animate.min.css');
+            }
             SppagebuilderHelperSite::addContainerMaxWidth();
         }
 

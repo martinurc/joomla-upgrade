@@ -33,6 +33,8 @@ class SppagebuilderAddonCarousel extends SppagebuilderAddons
 
 		//Addons option
 		$autoplay = (isset($settings->autoplay) && $settings->autoplay) ? 1 : 0;
+		$pause_on_hover = (!isset($settings->pause_on_hover) || $settings->pause_on_hover) ? 1 : 0;
+		$loop = !isset($settings->loop) ? 1 : (int) $settings->loop;
 		$controllers = (isset($settings->controllers) && $settings->controllers) ? $settings->controllers : 0;
 		$arrows = (isset($settings->arrows) && $settings->arrows) ? $settings->arrows : 0;
 		$interval = (isset($settings->interval) && $settings->interval) ? ((int) $settings->interval * 1000) : 5000;
@@ -41,7 +43,7 @@ class SppagebuilderAddonCarousel extends SppagebuilderAddons
 		{
 			$interval = 'false';
 		}
-		$output  = '<div id="sppb-carousel-' . $this->addon->id . '" data-interval="' . $interval . '" class="sppb-carousel sppb-slide' . $class . '"' . $carousel_autoplay . '>';
+		$output  = '<div id="sppb-carousel-' . $this->addon->id . '" data-loop="' . ($loop ? 'true' : 'false') . '" data-interval="' . $interval . '" class="sppb-carousel sppb-slide' . $class . '" data-pause-on-hover="' . $pause_on_hover . '"' . $carousel_autoplay . '>';
 
 		if(isset($settings->randomize_carousel) && $settings->randomize_carousel)
 		{
@@ -64,6 +66,10 @@ class SppagebuilderAddonCarousel extends SppagebuilderAddons
 		{
 			foreach ($settings->sp_carousel_item as $key => $value)
 			{
+				if(isset($value->item_visibility) && !$value->item_visibility) {
+					continue;
+				}
+				
 				list($button_url, $button_target) = AddonHelper::parseLink($value, 'button_url', ['url' => 'button_url', 'new_tab' => 'button_target']);
 
 				$bg_image = (isset($value->bg) && $value->bg) ? $value->bg : '';
@@ -246,6 +252,7 @@ class SppagebuilderAddonCarousel extends SppagebuilderAddons
 			interval = "false";
 		}
 		let autoplay = data.autoplay ? \'data-sppb-ride="sppb-carousel"\' : "";
+		let pauseOnHover = (data.pause_on_hover === 0 || data.pause_on_hover === "0") ? 0 : 1;
 		#>
 		<style type="text/css">';
 		// Alignment
@@ -298,7 +305,7 @@ class SppagebuilderAddonCarousel extends SppagebuilderAddons
 		$output .= '		
 			<# }); #>
 		</style>
-		<div class="sppb-carousel sppb-slide {{ data.class }}" id="sppb-carousel-{{ data.id }}" data-interval="{{ interval }}" {{{ autoplay }}}>
+		<div class="sppb-carousel sppb-slide {{ data.class }}" id="sppb-carousel-{{ data.id }}" data-interval="{{ interval }}" data-pause-on-hover="{{ pauseOnHover }}" {{{ autoplay }}}>
 
 		<# if(data.randomize_carousel){
 				data.sp_carousel_item = _.shuffle(data.sp_carousel_item);
@@ -307,6 +314,9 @@ class SppagebuilderAddonCarousel extends SppagebuilderAddons
 			<# if(data.controllers){ #>
 				<ol class="sppb-carousel-indicators">
 				<# _.each(data.sp_carousel_item, function (carousel_item, key){ #>
+				<# if(typeof carousel_item.item_visibility !== "undefined" && !carousel_item.item_visibility) { #>
+					<#	return; #>
+				<# } #>
 					<# var active = (key == 0) ? "active" : ""; #>
 					<li data-sppb-target="#sppb-carousel-{{ data.id }}"  class="{{ active }}"  data-sppb-slide-to="{{ key }}"></li>
 				<# }); #>
@@ -315,6 +325,9 @@ class SppagebuilderAddonCarousel extends SppagebuilderAddons
 			<div class="sppb-carousel-inner">
 				<#
 				_.each(data.sp_carousel_item, function (carousel_item, key){
+					if(typeof carousel_item.item_visibility !== "undefined" && !carousel_item.item_visibility) {
+						return;
+					}
 					var carouselBg = {}
 					if (typeof carousel_item.bg !== "undefined" && typeof carousel_item.bg.src !== "undefined") {
 						carouselBg = carousel_item.bg

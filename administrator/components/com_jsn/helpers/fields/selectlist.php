@@ -46,8 +46,8 @@ class JsnSelectlistFieldHelper
 		$dbfiltercolumn=($item->params->get('select_dboptfiltercolumn','')=='' ? '' : 'dboptfiltercolumn="'.JsnHelper::xmlentities($item->params->get('select_dboptfiltercolumn','')).'"');
 		$placeholder=($item->params->get('select_placeholder','')!='' ? 'hint="'.JsnHelper::xmlentities($item->params->get('select_placeholder','')).'"' : '');
 		
-		if($item->params->get('field_readonly','')==1 && JFactory::getApplication()->isSite()) $readonly='readonly="true"';
-		elseif($item->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('view')!='registration' && JFactory::getApplication()->isSite()) $readonly='readonly="true"';
+		if($item->params->get('field_readonly','')==1 && JFactory::getApplication()->isClient('site')) $readonly='readonly="true"';
+		elseif($item->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('view')!='registration' && JFactory::getApplication()->isClient('site')) $readonly='readonly="true"';
 		else $readonly='';
 
 		$options=array();
@@ -100,8 +100,8 @@ class JsnSelectlistFieldHelper
 	
 	public static function loadData($field, $user, &$data)
 	{
-		//if($field->params->get('field_readonly','')==1 && JFactory::getApplication()->isSite()) return;
-		//if($field->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('task')=='profile.save' && JFactory::getApplication()->isSite()) return;
+		//if($field->params->get('field_readonly','')==1 && JFactory::getApplication()->isClient('site')) return;
+		//if($field->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('task')=='profile.save' && JFactory::getApplication()->isClient('site')) return;
 		$alias=$field->alias;
 		if(isset($user->$alias)) $data->$alias=($field->params->get('select_multiple',0) ? json_decode($user->$alias) : $user->$alias);
 	}

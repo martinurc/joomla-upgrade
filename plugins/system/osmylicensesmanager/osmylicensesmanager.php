@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   ShackExtensionSupport
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2016-2024 Joomlashack.com. All rights reserved
+ * @copyright 2016-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of ShackExtensionSupport.
@@ -54,9 +55,9 @@ class PlgSystemOSMyLicensesManager extends PluginBase
     protected $namespace = 'OSMyLicensesManager';
 
     /**
-     * @var bool
+     * @var ?bool
      */
-    protected $enabled = null;
+    protected ?bool $enabled = null;
 
     /**
      * @return void
@@ -92,6 +93,7 @@ class PlgSystemOSMyLicensesManager extends PluginBase
 
     /**
      * @return void
+     * @throws Throwable
      */
     public function onAfterRender(): void
     {
@@ -130,6 +132,7 @@ class PlgSystemOSMyLicensesManager extends PluginBase
      * @param ?string $element
      *
      * @return void
+     * @throws Throwable
      */
     protected function addCustomFooterToCategories(?string $element): void
     {

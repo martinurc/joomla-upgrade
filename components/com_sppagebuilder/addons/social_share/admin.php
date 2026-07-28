@@ -28,7 +28,6 @@ SpAddonsConfig::addonConfig([
                     'desc'   => Text::_('COM_SPPAGEBUILDER_ADDON_SOCIAL_MEDIA_DESC'),
                     'values' => [
                         'facebook'  => Text::_('COM_SPPAGEBUILDER_ADDON_SOCIAL_MEDIA_FACEBOOK'),
-                        'twitter'   => Text::_('COM_SPPAGEBUILDER_ADDON_SOCIAL_MEDIA_TWITTER'),
                         'twitter-x' => Text::_('COM_SPPAGEBUILDER_ADDON_SOCIAL_MEDIA_TWITTER_X'),
                         'linkedin'  => Text::_('COM_SPPAGEBUILDER_ADDON_SOCIAL_MEDIA_LINKEDIN'),
                         'pinterest' => Text::_('COM_SPPAGEBUILDER_ADDON_SOCIAL_MEDIA_PINTEREST'),
@@ -44,7 +43,7 @@ SpAddonsConfig::addonConfig([
                     'multiple' => true,
                     'std'      => [
                         'facebook',
-                        'twitter',
+                        'twitter-x',
                         'linkedin',
                         'pinterest',
                         'thumblr',

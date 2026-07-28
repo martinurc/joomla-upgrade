@@ -24,6 +24,8 @@ INSERT IGNORE INTO `#__rsform_forms` SET
 `AdminEmailSubject`='Contact',
 `AdminEmailMode`=1,
 `Keepdata`=1,
+`Required`='(*)',
+`ErrorMessage` = '<div class="rsform-error-message">There are <span class="rsform-error-message-count">{error_count}</span> field errors on this form. Please complete all required fields before submitting.</div>',
 `MultipleSeparator`=', ';
 
 INSERT IGNORE INTO `#__rsform_components`
@@ -134,7 +136,7 @@ INSERT IGNORE INTO `#__rsform_forms` SET
   `MetaDesc` = 'This is the meta description of your form. You can use it for SEO purposes.',
   `MetaKeywords` = 'rsform, contact, form, joomla',
   `Required` = '(*)',
-  `ErrorMessage` = '<p class="formRed">Please complete all required fields!</p>',
+  `ErrorMessage` = '<div class="rsform-error-message">There are <span class="rsform-error-message-count">{error_count}</span> field errors on this form. Please complete all required fields before submitting.</div>',
   `MultipleSeparator` = ', ',
   `TextareaNewLines` = 1,
   `Keepdata` = 1;

@@ -4,11 +4,13 @@
  * @subpackage  Installer.Jce
  *
  * @copyright   Copyright (C) 2005 - 2023 Open Source Matters, Inc. All rights reserved
- * @copyright   Copyright (C) 2023 - 2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2023-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 namespace Joomla\Plugin\Installer\Jce\Extension;
+
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Plugin\CMSPlugin;
@@ -74,17 +76,10 @@ class Jce extends CMSPlugin
      */
     public function getDownloadKey()
     {
-        $component = ComponentHelper::getComponent('com_jce');
+        // get the key directly from the update sites table, eg: when updating a plugin
+        $key = $this->getDownloadKeyFromUpdateSites();
 
-        // check the component params for the key
-        $key = $component->params->get('updates_key', '');
-
-        // try get the key directly from the update sites table, eg: when updating a plugin
-        if (empty($key)) {
-            $key = $this->getDownloadKeyFromUpdateSites();
-        }
-
-        // Return null or an appropriate value if the key is not found
+        // Return the key or null if not found
         return $key;
     }
 }

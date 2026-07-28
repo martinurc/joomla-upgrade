@@ -1,29 +1,26 @@
 <?php
+
 /**
  * @package     JCE
  * @subpackage  Editors.Jce
  *
  * @copyright   Copyright (C) 2005 - 2023 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 namespace Joomla\Plugin\System\JcePro\PluginTraits;
 
-use Joomla\CMS\Editor\Editor;
 use Joomla\CMS\Factory;
 use Joomla\Registry\Registry;
+use Joomla\CMS\Filter\InputFilter;
+
 use WFApplication;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-/**
- * Handles the onDisplay event for the JCE editor.
- *
- * @since  2.9.70
- */
 trait CustomQueryTrait
 {
     /**
@@ -31,33 +28,84 @@ trait CustomQueryTrait
      *
      * @return array Associative array of query variables.
      */
+
     protected function getQueryVarsFromRequest()
     {
-        $app = Factory::getApplication();
-        $query = $app->input->getArray();
+        $app   = Factory::getApplication();
+        $input = $app->input;
 
-        $option = $app->input->getCmd('option', '');
+        $option = $input->getCmd('option', '');
 
-        $vars = array();
+        // Use the known-safe, typed fetch for this one
+        if ($option === 'com_jce') {
+            $query = $input->get('profile_custom', [], 'array');
+        } else {
+            // Avoid Input::getArray() (Joomla 6.x bug trigger)
+            $query = array_merge($_GET ?? [], $_POST ?? []);
 
-        if ($option == 'com_jce') {
-            $query = $app->input->get('profile_custom', array());
+            // get wf_catid from input API
+            $catid = $input->getInt('wf_catid', 0);
+
+            if ($catid > 0) {
+                $query['catid'] = $catid;
+            }
         }
 
+        $filter = InputFilter::getInstance();
+        $vars   = [];
+
+        $ignore = ['option', 'csrf.token', 'token'];
+
         foreach ($query as $key => $value) {
-            if ($key === 'option') {
+            // Normalise key
+            if (!is_string($key)) {
                 continue;
             }
 
-            // convert namespaced catid key
-            if ($key == 'wf_catid') {
-                $key = 'catid';
+            // Ignore keys that are in the ignore list
+            if (in_array($key, $ignore, true)) {
+                continue;
             }
 
-            $vars[$key] = $value;
+            // Keep keys "safe": allow only typical query-string names
+            $key = preg_replace('#[^a-zA-Z0-9_\-]#', '', $key);
+
+            if ($key === '') {
+                continue;
+            }
+
+            // Clean value:
+            // - arrays are kept (and recursively cleaned as strings)
+            // - scalars are cast to string and cleaned
+            $vars[$key] = $this->cleanQueryValue($filter, $value);
         }
 
         return $vars;
+    }
+
+    protected function cleanQueryValue(InputFilter $filter, $value)
+    {
+        if (is_array($value)) {
+            $out = [];
+
+            foreach ($value as $k => $v) {
+                // keep numeric indexes; clean string indexes similarly to above if you need
+                $out[$k] = $this->cleanQueryValue($filter, $v);
+            }
+
+            return $out;
+        }
+
+        if (is_bool($value) || is_int($value) || is_float($value)) {
+            return $value;
+        }
+
+        if ($value === null) {
+            return null;
+        }
+
+        // Cast to string and clean
+        return $filter->clean((string) $value, 'STRING');
     }
 
     private function checkValue($actual, $expected)
@@ -66,7 +114,7 @@ trait CustomQueryTrait
 
         // check if this is a negated value
         if (substr($expected, 0, 1) === '!') {
-            $negated = true;
+            $negated  = true;
             $expected = substr($expected, 1);
         }
 
@@ -86,30 +134,35 @@ trait CustomQueryTrait
     }
 
     /**
-     * Checks if the provided query array matches all custom conditions.
+     * Checks if the provided query array matches custom conditions.
      *
      * @param array $custom The custom conditions array with keys and expected values.
-     * @return bool Returns true if all conditions in the custom array are met by the query array, false otherwise.
+     * @return bool Returns true if conditions in the custom array are met by the query array, false otherwise.
      */
     private function checkCustomQueryVars($custom)
     {
         $query = $this->getQueryVarsFromRequest();
 
-        foreach ($custom as $key => $expected) {            
-            // set the actual value to an empty string if the key is not found in the query
+        foreach ($custom as $key => $expected) {
             $actual = isset($query[$key]) ? $query[$key] : '';
 
             if (!is_array($expected)) {
-                return $this->checkValue($actual, $expected);
+                if (!$this->checkValue($actual, $expected)) {
+                    return false;
+                }
             } else {
+                $matched = false;
 
                 foreach ($expected as $expectedValue) {
                     if ($this->checkValue($actual, $expectedValue)) {
-                        return true;
+                        $matched = true;
+                        break;
                     }
                 }
 
-                return false;
+                if (!$matched) {
+                    return false;
+                }
             }
         }
 
@@ -129,7 +182,7 @@ trait CustomQueryTrait
      */
     private function convertNameValuePairsToAssociativeArray($values)
     {
-        $associativeArray = array();
+        $associativeArray = [];
 
         // Re-map name|value pairs to associative array
         foreach ($values as $value) {
@@ -157,33 +210,18 @@ trait CustomQueryTrait
     /**
      * Filters query keys extracted from the request by custom values stored in the profile.
      *
-     * This function iterates over the provided input array, retrieves the corresponding
-     * request values from the application's input, and filters them based on specific criteria.
-     * If the query key 'catid' is encountered, it uses the 'wf_catid' request value instead.
-     * Matching values are added to the output array.
-     *
      * @param array $inputArray The input array of expected values.
      * @param array $outputArray The array to populate with matching values.
      */
     private function filterQueryVarsByCustomValues($inputArray, &$outputArray)
     {
-        $app = Factory::getApplication();
+        $query = $this->getQueryVarsFromRequest();
 
         foreach ($inputArray as $key => $expectedValue) {
-            // Retrieve the request value for the current key
-            $requestValue = $app->input->get($key, null);
-
-            // Special case for 'catid' key: use 'wf_catid' request value
-            if ($key == 'catid') {
-                $requestValue = $app->input->get('wf_catid', null);
-            }
-
-            // Skip if no value is found in the request
-            if ($requestValue === null) {
+            if (!isset($query[$key])) {
                 continue;
             }
 
-            // Add the expected value to the output array
             $outputArray[$key] = $expectedValue;
         }
     }
@@ -201,6 +239,10 @@ trait CustomQueryTrait
             return;
         }
 
+        if (empty($data['url'])) {
+            return;
+        }
+
         if (!is_object($profile)) {
             return;
         }
@@ -210,7 +252,7 @@ trait CustomQueryTrait
         $params = new Registry($profile->params);
 
         // get custom query variables from parameters if set
-        $customParams = $params->get('setup.custom', array());
+        $customParams = $params->get('setup.custom', []);
 
         // no custom query variables to process
         if (empty($customParams)) {
@@ -233,7 +275,7 @@ trait CustomQueryTrait
 
         // assign custom query values
         $options = [
-            'profile_custom' => $app->input->get('profile_custom', array(), 'ARRAY'),
+            'profile_custom' => $app->input->get('profile_custom', [], 'ARRAY'),
         ];
 
         // process custom query values to remove invalid values
@@ -263,7 +305,7 @@ trait CustomQueryTrait
             $params = new Registry($item->params);
 
             // get custom query variables from parameters if set
-            $customParams = $params->get('setup.custom', array());
+            $customParams = $params->get('setup.custom', []);
 
             // no custom query variables to process
             if (empty($customParams)) {
@@ -299,13 +341,11 @@ trait CustomQueryTrait
             return;
         }
 
-        $app = Factory::getApplication();
-
         // get an editor instance
         $wf = WFApplication::getInstance();
 
         // get custom query variables from parameters if set
-        $custom = $wf->getParam('setup.custom', array());
+        $custom = $wf->getParam('setup.custom', []);
 
         if (empty($custom)) {
             return;
@@ -318,10 +358,10 @@ trait CustomQueryTrait
             return;
         }
 
-        $custom = array();
+        $custom = [];
 
         $this->filterQueryVarsByCustomValues($vars, $custom);
 
-        $settings['query'] = array_merge($settings['query'], array('profile_custom' => $vars));
+        $settings['query'] = array_merge($settings['query'], ['profile_custom' => $custom]);
     }
 }

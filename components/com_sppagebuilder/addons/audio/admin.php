@@ -58,6 +58,24 @@ SpAddonsConfig::addonConfig([
 					'values' => ['' => Text::_('JNO'), 'loop' => Text::_('JYES')],
 					'std'    => '',
 				],
+
+				'aria_label' => [
+					'type'  => 'text',
+					'title' => Text::_('COM_SPPAGEBUILDER_ADDON_AUDIO_ARIA_LABEL'),
+					'desc'  => Text::_('COM_SPPAGEBUILDER_ADDON_AUDIO_ARIA_LABEL_DESC'),
+				],
+
+				'preload' => [
+					'type'   => 'select',
+					'title'  => Text::_('COM_SPPAGEBUILDER_ADDON_AUDIO_PRELOAD'),
+					'desc'   => Text::_('COM_SPPAGEBUILDER_ADDON_AUDIO_PRELOAD_DESC'),
+					'values' => [
+						'none' => Text::_('COM_SPPAGEBUILDER_ADDON_AUDIO_PRELOAD_NONE'),
+						'metadata' => Text::_('COM_SPPAGEBUILDER_ADDON_AUDIO_PRELOAD_METADATA'),
+						'autoplay' => Text::_('COM_SPPAGEBUILDER_ADDON_AUDIO_PRELOAD_AUTOPLAY'),
+					],
+					'std'    => 'none',
+				],
 			],
 		],
 

@@ -1,6 +1,14 @@
-
 <?php 
-defined ('JPATH_BASE') or die();
+
+/**
+ * @package Helix Ultimate Framework
+ * @author JoomShaper https://www.joomshaper.com
+ * @copyright Copyright (c) 2010 - 2025 JoomShaper
+ * @license http://www.gnu.org/licenses/gpl-2.0.html GNU/GPLv2 or Later
+*/
+
+
+defined('_JEXEC') or die;
 
 use HelixUltimate\Framework\Platform\Helper;
 use Joomla\CMS\Factory;
@@ -34,7 +42,8 @@ $tmpl_params = $template->params;
 	<?php if( $tmpl_params->get('related_article_view_type') === 'list' ): ?> 
 		<ul class="article-list related-article-list">
 			<?php foreach( $articles as $item ): ?> 
-				<li class="related-article-list-item">     
+				<li class="related-article-list-item">
+					<?php $item->heading = 'h4'; ?> 
 					<?php echo LayoutHelper::render('joomla.content.blog_style_default_item_title', $item); ?>
 					<?php echo LayoutHelper::render('joomla.content.info_block.publish_date', array('item' => $item, 'params' => $item->params,'articleView'=>'intro')); ?>
 				</li>

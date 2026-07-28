@@ -11,7 +11,7 @@ use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\HTML\HTMLHelper;
-use Joomla\CMS\Filesystem\File;
+use Joomla\Filesystem\File;
 use Joomla\CMS\Language\LanguageHelper;
 use Joomla\Utilities\IpHelper;
 
@@ -897,7 +897,14 @@ class RsformModelSubmissions extends ListModel
 							// File has been removed from list, remove the original file to save up space
 							if (!in_array($original, $valueSent) && file_exists($original) && is_file($original))
 							{
-								File::delete($original);
+								try
+								{
+									File::delete($original);
+								}
+								catch (Exception $e)
+								{
+									$app->enqueueMessage($e->getMessage(), 'error');
+								}
 							}
 						}
 					}
@@ -1118,7 +1125,7 @@ class RsformModelSubmissions extends ListModel
         {
             for ($i = 0; $i < 5; $i++)
             {
-                $data = fgetcsv($h, 0, $delimiter, $enclosure);
+                $data = fgetcsv($h, 0, $delimiter, $enclosure, '');
 
                 if ($data !== false)
                 {

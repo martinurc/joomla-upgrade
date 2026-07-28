@@ -5,7 +5,7 @@
  *
  * @copyright  (C) 2017 Open Source Matters, Inc. <https://www.joomla.org>
  * @license    GNU General Public License version 2 or later; see LICENSE.txt
-
+ *
  * @phpcs:disable PSR1.Classes.ClassDeclaration.MissingNamespace
  */
 
@@ -148,7 +148,9 @@ class JNamespacePsr4Map
         $content = implode("\n", $content);
 
         try {
-            File::write($this->file, $content);
+            if (!File::write($this->file, $content)) {
+                throw new Exception('Could not save ' . $this->file, 500);
+            }
         } catch (Exception $e) {
             Log::add('Could not save ' . $this->file, Log::WARNING);
 

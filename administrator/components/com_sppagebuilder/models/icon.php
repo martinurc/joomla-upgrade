@@ -203,6 +203,48 @@ class SppagebuilderModelIcon extends ListModel
 		}
 	}
 
+	public function deleteCustomIcons(array $ids) : bool
+	{
+		$assets = $this->getAssetsByIds($ids);
+
+		foreach ($assets as $asset)
+		{
+			$assetName = isset($asset->name) ? $asset->name : '';
+			$assetPath = JPATH_ROOT . '/media/com_sppagebuilder/assets/iconfont/' . $assetName;
+
+			if (Folder::exists($assetPath))
+			{
+				Folder::delete($assetPath);
+			}
+		}
+
+		$db 	= Factory::getDbo();
+		$query 	= $db->getQuery(true);
+		$query->delete($db->quoteName('#__sppagebuilder_assets'))
+			->where($db->quoteName('id') . ' IN (' . implode(',', $ids) . ')');
+		$db->setQuery($query);
+		
+		try
+		{
+			return $db->execute() !== false;
+		}
+		catch (\Exception $e)
+		{
+			return false;
+		}
+	}
+
+	public function getAssetsByIds(array $ids)
+	{
+		$db 	= Factory::getDbo();
+		$query 	= $db->getQuery(true);
+		$query->select('*')->from($db->quoteName('#__sppagebuilder_assets'))
+			->where($db->quoteName('id') . ' IN (' . implode(',', $ids) . ')');
+		$db->setQuery($query);
+
+		return $db->loadObjectList();
+	}
+
 	public function getAssetById(int $id)
 	{
 		$db 	= Factory::getDbo();

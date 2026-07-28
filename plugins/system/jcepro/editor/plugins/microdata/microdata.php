@@ -1,16 +1,17 @@
 <?php
+
 /**
  * @package     JCE
  * @subpackage  Editor
  *
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Filesystem\File;
+use Joomla\Filesystem\File;
 use Joomla\CMS\Http\HttpFactory;
 
 // Link Plugin Controller
@@ -56,14 +57,16 @@ class WFMicrodataPlugin extends WFEditorPlugin
         $document->addStyleSheet(
             array(
                 'plugins/microdata/css/microdata',
-            ), 
+            ),
             'pro'
         );
         // add link scripts last
-        $document->addScript(array(
-            'plugins/microdata/js/microdata',
-        ), 
-        'pro');
+        $document->addScript(
+            array(
+                'plugins/microdata/js/microdata',
+            ),
+            'pro'
+        );
     }
 
     public function getSettings($settings = array())
@@ -288,7 +291,6 @@ class WFMicrodataPlugin extends WFEditorPlugin
                             $item[$prop] = array_merge($item[$prop], array($entry));
                         }
                     });
-
                 } else {
                     foreach ($val as $subclass) {
                         if (!is_string($subclass)) {
@@ -408,8 +410,6 @@ class WFMicrodataPlugin extends WFEditorPlugin
 
     public function getSchema()
     {
-        
-
         // get the url from parameters or default
         $url = $this->getParam('schema_url', self::$_url);
 
@@ -417,16 +417,19 @@ class WFMicrodataPlugin extends WFEditorPlugin
             // create cache file path
             $cache = JPATH_SITE . '/cache/com_jce/' . md5($url) . '.json';
 
+            // clean cache path
+            $cache = WFUtility::cleanPath($cache);
+
             // get refresh time
             $ttl = (int) $this->getParam('cache_ttl', 7);
 
             // load data from cache file
-            if (File::exists($cache)) {
+            if (is_file($cache)) {
                 $data = file_get_contents($cache);
                 self::$_schema = json_decode($data);
             }
 
-            if (empty(self::$_schema) || !$ttl || (File::exists($cache) && filemtime($cache) >= strtotime($ttl . ' days ago'))) {
+            if (empty(self::$_schema) || !$ttl || (is_file($cache) && filemtime($cache) >= strtotime($ttl . ' days ago'))) {
                 if (pathinfo($url, PATHINFO_EXTENSION) === 'jsonld') {
                     $jsonld = $this->getData($url);
 
@@ -441,7 +444,6 @@ class WFMicrodataPlugin extends WFEditorPlugin
                     }
 
                     $data = self::buildListFromJson($json);
-
                 } else {
                     $html = $this->getData($url);
 

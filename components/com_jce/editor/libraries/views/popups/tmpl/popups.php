@@ -4,18 +4,18 @@
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
 
 ?>
 <div class="uk-form-row uk-grid uk-grid-small uk-margin-small-bottom">
 	<label for="popup_list" class="uk-form-label uk-width-1-5 hastip" title="<?php echo Text::_('WF_POPUP_TYPE_DESC'); ?>"><?php echo Text::_('WF_POPUP_TYPE'); ?></label>
-	<div class="uk-form-controls uk-width-2-5">
+	<div class="uk-form-controls uk-width-4-5">
 		<?php echo $this->popups->getPopupList(); ?>
 	</div>
 </div>

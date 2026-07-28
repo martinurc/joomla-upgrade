@@ -16,7 +16,7 @@ use Joomla\Database\Exception\ExecutionFailureException;
 use Joomla\Database\QueryInterface;
 
 // phpcs:disable PSR1.Files.SideEffects
-\defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
 /**
@@ -291,21 +291,15 @@ class SqlField extends ListField
 
             try {
                 $items = $db->loadObjectList();
-            } catch (ExecutionFailureException $e) {
+            } catch (ExecutionFailureException) {
                 Factory::getApplication()->enqueueMessage(Text::_('JERROR_AN_ERROR_HAS_OCCURRED'), 'error');
             }
-        }
-
-        // Add header.
-        if (!empty($header)) {
-            $header_title = Text::_($header);
-            $options[]    = HTMLHelper::_('select.option', '', $header_title);
         }
 
         // Build the field options.
         if (!empty($items)) {
             foreach ($items as $item) {
-                if ($this->translate == true) {
+                if ($this->translate) {
                     $options[] = HTMLHelper::_('select.option', $item->$key, Text::_($item->$value));
                 } else {
                     $options[] = HTMLHelper::_('select.option', $item->$key, $item->$value);

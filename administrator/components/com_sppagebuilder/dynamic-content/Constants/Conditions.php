@@ -38,10 +38,13 @@ final class Conditions
     public const IS_NOT_INCLUDE = 'is-not-include';
     public const IS_INCLUDE_PARENT = 'is-include-parent';
     public const IS_BEFORE = 'is-before';
+    public const IS_BEFORE_OR_EQUAL = 'is-before-or-equal';
     public const IS_AFTER = 'is-after';
+    public const IS_AFTER_OR_EQUAL = 'is-after-or-equal';
     public const IS_BETWEEN_DATE = 'is-between-date';
     public const IS_NOT_BETWEEN_DATE = 'is-not-between-date';
     public const IS_ASSOCIATED_WITH = 'is-associated-with';
+    public const RELATED = 'related';
 
     public const MATCH_ALL = 'all';
     public const MATCH_ANY = 'any';
@@ -77,7 +80,9 @@ final class Conditions
             self::IS_NOT_INCLUDE,
             self::IS_INCLUDE_PARENT,
             self::IS_BEFORE,
+            self::IS_BEFORE_OR_EQUAL,
             self::IS_AFTER,
+            self::IS_AFTER_OR_EQUAL,
             self::IS_BETWEEN_DATE,
             self::IS_NOT_BETWEEN_DATE,
             self::IS_ASSOCIATED_WITH,
@@ -110,7 +115,9 @@ final class Conditions
             self::IS_GREATER_THAN_OR_EQUAL_TO,
             self::IS_LESS_THAN_OR_EQUAL_TO,
             self::IS_BEFORE,
+            self::IS_BEFORE_OR_EQUAL,
             self::IS_AFTER,
+            self::IS_AFTER_OR_EQUAL,
             self::IS_BETWEEN_DATE,
             self::IS_NOT_BETWEEN_DATE,
         ];
@@ -131,6 +138,7 @@ final class Conditions
             self::EQUALS_IN_REFERENCE,
             self::NOT_EQUALS_IN_REFERENCE,
             self::IS_ASSOCIATED_WITH,
+            self::RELATED,
         ];
     }
 

@@ -16,6 +16,10 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Component\ComponentHelper;
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\CollectionIds;
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\ArticleLayouts;
+use JoomShaper\SPPageBuilder\DynamicContent\Models\Page;
+require_once JPATH_COMPONENT . '/controllers/typography.php';
 
 require_once JPATH_COMPONENT . '/builder/classes/base.php';
 require_once JPATH_COMPONENT . '/builder/classes/config.php';
@@ -26,6 +30,12 @@ JLoader::register('SppagebuilderHelperRoute', JPATH_ROOT . '/components/com_sppa
 $doc = Factory::getDocument();
 $app = Factory::getApplication();
 $params = ComponentHelper::getParams('com_sppagebuilder');
+
+$GLOBAL_TYPOGRAPHIES_URL = Uri::root() . 'index.php?option=com_sppagebuilder&task=typography.globalTypographies&_method=get';
+
+$globalTypographies = new SppagebuilderControllerTypography();
+$globalTypographies = $globalTypographies->getGlobalTypographiesLocally() ?? null;
+$doc->addScriptdeclaration('var globalTypographies=' . json_encode($globalTypographies) . ';');
 
 if (!$params->get('enable_frontend_editing', 1)) {
 	die("The frontend editing is disabled.");
@@ -160,14 +170,34 @@ $app = Factory::getApplication();
 $cParams = $app->getParams('com_sppagebuilder');
 // Media
 $mediaParams = ComponentHelper::getParams('com_media');
-$doc->addScriptdeclaration('var sppbMediaPath=\'/' . $mediaParams->get('file_path', 'images') . '\';');
+$filePath = trim($mediaParams->get('file_path', 'images'), '/');
+$imagePath = trim($mediaParams->get('image_path', 'images'), '/');
+$mediaRootPaths = array_values(array_unique(array_filter([
+	'/' . ($filePath !== '' ? $filePath : 'images'),
+	'/' . ($imagePath !== '' ? $imagePath : 'images'),
+])));
+$doc->addScriptdeclaration('var sppbMediaPath=\'/' . ($filePath !== '' ? $filePath : 'images') . '\';');
+$doc->addScriptdeclaration('var sppbMediaRootPaths=' . json_encode($mediaRootPaths) . ';');
 
 $doc->addScriptdeclaration('var sppbSvgShape=' . json_encode(SppagebuilderHelperSite::getSvgShapes()) . ';');
 $doc->addScriptdeclaration('var extensionView=\'' . $extension_view . '\';');
 $doc->addScriptDeclaration('var is_ai_enabled=' . $cParams->get('enable_ai', 1, 'INT') . ';');
 
-if (!$this->item->text) {
-	$doc->addScriptdeclaration('var initialState=[];');
+$textContent = $this->item->text;
+
+if (!empty($this->item->view_id) && $this->item->view_id === CollectionIds::ARTICLES_COLLECTION_ID && !empty($this->item->extension_view) && $this->item->extension_view === Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX && empty($this->item->text)) {
+	$textContent = json_decode(ArticleLayouts::DEFAULT_LAYOUT_ARTICLE_INDEX);
+} else if (!empty($this->item->view_id) && $this->item->view_id === CollectionIds::ARTICLES_COLLECTION_ID && !empty($this->item->extension_view) && $this->item->extension_view === Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL && empty($this->item->text)) {
+	$textContent = json_decode(ArticleLayouts::DEFAULT_LAYOUT_ARTICLE_DETAILS);
+}
+
+if (!$this->item->text)
+{
+	if (!$textContent) {
+		$doc->addScriptdeclaration('var initialState=[];');
+	} else {
+		$doc->addScriptdeclaration('var initialState=' . json_encode($textContent) . ';');
+	}
 } else {
 	$doc->addScriptdeclaration('var initialState=' . json_encode($this->item->text) . ';');
 }
@@ -224,9 +254,9 @@ $previewUrl = $model->getPreviewUrl($this->item->id, $this->item->language)['url
 		
 		$layout = $isPopupPage ? 'edit-iframe-popup' : 'edit-iframe';
 
-		$iframeUrl = Uri::root() . 'index.php?option=com_sppagebuilder&view=form&id=' . $this->item->id . '&layout=' . $layout . '&Itemid=' . $Itemid . $languageCode;
+		$iframeUrl = Uri::root() . 'index.php?option=com_sppagebuilder&view=form&id=' . $this->item->id . '&layout=' . $layout . '&Itemid=' . $Itemid;
 
-		if ($extension === 'mod_sppagebuilder' || $isPopupPage === true) {
+		if ($extension === 'mod_sppagebuilder' || $isPopupPage === true || $params->get('hide_editor_modules', 0)) {
 			$iframeUrl .= '&tmpl=component';
 		}
 		?>
@@ -293,7 +323,12 @@ foreach ($mediaQueries as $size => $media) {
 		<# }
 		if(typeof data.use_global_width !== "undefined" && data.use_global_width && typeof data.global_width !== "undefined" && _.isObject(data.global_width)) {
 		#>
-			width: {{data.global_width.' . $size . '}}%;
+			width: {{data.global_width.' . $size . '}}{{data.global_width.unit ?? \'%\'}};
+		<# } #>
+		<#
+		if(typeof data.use_global_width !== "undefined" && data.use_global_width && typeof data.global_max_width !== "undefined" && _.isObject(data.global_max_width)) {
+		#>
+			max-width: {{data.global_max_width.' . $size . '}}{{data.global_max_width.unit ?? \'px\'}};
 		<# } #>
 	}
 	

@@ -8,13 +8,15 @@
 //no direct access
 defined ('_JEXEC') or die ('Restricted access');
 
+use Joomla\CMS\Version;
+
 use Joomla\CMS\Factory;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Access\Access;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Filesystem\File;
 use Joomla\CMS\Helper\TagsHelper;
-use Joomla\CMS\Version;
 use Joomla\Utilities\ArrayHelper;
 
 $version = new Version();
@@ -26,7 +28,172 @@ if(version_compare($JoomlaVersion, '4.0.0', '<') && !class_exists('ContentHelper
 
 abstract class SppagebuilderHelperArticles
 {
-	public static function getArticles( $count = 5, $ordering = 'latest', $catid = '', $include_subcategories = true, $post_format = '', $tagids = array() ) {
+	/**
+	 * Map Joomla com_fields types to SP Page Builder dynamic field types.
+	 *
+	 * @param string $joomlaType Raw type from #__fields.type
+	 * @return string|null Dynamic type or null when unsupported
+	 *
+	 * @since 6.6.0
+	 */
+	public static function mapComContentCustomFieldTypeToDynamic($joomlaType)
+	{
+		static $map = [
+			'text' => 'text',
+			'textarea' => 'text',
+			'url' => 'link',
+			'editor' => 'rich-text',
+			'media' => 'image',
+			'calendar' => 'date-time',
+			'radio' => 'text',
+			'number' => 'number',
+			'integer' => 'number',
+		];
+
+		$joomlaType = is_string($joomlaType) ? $joomlaType : '';
+
+		return $map[$joomlaType] ?? null;
+	}
+
+	/**
+	 * Published custom fields for articles (#__fields, context com_content.article).
+	 *
+	 * @return array
+	 *
+	 * @since 6.6.0
+	 */
+	public static function getPublishedArticleCustomFieldRows()
+	{
+		$db = Factory::getDbo();
+		$query = $db->getQuery(true)
+			->select($db->quoteName(['id', 'title', 'name', 'type']))
+			->from($db->quoteName('#__fields'))
+			->where($db->quoteName('context') . ' = ' . $db->quote('com_content.article'))
+			->where($db->quoteName('state') . ' = 1')
+			->order($db->quoteName('ordering') . ' ASC');
+
+		$db->setQuery($query);
+
+		return $db->loadObjectList() ?: [];
+	}
+
+	/**
+	 * Attach com_fields values to an article object using each field's machine name (name) as the property key.
+	 *
+	 * @param object $item Article row / object passed to FieldsHelper::getFields
+	 * @param array|null $customFields Optional preloaded array from FieldsHelper::getFields
+	 * @return void
+	 *
+	 * @since 6.6.0
+	 */
+	public static function applyComContentCustomFieldValuesToItem($item, $customFields = null)
+	{
+		if (!is_object($item)) {
+			return;
+		}
+
+		if (!is_array($customFields)) {
+			$customFields = self::loadComContentCustomFieldsForItem($item);
+		}
+
+		foreach ($customFields as $field) {
+			if (empty($field->name)) {
+				continue;
+			}
+
+			$joomlaType = isset($field->type) ? (string) $field->type : '';
+
+			if (self::mapComContentCustomFieldTypeToDynamic($joomlaType) === null) {
+				continue;
+			}
+
+			$raw = isset($field->value) ? $field->value : null;
+			$item->{$field->name} = self::normalizeComContentCustomFieldStoredValue($raw, $joomlaType);
+		}
+	}
+
+	/**
+	 * @param object $item
+	 * @return array
+	 */
+	private static function loadComContentCustomFieldsForItem($item)
+	{
+		$version = new Version();
+		$JoomlaVersion = $version->getShortVersion();
+
+		if ((float) $JoomlaVersion >= 4) {
+			JLoader::registerAlias('FieldsHelper', 'Joomla\Component\Fields\Administrator\Helper\FieldsHelper');
+		} else {
+			JLoader::register('FieldsHelper', JPATH_ADMINISTRATOR . '/components/com_fields/helpers/fields.php');
+		}
+
+		return FieldsHelper::getFields('com_content.article', $item);
+	}
+
+	/**
+	 * @param mixed $raw
+	 * @param string $joomlaType
+	 * @return string
+	 */
+	private static function normalizeComContentCustomFieldStoredValue($raw, $joomlaType)
+	{
+		if ($raw === null) {
+			return '';
+		}
+
+		if ($joomlaType === 'media') {
+			$path = $raw;
+
+			if (is_string($raw) && $raw !== '') {
+				$decoded = json_decode($raw, true);
+
+				if (is_array($decoded)) {
+					if (!empty($decoded['imagefile'])) {
+						$path = $decoded['imagefile'];
+					} elseif (!empty($decoded['image'])) {
+						$path = $decoded['image'];
+					}
+				}
+			}
+
+			if ($path === null || $path === '') {
+				return '';
+			}
+
+			$path = (string) $path;
+
+			if (strpos($path, 'http://') === 0 || strpos($path, 'https://') === 0) {
+				return $path;
+			}
+
+			return Uri::root(true) . '/' . ltrim($path, '/');
+		}
+
+		return is_scalar($raw) ? (string) $raw : '';
+	}
+
+	public static function checkAuthorised($id) {
+		if (empty($id)) {
+			return false;
+		}
+		$authorised = Access::getAuthorisedViewLevels(Factory::getUser()->get('id'));
+
+		$db = Factory::getDbo();
+		$query = $db->getQuery(true);
+		$query->select('*')
+			->from($db->quoteName('#__content'))
+			->where($db->quoteName('id') . ' = ' . $id)
+			->where($db->quoteName('state') . ' = ' . $db->quote(1))
+			->where($db->quoteName('access') . ' IN (' . implode(',', $authorised) . ')');
+
+		$db->setQuery($query);
+		$article = $db->loadObject();
+		if (empty($article)) {
+			return false;
+		}
+		return true;
+	}
+	public static function getArticles( $count = 5, $ordering = 'latest', $catid = '', $include_subcategories = true, $post_format = '', $tagids = array(), $state = 1, $currentPage = 1) {
 
 		$authorised = Access::getAuthorisedViewLevels(Factory::getUser()->get('id'));
 
@@ -35,21 +202,26 @@ abstract class SppagebuilderHelperArticles
 		$nullDate = $db->quote($db->getNullDate());
 		$nowDate  = $db->quote(Factory::getDate()->toSql());
 
+		$baseUrl = rtrim(\Joomla\CMS\Uri\Uri::root(), '/');
+
 		$query = $db->getQuery(true);
 
 		$query
-		->select('a.*')
+		->select(['a.*', 'u.email as created_by_email', 'CASE WHEN p.profile_value IS NOT NULL THEN CONCAT(' . $db->quote($baseUrl) . ', JSON_UNQUOTE(p.profile_value)) ELSE NULL END as profile_image'])
 		->from($db->quoteName('#__content', 'a'))
 		->select($db->quoteName('b.alias', 'category_alias'))
 		->select($db->quoteName('b.title', 'category'))
 		->join('LEFT', $db->quoteName('#__categories', 'b') . ' ON (' . $db->quoteName('a.catid') . ' = ' . $db->quoteName('b.id') . ')')
-		->where($db->quoteName('b.extension') . ' = ' . $db->quote('com_content'));
+		->join('LEFT', $db->quoteName('#__users', 'u') . ' ON ' . $db->quoteName('u.id') . ' = ' . $db->quoteName('a.created_by') . ' AND ' . $db->quoteName('a.created_by') . ' IS NOT NULL')
+		->join('LEFT', $db->quoteName('#__user_profiles', 'p') . ' ON ' . $db->quoteName('p.user_id') . ' = ' . $db->quoteName('a.created_by') . ' AND ' . $db->quoteName('p.profile_key') . ' = ' . $db->quote('profileimage.profile_image'))
+		->where($db->quoteName('b.extension') . ' = ' . $db->quote('com_content'))
+		->group($db->quoteName('a.id'));
 
 		if($post_format) {
 			$query->where('('.$db->quoteName('a.attribs') . ' LIKE ' . $db->quote('%"post_format":"'. $post_format .'"%') . ' OR ' . $db->quoteName('a.attribs') . ' LIKE ' . $db->quote('%"helix_ultimate_article_format":"'. $post_format .'"%').')');
 		}
 
-		$query->where($db->quoteName('a.state') . ' = ' . $db->quote(1));
+		$query->where($db->quoteName('a.state') . ' = ' . $db->quote($state));
 
 		// Category filter
 		if (!is_array($catid))
@@ -63,8 +235,10 @@ abstract class SppagebuilderHelperArticles
 			$categories = self::getCategories($catid, $include_subcategories );
 		
 			$categories = array_filter(array_merge($categories, $catid));
-	
-			$query->where($db->quoteName('a.catid')." IN (" . implode( ',', $categories ) . ")");
+
+			if (!empty($categories)) {
+				$query->where($db->quoteName('a.catid')." IN (" . implode( ',', $categories ) . ")");
+			}
 		}
 
 		// tags filter
@@ -137,25 +311,47 @@ abstract class SppagebuilderHelperArticles
 			$query->where('a.language IN (' . $db->Quote(Factory::getLanguage()->getTag()) . ',' . $db->Quote('*') . ')');
 		}
 
+		$start = ($currentPage - 1) * $count;
+
 		// continue query
 		$query->where($db->quoteName('a.access')." IN (" . implode( ',', $authorised ) . ")");
-		$query->order($db->quoteName('a.created') . ' DESC')
-		->setLimit($count);
+		$query->order($db->quoteName('a.created') . ' DESC');
+
+		if ($currentPage === -1){
+			$query->setLimit($count);
+		} else {
+			$query->setLimit($count, $start);
+		}
+		
 		$db->setQuery($query);
 		$items = $db->loadObjectList();
 
 		
+
+		$itemIds = [];
+		foreach ($items as $itemEntry) {
+			$itemIds[] = (int) $itemEntry->id;
+		}
+
+		$tagsMap = [];
+		if (!empty($itemIds)) {
+			$tagsHelper = new TagsHelper;
+			$tagsMap = $tagsHelper->getMultipleItemTags('com_content.article', $itemIds, true);
+		}
 
 		foreach ($items as &$item) {
 			
 			$item->slug    	= $item->id . ':' . $item->alias;
 			$item->catslug 	= $item->catid . ':' . $item->category_alias;
 			$item->username = Factory::getUser($item->created_by)->name;
+			$item->profile_image = $item->profile_image ?? '';
 			$item->link 	= Route::_(version_compare($JoomlaVersion, '4.0.0', '>=') ? Joomla\Component\Content\Site\Helper\RouteHelper::getArticleRoute($item->slug, $item->catid, $item->language) : ContentHelperRoute::getArticleRoute($item->slug, $item->catid, $item->language));
+			self::applyComContentCustomFieldValuesToItem($item);
 			$attribs 		= json_decode($item->attribs);
 
-			$item->tags = new TagsHelper;
-			$item->tags->getItemTags('com_content.article', $item->id);
+			$tagsHelper = new TagsHelper;
+			$tagsHelper->itemTags = isset($tagsMap[$item->id]) ? $tagsMap[$item->id] : [];
+			$item->tags = $tagsHelper;
 
 			$feature_img = '';
 			if (isset($attribs->helix_ultimate_image) && $attribs->helix_ultimate_image) {
@@ -213,6 +409,7 @@ abstract class SppagebuilderHelperArticles
 					$item->image_thumbnail = false;
 				}
 			}
+
 
 			// Post Format
 			$item->post_format = 'standard';
@@ -378,9 +575,77 @@ abstract class SppagebuilderHelperArticles
 				}
 
 			}
+
+			$keysToAdd = [
+				'image_small',
+				'image_medium',
+				'image_large',
+				'image_intro',
+				'image_intro_alt',
+				'float_intro',
+				'image_intro_caption',
+				'image_fulltext',
+				'image_fulltext_alt',
+				'float_fulltext',
+				'image_fulltext_caption'
+			];
+			
+			foreach ($keysToAdd as $key) {
+				if (!isset($item->$key)) {
+					$item->$key = '';
+				}
+			}
+
+			if (isset($item->images)) {
+				$images = json_decode($item->images);
+				if (isset($images)) {
+					foreach($images as $key => $value) {
+						$item->$key = $value;
+					}
+				}
+			}
+
+			if (empty($item->profile_image)) {
+				$enableGravatar = ComponentHelper::getParams('com_sppagebuilder')->get('enable_gravatar', 1);
+				if ($enableGravatar && !empty($item->created_by_email)) {
+					$gravatarUrl = self::getGravatarUrl($item->created_by_email, 45, '404');
+					if ($gravatarUrl) {
+						$item->profile_image = $gravatarUrl;
+					}
+				}
+			}
+
+			// Fetch layout data from SP Page Builder for this article
+			$query = $db->getQuery(true);
+			$query->select($db->quoteName(['content', 'text', 'css']));
+			$query->from($db->quoteName('#__sppagebuilder'));
+			$query->where($db->quoteName('extension') . ' = ' . $db->quote('com_content'));
+			$query->where($db->quoteName('extension_view') . ' = ' . $db->quote('article'));
+			$query->where($db->quoteName('view_id') . ' = ' . (int) $item->id);
+			$query->where($db->quoteName('active') . ' = 1');
+			$db->setQuery($query);
+			$layoutData = $db->loadObject();
+			
+			if (empty($layoutData)) {
+				$item->layout = null;
+				continue;
+			}
+			$item->layout = $layoutData;
 		}
 
 		return $items;
+	}
+
+	public static function getArticlesCount() {
+		$app = Factory::getApplication();
+		$db = Factory::getDbo();
+		$query = $db->getQuery(true);
+
+		$query->select('COUNT(*)');
+		$query->from($db->quoteName('#__content'));
+		$db->setQuery($query);
+		$count = $db->loadResult();
+		return $count;
 	}
 
 	public static function getCategories($parent_id = [1], $include_subcategories = true, $child = false, $cats = array()) {
@@ -447,5 +712,16 @@ abstract class SppagebuilderHelperArticles
 		}
 
 		return false;
+	}
+
+	private static function getGravatarUrl($email, $size = 45, $default = '404') {
+		if (empty($email)) {
+			return false;
+		}
+		
+		$hash = md5(strtolower(trim($email)));
+		$url = "https://www.gravatar.com/avatar/{$hash}?s={$size}&d={$default}";
+		
+		return $url;
 	}
 }

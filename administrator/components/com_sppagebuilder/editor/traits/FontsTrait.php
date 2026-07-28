@@ -459,7 +459,6 @@ trait FontsTrait
 
 
 		$url = "https://fonts.googleapis.com/css2?family=" . $familyName;
-		$url .= '&display=swap';
 
 		$options  = [
 			'ssl' => [

@@ -102,6 +102,13 @@ function adjustedMargin($originalData) {
     return "{$topBottomMargin} {$leftRightMargin}";
 }
 
+$popupAttribs = json_decode($this->item->attribs, true);
+$responsive_class = '';
+$responsive_class .= (isset($popupAttribs['hidden_xl']) && filter_var($popupAttribs['hidden_xl'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-xl ' : '';
+$responsive_class .= (isset($popupAttribs['hidden_lg']) && filter_var($popupAttribs['hidden_lg'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-lg ' : '';
+$responsive_class .= (isset($popupAttribs['hidden_md']) && filter_var($popupAttribs['hidden_md'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-md ' : '';
+$responsive_class .= (isset($popupAttribs['hidden_sm']) && filter_var($popupAttribs['hidden_sm'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-sm ' : '';
+$responsive_class .= (isset($popupAttribs['hidden_xs']) && filter_var($popupAttribs['hidden_xs'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-xs ' : '';
 
 if (!$this->item->text) {
 	$doc->addScriptdeclaration('var initialState=[];');
@@ -452,8 +459,8 @@ if (!$this->item->text) {
 	});
 </script>
 
-<div id="sp-pagebuilder-overlay" data-isoverlay=<?php echo !empty(json_decode($this->item->attribs, true)['overlay']) ? 'true' : 'false' ?> style="position: fixed; inset: 0; z-index: 1;"></div>
-<div id="sp-page-builder" class="sp-pagebuilder <?php echo $menuClassPrefix; ?> page-<?php echo $this->item->id; ?> sp-pagebuilder-popup" data-isbg=<?php echo !empty(json_decode($this->item->attribs, true)['background_type']) ? 'true' : 'false' ?> x-data="easystoreProductList">
+<div class="<?php echo $responsive_class; ?>" id="sp-pagebuilder-overlay" data-isoverlay=<?php echo !empty(json_decode($this->item->attribs, true)['overlay']) ? 'true' : 'false' ?> style="position: fixed; inset: 0; z-index: 1;"></div>
+<div id="sp-page-builder" class="sp-pagebuilder <?php echo $menuClassPrefix; ?> page-<?php echo $this->item->id; ?> sp-pagebuilder-popup <?php echo $responsive_class; ?>" data-isbg=<?php echo !empty(json_decode($this->item->attribs, true)['background_type']) ? 'true' : 'false' ?> x-data="easystoreProductList">
 	<div id="sp-pagebuilder-container" class="sp-pagebuilder-container-popup" x-data="easystoreProductDetails">
 		<div class="sp-pagebuilder-loading-wrapper">
 			<div class="sp-pagebuilder-loading">
@@ -473,16 +480,12 @@ if (!$this->item->text) {
 	</div>
 </div>
 
-<style id="sp-pagebuilder-css" type="text/css">
-	<?php echo $this->item->css; ?>
-</style>
-
 <style type="text/css">
 	<?php 
 		$popupAttribs = json_decode($this->item->attribs, true);
 		if (!empty($popupAttribs['custom_css']))
 		{
-			echo ' ' . $popupAttribs['custom_css'] . ' ';
+			echo ' ' . htmlspecialchars($popupAttribs['custom_css'], ENT_QUOTES, 'UTF-8') . ' ';
 		}
 	?>
 </style>
@@ -515,8 +518,12 @@ if (!$this->item->text) {
 
 		if (!empty($popupAttribs['background_type']) && !empty($popupAttribs['bg_media']) && $popupAttribs['background_type'] === 'image')
 		{
+			$bgImageSrc = $popupAttribs['bg_media']['src'];
+			if (!preg_match('#^(https?://|//)#', $bgImageSrc) && substr($bgImageSrc, 0, 1) !== '/') {
+				$bgImageSrc = Uri::root(true) . '/' . ltrim($bgImageSrc, '/');
+			}
 			echo ' .sp-pagebuilder-popup .builder-container {
-				background-image: url("' . $popupAttribs['bg_media']['src'] . '");
+				background-image: url("' . $bgImageSrc . '");
 				background-repeat: ' . (!empty($popupAttribs['bg_media_repeat']) ? $popupAttribs['bg_media_repeat'] : 'no-repeat') . ';
 				background-attachment: ' . (!empty($popupAttribs['bg_media_attachment']) ? $popupAttribs['bg_media_attachment'] : 'initial') . ';
 				background-position: ' . (!empty($popupAttribs['bg_media_position']) ? $popupAttribs['bg_media_position'] : 'initial') . ';
@@ -582,8 +589,12 @@ if (!$this->item->text) {
 
 			if (!empty($popupAttribs['overlay']) && !empty($popupAttribs['overlay_bg_media']) && !empty($popupAttribs['overlay_background_type']) && $popupAttribs['overlay_background_type'] === 'image')
 			{
+				$overlayBgImageSrc = $popupAttribs['overlay_bg_media']['src'];
+				if (!preg_match('#^(https?://|//)#', $overlayBgImageSrc) && substr($overlayBgImageSrc, 0, 1) !== '/') {
+					$overlayBgImageSrc = Uri::root(true) . '/' . ltrim($overlayBgImageSrc, '/');
+				}
 				echo ' #sp-pagebuilder-overlay {
-					background-image: url("' . $popupAttribs['overlay_bg_media']['src'] . '");
+					background-image: url("' . $overlayBgImageSrc . '");
 					background-repeat: ' . (!empty($popupAttribs['overlay_bg_media_repeat']) ? $popupAttribs['overlay_bg_media_repeat'] : 'no-repeat') . ';
 					background-attachment: ' . (!empty($popupAttribs['overlay_bg_media_attachment']) ? $popupAttribs['overlay_bg_media_attachment'] : 'initial') . ';
 					background-position: ' . (!empty($popupAttribs['overlay_bg_media_position']) ? $popupAttribs['overlay_bg_media_position'] : 'initial') . ';
@@ -848,7 +859,7 @@ $doc->addScriptDeclaration('jQuery(document).ready(function($) {
 
 		const addonName = e.target?.getAttribute("data-addon") || null;
 
-		if (addonName !== "text-block") return;
+		if (addonName !== "text-block" && addonName !== "dynamic-content-text" && addonName !== "dynamic_content_text") return;
 		
 		const isTruncated = e.target?.getAttribute("data-is-truncated") || "false";
 		const fullText = e.target?.getAttribute("data-full-text") || "";
@@ -872,7 +883,7 @@ $doc->addScriptDeclaration('jQuery(document).ready(function($) {
 
 		const addonName = e.target?.getAttribute("data-addon") || null;
 
-		if (addonName !== "text-block") return;
+		if (addonName !== "text-block" && addonName !== "dynamic-content-text" && addonName !== "dynamic_content_text") return;
 		
 		const isTruncated = e.target?.getAttribute("data-is-truncated") || "false";
 		const isShowBtn = e.target?.querySelector(".sppb-btn-container");
