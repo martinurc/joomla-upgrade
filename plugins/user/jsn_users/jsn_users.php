@@ -9,6 +9,24 @@
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
+use Joomla\String\StringHelper;
+
+// Shim de compatibilidad completo para JString en Joomla 5 / PHP 8
+if (!class_exists('JString')) {
+    class JString extends \Joomla\String\StringHelper {
+        public static function parse_url($url, $component = -1) {
+            if ($component === -1) {
+                return \parse_url($url);
+            }
+            return \parse_url($url, $component);
+        }
+    }
+}
+/*if (!class_exists('JString') && class_exists('Joomla\String\StringHelper')) {
+    class_alias('Joomla\String\StringHelper', 'JString');
+}*/
+
 class PlgUserJsn_Users extends JPlugin
 {
 	private $config=null;
@@ -144,6 +162,301 @@ class PlgUserJsn_Users extends JPlugin
 	}
 
 	public function onUserAfterSave($data, $isNew, $result, $error)
+{
+    $userId = \Joomla\Utilities\ArrayHelper::getValue($data, 'id', 0, 'int');
+
+    if (!$userId || !$result) {
+        return true;
+    }
+
+    $app = \Joomla\CMS\Factory::getApplication();
+    $db  = \Joomla\CMS\Factory::getContainer()->get('DatabaseDriver');
+
+    // Activate email when user change it
+    if (file_exists(JPATH_ADMINISTRATOR . '/components/com_jsn/defines.php')) {
+        require_once JPATH_ADMINISTRATOR . '/components/com_jsn/defines.php';
+    }
+    
+    if (!empty($this->config) && $this->config->get('activatenewmail', 0) && defined('JSN_TYPE') && JSN_TYPE != 'free') {
+        if (method_exists($this, 'changeEmailAfterSave')) {
+            $this->changeEmailAfterSave($userId, $data, $isNew, $result, $error);
+        }
+    }
+    
+    if (!empty($this->config) && $this->config->get('logintype', 'USERNAME') == 'MAIL' && 
+        ($app->getInput()->get('task') == 'registration.activate' || $app->getInput()->get('task') == 'activate')) {
+        
+        $user = \Joomla\CMS\Factory::getUser($userId);
+        if (isset($user->tmp_username)) {
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__users'))
+                ->set($db->quoteName('username') . ' = ' . $db->quote($user->tmp_username))
+                ->where($db->quoteName('id') . ' = ' . (int) $userId);
+            $db->setQuery($query);
+            $db->execute();
+        }
+    }
+    
+    if (isset($data['firstname'])) {
+        try {
+            $logintype = !empty($this->config) ? $this->config->get('logintype', 'USERNAME') : 'USERNAME';
+            
+            if ($isNew && $logintype == 'MAIL') {
+                if ($app->isClient('site')) {
+                    $data['username'] = $data['email1'] ?? $data['email'] ?? '';
+                } else {
+                    $data['username'] = $data['email'] ?? '';
+                }
+            }
+
+            // Format Name
+            $namestyle = !empty($this->config) ? $this->config->get('namestyle', 'FIRSTNAME_LASTNAME') : 'FIRSTNAME_LASTNAME';
+            $firstname  = trim($data['firstname'] ?? '');
+            $secondname = trim($data['secondname'] ?? '');
+            $lastname   = trim($data['lastname'] ?? '');
+
+            switch ($namestyle) {
+                case 'FIRSTNAME_SECONDNAME_LASTNAME':
+                    $name = trim(trim($firstname . ' ' . $secondname) . ' ' . $lastname);
+                    break;
+                case 'FIRSTNAME':
+                    $name = $firstname;
+                    break;
+                case 'FIRSTNAME_LASTNAME':
+                default:
+                    $name = trim($firstname . ' ' . $lastname);
+                    break;
+            }
+            
+            // Write new Format Name
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__users'))
+                ->set($db->quoteName('name') . ' = ' . $db->quote($name));
+
+            if ($isNew && $logintype == 'MAIL') {
+                $username = \Joomla\CMS\Filter\OutputFilter::stringURLSafe($name);
+                if (!trim($username, '-_ ')) {
+                    $username = 'user_' . date('YmdHis');
+                }
+                
+                $queryCheckUsername = $db->getQuery(true)
+                    ->select('a.email')
+                    ->from($db->quoteName('#__users', 'a'))
+                    ->where($db->quoteName('a.username') . ' = ' . $db->quote($username))
+                    ->where($db->quoteName('id') . ' <> ' . (int) $userId);
+                
+                $db->setQuery($queryCheckUsername);
+                if ($db->loadResult()) {
+                    $username = $username . '_' . rand(0, 2000);
+                }
+                $query->set($db->quoteName('username') . ' = ' . $db->quote($username));
+            }
+
+            $query->where($db->quoteName('id') . ' = ' . (int) $userId);
+            $db->setQuery($query);
+            $db->execute();
+
+            // Check if user exists in #__jsn_users
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('a.id'))
+                ->from($db->quoteName('#__jsn_users', 'a'))
+                ->where($db->quoteName('a.id') . ' = ' . (int) $userId);
+            $db->setQuery($query);
+            $isUpdate = $db->loadObjectList();
+            
+            // Load Fields
+            if (file_exists(JPATH_SITE . '/components/com_jsn/helpers/helper.php')) {
+                require_once JPATH_SITE . '/components/com_jsn/helpers/helper.php';
+            }
+
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('a') . '.*')
+                ->from($db->quoteName('#__jsn_fields', 'a'))
+                ->where($db->quoteName('a.level') . ' = 2')
+                ->where($db->quoteName('a.published') . ' = 1')
+                ->order($db->quoteName('a.lft') . ' ASC');
+            
+            $db->setQuery($query);
+            $fields = $db->loadObjectList();
+            
+            $storeData = [];
+            $jsnUser   = class_exists('JsnHelper') ? JsnHelper::getUser($userId) : null;
+            $no_edit_fields = [];
+
+            $session     = \Joomla\CMS\Factory::getSession();
+            $original_id = $session->get('jsn_original_id', 0);
+
+            if (!empty($this->config) && $this->config->get('admin_frontend', 0) && is_object($jsnUser) &&
+                ($original_id != $jsnUser->id || $jsnUser->authorise('core.edit', 'com_users'))) {
+                $allow_no_edit_fields = true;
+            } else {
+                $allow_no_edit_fields = false;
+            }
+
+            foreach ($fields as $field) {
+                $registry = new \Joomla\Registry\Registry();
+                $registry->loadString($field->params);
+                $field->params = $registry;
+                
+                $class = 'Jsn' . ucfirst($field->type) . 'FieldHelper';
+                if (class_exists($class) && method_exists($class, 'storeData')) {
+                    $class::storeData($field, $data, $storeData);
+                }
+                
+                if ($app->isClient('site') && $app->getInput()->get('option') == 'com_users' && 
+                    in_array($app->getInput()->get('task'), ['profile.save', 'save']) && 
+                    $field->edit == 0 && !$allow_no_edit_fields) {
+                    
+                    $alias = $field->alias;
+                    $no_edit_fields[] = $alias;
+                    if (is_object($jsnUser) && isset($jsnUser->$alias)) {
+                        $storeData[$alias] = $jsnUser->$alias;
+                        if (is_array($storeData[$alias])) {
+                            $storeData[$alias] = json_encode($storeData[$alias]);
+                        }
+                    }
+                }
+            }
+            
+            // Check if columns exist
+            $db->setQuery("SHOW COLUMNS FROM " . $db->quoteName('#__jsn_users'));
+            $result  = $db->loadObjectList();
+            $columns = [];
+            foreach ($result as $column) {
+                $columns[] = $column->Field;
+            }
+
+            foreach ($storeData as $key => $value) {
+                if (!in_array($key, $columns)) {
+                    unset($storeData[$key]);
+                    if ($app->isClient('administrator')) {
+                        $app->enqueueMessage('Error on save "' . $key . '" field, try to recreate field!', 'warning');
+                    }
+                }
+            }
+            
+            // Privacy Field
+            $data['privacy'] = [];
+            foreach ($data as $key => $value) {
+                if (strpos($key, 'privacy_') === 0) {
+                    $data['privacy'][$key] = $value;
+                }
+            }
+            $storeData['privacy'] = json_encode($data['privacy']);
+            
+            // Social Connect
+            foreach (['facebook_id', 'twitter_id', 'google_id', 'linkedin_id', 'instagram_id'] as $socialKey) {
+                if (isset($data[$socialKey])) {
+                    $storeData[$socialKey] = $data[$socialKey];
+                }
+            }
+            
+            // Reset field Hidden By Condition
+            $conditions_check = (object) $storeData;
+            foreach ($conditions_check as $key => $val) {
+                if (!is_array($conditions_check->$key) && !is_null(json_decode($conditions_check->$key))) {
+                    $conditions_check->$key = json_decode($conditions_check->$key);
+                }
+            }
+            $conditions_check->id = $userId;
+
+            if (class_exists('JsnHelper') && method_exists('JsnHelper', 'excludeFromProfile')) {
+                $removedByConditions = JsnHelper::excludeFromProfile($conditions_check, true);
+                foreach ($removedByConditions as $field) {
+                    if (isset($storeData[$field])) {
+                        $storeData[$field] = '';
+                    }
+                }
+            }
+            
+            foreach ($no_edit_fields as $field) {
+                unset($storeData[$field]);
+            }
+            
+            // Trigger Profile and Field Update (Joomla 5 style)
+            \Joomla\CMS\Plugin\PluginHelper::importPlugin('jsn');
+            
+            $changed = [];
+            $storeData['email']    = $data['email'] ?? '';
+            $storeData['username'] = $data['username'] ?? '';
+            $storeData['password'] = $data['password'] ?? '';
+            $storeData['name']     = $data['name'] ?? '';
+            
+            foreach ($storeData as $key => $value) {
+                if ($key != 'privacy') {
+                    $key_clean = $key . '_clean';
+                    if (is_object($jsnUser) && isset($jsnUser->$key_clean)) {
+                        $jsnUser->$key = $jsnUser->$key_clean;
+                    }
+                    if (is_object($jsnUser) && isset($jsnUser->$key) && is_array($jsnUser->$key)) {
+                        $value = json_decode($value);
+                    }
+                    if (is_object($jsnUser) && (!isset($jsnUser->$key) || $jsnUser->$key === null)) {
+                        $jsnUser->$key = '';
+                    }
+                    if (is_object($jsnUser) && ((isset($jsnUser->$key) && $jsnUser->$key != $value) || !isset($jsnUser->$key))) {
+                        $changed[] = $key;
+                        $app->triggerEvent('triggerField' . ucfirst(str_replace('-', '_', $key)) . 'Update', [$jsnUser, &$storeData, $changed, $isNew]);
+                    }
+                }
+            }
+
+            if (count($changed)) {
+                $app->triggerEvent('triggerProfileUpdate', [$jsnUser, &$storeData, $changed, $isNew]);
+            }
+
+            unset($storeData['email'], $storeData['username'], $storeData['password'], $storeData['name']);
+            
+            // Write Jsn User
+            if (count($isUpdate)) {
+                $query = $db->getQuery(true)->update($db->quoteName('#__jsn_users'));
+                foreach ($storeData as $key => $value) {
+                    $query->set($db->quoteName($key) . ' = ' . $db->quote($value));
+                }
+                $query->where($db->quoteName('id') . ' = ' . (int) $userId);
+                $db->setQuery($query);
+                $db->execute();
+            } else {
+                $fields = [];
+                $values = [];
+                foreach ($storeData as $key => $value) {
+                    $fields[] = $db->quoteName($key);
+                    $values[] = $db->quote($value);
+                }
+                
+                $query = "INSERT INTO " . $db->quoteName('#__jsn_users') . " (" . $db->quoteName('id') . ", " . implode(', ', $fields) . ") VALUES (" . (int) $userId . ", " . implode(', ', $values) . ")";
+                $db->setQuery($query);
+                $db->execute();
+            }
+            
+            // Update Session
+            if ($userId == $app->getIdentity()->id) {
+                $session->set('user', new \Joomla\CMS\User\User($userId));
+            }
+            
+            // Redirect on Profile Page
+            if (!$isNew) {
+                $Itemid = $session->get('jsn_profile_item_id_' . $userId, false);
+                if (!$Itemid) {
+                    $profileMenu = $app->getMenu()->getItems('link', 'index.php?option=com_jsn&view=profile', true);
+                    $Itemid = isset($profileMenu->id) ? $profileMenu->id : '';
+                }
+                if ($session->get('redirectAfterLogin', null)) {
+                    $app->setUserState('com_users.edit.profile.redirect', $session->get('redirectAfterLogin', null));
+                } else {
+                    $app->setUserState('com_users.edit.profile.redirect', 'index.php?option=com_jsn&Itemid=' . $Itemid . '&view=profile&id=' . (int) $userId);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Ignorar el error sin romper el guardado ni invocar setError en null
+            $app->enqueueMessage($e->getMessage(), 'warning');
+        }
+    }
+
+    return true;
+}
+	
+	public function onUserAfterSaveDeprecated($data, $isNew, $result, $error)
 	{
 		$userId = \Joomla\Utilities\ArrayHelper::getValue($data, 'id', 0, 'int');
 
@@ -429,35 +742,33 @@ class PlgUserJsn_Users extends JPlugin
 			if(class_exists($class) && method_exists($class, 'deleteUser')) $class::deleteUser($field, $user);
 		}
 	}
+	
+public function onUserAfterDelete($user, $success, $msg)
+{
+    if (!$success) {
+        return false;
+    }
 
-	public function onUserAfterDelete($user, $success, $msg)
-	{
-		if (!$success)
-		{
-			return false;
-		}
+    $userId = \Joomla\Utilities\ArrayHelper::getValue($user, 'id', 0, 'int');
 
-		$userId = \Joomla\Utilities\ArrayHelper::getValue($user, 'id', 0, 'int');
+    if ($userId) {
+        try {
+            $db    = \Joomla\CMS\Factory::getContainer()->get('DatabaseDriver');
+            $query = $db->getQuery(true)
+                ->delete($db->quoteName('#__jsn_users'))
+                ->where($db->quoteName('id') . ' = ' . (int) $userId);
 
-		if ($userId)
-		{
-			try
-			{
-				$db = JFactory::getDbo();
-				$db->setQuery(
-					'DELETE FROM #__jsn_users WHERE id = ' . $userId
-				);
+            $db->setQuery($query);
+            $db->execute();
+        } catch (\Throwable $e) {
+            // En Joomla 5 los mensajes de error de plugins se envían a la aplicación
+            \Joomla\CMS\Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+            return false;
+        }
+    }
 
-				$db->execute();
-			}
-			catch (Exception $e)
-			{
-				$this->_subject->setError($e->getMessage());
-				return false;
-			}
-		}
-		return true;
-	}
+    return true;
+}
 	
 	public function onUserLogin($user, $options = array())
 	{

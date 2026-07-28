@@ -4,16 +4,16 @@
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
- defined('JPATH_PLATFORM') or die;
+ \defined('_JEXEC') or die;
 
  use Joomla\CMS\Client\ClientHelper;
  use Joomla\CMS\Factory;
- use Joomla\CMS\Filesystem\File;
- use Joomla\CMS\Filesystem\Folder;
+ use Joomla\Filesystem\File;
+ use Joomla\Filesystem\Folder;
  use Joomla\CMS\Language\Text;
  use Joomla\CMS\Uri\Uri;
  

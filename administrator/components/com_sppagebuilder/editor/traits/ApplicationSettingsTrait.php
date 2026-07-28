@@ -43,7 +43,7 @@ trait ApplicationSettingsTrait
 
 		if ($params->exists('ig_token'))
 		{
-			$params->set('ig_token', \json_decode($params->get('ig_token')));
+			$params->set('ig_token', \json_decode($params->get('ig_token', '')));
 		}
 
 		if (!$params->exists('enable_frontend_editing'))
@@ -51,9 +51,31 @@ trait ApplicationSettingsTrait
 			$params->set('enable_frontend_editing', '1');
 		}
 
+		if (!$params->exists('hide_editor_modules'))
+		{
+			$params->set('hide_editor_modules', '0');
+		}
+
 		if(!$params->get('lazyplaceholder')) 
 		{	
 			$params->set('lazyplaceholder', '/components/com_sppagebuilder/assets/images/lazyloading-placeholder.svg');
+		}
+
+		if(!$params->exists('enable_page_versioning')) {
+			$params->set('enable_page_versioning', '1');
+		}
+
+		if(!$params->exists('enable_versioning_on_save')) {
+			$params->set('enable_versioning_on_save', '1');
+		}
+
+		if(!$params->exists('max_versions_for_page')) {
+			$params->set('max_versions_for_page', '10');
+		}
+
+		if (!$params->exists('sppb_default_color_mode'))
+		{
+			$params->set('sppb_default_color_mode', '');
 		}
 
 		$colors = $this->getColors();
@@ -79,6 +101,7 @@ trait ApplicationSettingsTrait
 		$disableOG = $this->getInput('disable_og', 0, 'INT');
 		$fbAppID = $this->getInput('fb_app_id', '', 'STRING');
 		$disableTc = $this->getInput('disable_tc', 0, 'INT');
+		$enableGravatar = $this->getInput('enable_gravatar', 0, 'INT');
 		$joomshaperEmail = $this->getInput('joomshaper_email', '', 'STRING');
 		$joomshaperLicenseKey = $this->getInput('joomshaper_license_key', '', 'STRING');
 		$colors = $this->getInput('colors', '', 'RAW');
@@ -88,9 +111,20 @@ trait ApplicationSettingsTrait
 		$openaiApiKey = $this->getInput('openai_api_key', '', 'STRING');
 		$openaiModel = $this->getInput('openai_model', 'gpt-3.5-turbo', 'STRING');
 		$enableFrontendEditing = $this->getInput('enable_frontend_editing', 1, 'INT');
+		$hideEditorModules = $this->getInput('hide_editor_modules', 0, 'INT');
 		$containerMaxWidth = $this->getInput('container_max_width', 0, 'INT');
 		$containerMaxWidth = max(1140, $containerMaxWidth);
-
+		$colorVariables = $this->getInput('sppb_color_variables', '', 'RAW');
+		$defaultColorMode = $this->getInput('sppb_default_color_mode', '', 'STRING');
+		$showColorSwitcher = $this->getInput('show_color_switcher', 0, 'INT');
+		$manualCommentApproval = $this->getInput('manual_comment_approval', 0, 'INT');
+		$previouslyApprovedComment = $this->getInput('previously_approved_comment', 0, 'INT');
+		$showArticleDetailsPageAsDefault = $this->getInput('show_article_details_page_as_default', 0, 'INT');
+		$enablePageVersioning = $this->getInput('enable_page_versioning', 1, 'INT');
+		$enableVersioningOnSave = $this->getInput('enable_versioning_on_save', 1, 'INT');
+		$maxVersionsForPage = $this->getInput('max_versions_for_page', 10, 'INT');
+		$maxVersionsForPage = max(3, $maxVersionsForPage);
+		
 		$params = ComponentHelper::getParams('com_sppagebuilder');
 		$componentId = ComponentHelper::getComponent('com_sppagebuilder')->id;
 
@@ -109,6 +143,7 @@ trait ApplicationSettingsTrait
 		$params->set('disable_og', $disableOG);
 		$params->set('fb_app_id', $fbAppID);
 		$params->set('disable_tc', $disableTc);
+		$params->set('enable_gravatar', $enableGravatar);
 		$params->set('joomshaper_email', $joomshaperEmail);
 		$params->set('joomshaper_license_key', $joomshaperLicenseKey);
 		$params->set('google_font_api_key', trim($googleFontsApiKey));
@@ -116,7 +151,28 @@ trait ApplicationSettingsTrait
 		$params->set('openai_api_key', trim($openaiApiKey));
 		$params->set('openai_model', $openaiModel);
 		$params->set('enable_frontend_editing', $enableFrontendEditing);
+		$params->set('hide_editor_modules', $hideEditorModules);
 		$params->set('container_max_width', $containerMaxWidth);
+		$params->set('sppb_default_color_mode', trim($defaultColorMode));
+		$params->set('show_color_switcher', $showColorSwitcher);
+		$params->set('manual_comment_approval', $manualCommentApproval);
+		$params->set('previously_approved_comment', $previouslyApprovedComment);
+		$params->set('show_article_details_page_as_default', $showArticleDetailsPageAsDefault);
+		$params->set('enable_page_versioning', $enablePageVersioning);
+		$params->set('enable_versioning_on_save', $enableVersioningOnSave);
+		$params->set('max_versions_for_page', $maxVersionsForPage);
+
+		if(!empty($colorVariables))
+		{
+			if(is_string($colorVariables))
+			{
+				$params->set('sppb_color_variables', \json_decode($colorVariables));
+			}
+			else
+			{
+				$params->set('sppb_color_variables', $colorVariables);
+			}
+		}
 
 		if (!empty($joomshaperEmail) && !empty($joomshaperLicenseKey))
 		{
@@ -249,6 +305,12 @@ trait ApplicationSettingsTrait
 			$styleObj = !empty($ext->params) ? $ext->params : "{}";
 
 			$styleObjDecoded = \json_decode($styleObj);
+
+			$isCustomTemplateStyle = isset($styleObjDecoded->custom_style) && $styleObjDecoded->custom_style == 1;
+
+			if(!$isCustomTemplateStyle && isset($styleObjDecoded->preset) && !empty($styleObjDecoded->preset)) {
+				$styleObjDecoded = json_decode($styleObjDecoded->preset);
+			}
 
 			$newStyleObj = new \stdClass();
 
@@ -641,4 +703,122 @@ trait ApplicationSettingsTrait
 			return false;
 		}
 	}
+
+	public function typographyInUse(){
+		$groupIndex = $this->getInput('group_index', -1, 'INT');
+		$typographyIndex = $this->getInput('typography_index', -1, 'INT');
+		$typographiesInUse = $this->getTypographiesInUse();
+
+		if($typographyIndex === -1) {
+			$isInUse = isset($typographiesInUse[(string) $groupIndex]);
+			if($isInUse){
+				$response['message'] = Text::_("COM_SPPAGEBUILDER_ERROR_TYPOGRAPHY_IN_USE");
+			}
+			$response['data'] = [
+				'is_in_use' => $isInUse
+			];
+			$this->sendResponse($response);
+		} else {
+			$isInUse = false;
+			if (isset($typographiesInUse[(string) $groupIndex])) {
+				$isInUse = in_array($typographyIndex, $typographiesInUse[(string) $groupIndex]);
+			}
+			if($isInUse){
+				$response['message'] = Text::_("COM_SPPAGEBUILDER_ERROR_TYPOGRAPHY_IN_USE");
+			}
+			$response['data'] = [
+				'is_in_use' => $isInUse
+			];
+			$this->sendResponse($response);
+		}
+	}
+
+private function getTypographiesInUse()
+	{
+		$db = Factory::getDbo();
+		$query = $db->getQuery(true);
+		$query->select('content')
+			->from($db->quoteName('#__sppagebuilder'));
+		$db->setQuery($query);
+		
+		$typographyMap = [];
+		
+		try
+		{
+			$pages = $db->loadObjectList();
+			
+			if (!empty($pages))
+			{
+				foreach ($pages as $page)
+				{
+					if (!empty($page->content))
+					{
+						$content = json_decode($page->content);
+						
+						if (!empty($content))
+						{
+							$this->extractTypographyPresets($content, $typographyMap);
+						}
+					}
+				}
+			}
+		}
+		catch (\Exception $e)
+		{
+			return [];
+		}
+		
+		foreach ($typographyMap as $groupIndex => &$typographyIndices)
+		{
+			$typographyIndices = array_values(array_unique($typographyIndices));
+			sort($typographyIndices);
+		}
+		unset($typographyIndices);
+		
+		return $typographyMap;
+	}
+
+	private function extractTypographyPresets($data, &$map)
+	{
+		if (is_object($data))
+		{
+			foreach ($data as $key => $value)
+			{
+				if (is_object($value) && isset($value->preset) && !empty($value->preset))
+				{
+					$preset = $value->preset;
+					
+					$parts = explode('.', $preset);
+					
+					if (count($parts) === 2)
+					{
+						$groupIndex = $parts[0];
+						$typographyIndex = (int) $parts[1];
+						
+						if (!isset($map[$groupIndex]))
+						{
+							$map[$groupIndex] = [];
+						}
+						
+						if (!in_array($typographyIndex, $map[$groupIndex]))
+						{
+							$map[$groupIndex][] = $typographyIndex;
+						}
+					}
+				}
+				else
+				{
+					$this->extractTypographyPresets($value, $map);
+				}
+			}
+		}
+		else if (is_array($data))
+		{
+			foreach ($data as $value)
+			{
+				$this->extractTypographyPresets($value, $map);
+			}
+		}
+	}
+	
 }

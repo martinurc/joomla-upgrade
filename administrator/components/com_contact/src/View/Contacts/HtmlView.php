@@ -14,11 +14,11 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+use Joomla\CMS\Session\Session;
 use Joomla\CMS\Toolbar\Button\DropdownButton;
-use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
+use Joomla\Component\Contact\Administrator\Model\ContactsModel;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -48,7 +48,7 @@ class HtmlView extends BaseHtmlView
     /**
      * The model state
      *
-     * @var  \Joomla\CMS\Object\CMSObject
+     * @var  \Joomla\Registry\Registry
      */
     protected $state;
 
@@ -84,26 +84,18 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null)
     {
-        $this->items         = $this->get('Items');
-        $this->pagination    = $this->get('Pagination');
-        $this->state         = $this->get('State');
-        $this->filterForm    = $this->get('FilterForm');
-        $this->activeFilters = $this->get('ActiveFilters');
+        /** @var ContactsModel $model */
+        $model = $this->getModel();
+        $model->setUseExceptions(true);
 
-        if (!\count($this->items) && $this->isEmptyState = $this->get('IsEmptyState')) {
+        $this->items         = $model->getItems();
+        $this->pagination    = $model->getPagination();
+        $this->state         = $model->getState();
+        $this->filterForm    = $model->getFilterForm();
+        $this->activeFilters = $model->getActiveFilters();
+
+        if (!\count($this->items) && $this->isEmptyState = $model->getIsEmptyState()) {
             $this->setLayout('emptystate');
-        }
-
-        // Check for errors.
-        if (\count($errors = $this->get('Errors'))) {
-            throw new GenericDataException(implode("\n", $errors), 500);
-        }
-
-        // Preprocess the list of items to find ordering divisions.
-        // @todo: Complete the ordering stuff with nested sets
-        foreach ($this->items as &$item) {
-            $item->order_up = true;
-            $item->order_dn = true;
         }
 
         // We don't need toolbar in the modal window.
@@ -129,6 +121,15 @@ class HtmlView extends BaseHtmlView
                 // One last changes needed is to change the category filter to just show categories with All language or with the forced language.
                 $this->filterForm->setFieldAttribute('category_id', 'language', '*,' . $forcedLanguage, 'filter');
             }
+
+            /*
+            * When loaded from the frontend, the modal template requires a valid CSRF token on every request.
+            * Pagination links are plain GET anchor tags that bypass form submission,
+            * so the token must be threaded into all pagination URLs via additionalUrlParams.
+            */
+            if (Factory::getApplication()->isClient('site')) {
+                $this->pagination->setAdditionalUrlParam(Session::getFormToken(), '1');
+            }
         }
 
         parent::display($tpl);
@@ -144,10 +145,10 @@ class HtmlView extends BaseHtmlView
     protected function addToolbar()
     {
         $canDo = ContentHelper::getActions('com_contact', 'category', $this->state->get('filter.category_id'));
-        $user  = Factory::getApplication()->getIdentity();
+        $user  = $this->getCurrentUser();
 
         // Get the toolbar object instance
-        $toolbar = Toolbar::getInstance();
+        $toolbar = $this->getDocument()->getToolbar();
 
         ToolbarHelper::title(Text::_('COM_CONTACT_MANAGER_CONTACTS'), 'address-book contact');
 
@@ -188,13 +189,17 @@ class HtmlView extends BaseHtmlView
                 && $user->authorise('core.edit.state', 'com_contact')
             ) {
                 $childBar->popupButton('batch', 'JTOOLBAR_BATCH')
-                    ->selector('collapseModal')
+                    ->popupType('inline')
+                    ->textHeader(Text::_('COM_CONTACT_BATCH_OPTIONS'))
+                    ->url('#joomla-dialog-batch')
+                    ->modalWidth('800px')
+                    ->modalHeight('fit-content')
                     ->listCheck(true);
             }
         }
 
         if (!$this->isEmptyState && $this->state->get('filter.published') == -2 && $canDo->get('core.delete')) {
-            $toolbar->delete('contacts.delete', 'JTOOLBAR_EMPTY_TRASH')
+            $toolbar->delete('contacts.delete', 'JTOOLBAR_DELETE_FROM_TRASH')
                 ->message('JGLOBAL_CONFIRM_DELETE')
                 ->listCheck(true);
         }

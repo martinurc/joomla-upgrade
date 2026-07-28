@@ -3,15 +3,15 @@
  * @package     JCE
  * @subpackage  Editor
  *
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\File;
-use Joomla\CMS\Filesystem\Folder;
+use Joomla\Filesystem\File;
+use Joomla\Filesystem\Folder;
 
 class WFFileManagerPlugin extends WFMediaManager
 {
@@ -96,7 +96,8 @@ class WFFileManagerPlugin extends WFMediaManager
         }
 
         // get extension from format
-        $ext = File::getExt($format);
+        $ext = pathinfo($format, PATHINFO_EXTENSION);
+        
         // get all matched icons
         $icons = Folder::files(JPATH_SITE . '/' . $path, '\.' . $ext);
 
@@ -180,7 +181,7 @@ class WFFileManagerPlugin extends WFMediaManager
             // add icon first
             if ($defaults['option_icon_check']) {
 
-                $ext = File::getExt(basename($file));
+                $ext = pathinfo($file, PATHINFO_EXTENSION);
                 $map = $this->getIconMap();
 
                 $icon = str_replace('{$name}', $map[$ext], $this->getParam('filemanager.icon_format', '{$name}.png'));
@@ -238,8 +239,11 @@ class WFFileManagerPlugin extends WFMediaManager
         $data = array('size' => '', 'date' => '', 'url' => '');
 
         $filesystem = $browser->getFileSystem();
+
+        $path = $browser->resolvePath($file);
+
         // get array with folder date and content count eg: array('date'=>'00-00-000', 'folders'=>1, 'files'=>2);
-        $details = $filesystem->getFileDetails($file);
+        $details = $filesystem->getFileDetails($path);
 
         if (!empty($details['size'])) {
             $details['size'] = WFUtility::formatSize($details['size']);

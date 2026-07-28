@@ -174,9 +174,87 @@ SpAddonsConfig::addonConfig([
 					'type'    => 'select',
 					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_TEXT_ANI'),
 					'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_TEXT_ANI_DESC'),
-					'values'  => ['blinds' => 'Blinds', 'clip' => 'Clip', 'delete-typing' => 'Typing', 'flip' => 'Flip', 'fade-in' => 'Fade In', 'loading-bar' => 'Loading Bar', 'scale' => 'Scale', 'slide' => 'Swirl', 'push' => 'Push', 'wave' => 'Twist'],
+					'values'  => ['blinds' => 'Blinds', 'clip' => 'Clip', 'delete-typing' => 'Typing', 'flip' => 'Flip', 'fade-in' => 'Fade In', 'loading-bar' => 'Loading Bar', 'scale' => 'Scale', 'slide' => 'Swirl', 'push' => 'Push', 'wave' => 'Twist', 'marquee' => 'Marquee'],
 					'std'     => 'clip',
 					'depends' => [['heading_style', '=', 'text-animation'], ['animated_text', '!=', '']],
+				],
+
+				'pause_on_hover' => [
+					'type'    => 'checkbox',
+					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_PAUSE_ON_HOVER'),
+					'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_PAUSE_ON_HOVER_DESC'),
+					'std'     => 0,
+					'depends' => [['heading_style', '=', 'text-animation'], ['animated_text', '!=', ''], ['text_animation_name', '=', 'marquee']],				
+				],
+
+				'duplicates' => [
+					'type'    => 'slider',
+					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_DUPLICATE_COUNT'),
+					'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_DUPLICATE_COUNT_DESC'),
+					'std'	 => 5,
+					'max'     => 10,
+					'depends' => [['heading_style', '=', 'text-animation'], ['animated_text', '!=', ''], ['text_animation_name', '=', 'marquee']],				
+				],
+
+				'is_full_container' => [
+					'type'    => 'checkbox',
+					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_FULL_CONTAINER'),
+					'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_FULL_CONTAINER_DESC'),
+					'std'     => 0,
+					'depends' => [['heading_style', '=', 'text-animation'], ['animated_text', '!=', ''], ['text_animation_name', '=', 'marquee']],				
+				],
+
+				'full_container_width' => [
+					'type'    => 'slider',
+					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_FULL_CONTAINER_WIDTH'),
+					'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_FULL_CONTAINER_WIDTH_DESC'),
+					'std'     => 100,
+					'max'     => 100,
+					'depends' => [['heading_style', '=', 'text-animation'], ['animated_text', '!=', ''], ['text_animation_name', '=', 'marquee'], ['is_full_container', '=', 1]],				
+				],
+
+				'gap' => [
+					'type'    => 'slider',
+					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_GAP'),
+					'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_GAP_DESC'),
+					'std'     => 10,
+					'max'     => 100,
+					'depends' => [['heading_style', '=', 'text-animation'], ['animated_text', '!=', ''], ['text_animation_name', '=', 'marquee']],				
+				],
+
+				'direction' => [
+					'type'    => 'select',
+					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_DIRECTION'),
+					'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_DIRECTION_DESC'),
+					'values'  => ['left' => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_DIRECTION_LEFT'), 'right' => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_DIRECTION_RIGHT')],
+					'std'     => 'left',
+					'depends' => [['heading_style', '=', 'text-animation'], ['animated_text', '!=', ''], ['text_animation_name', '=', 'marquee']],				
+				],
+
+				'speed' => [
+					'type'    => 'slider',
+					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_SPEED'),
+					'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_SPEED_DESC'),
+					'std'     => 5,
+					'min'     => 1,
+					'depends' => [['heading_style', '=', 'text-animation'], ['animated_text', '!=', ''], ['text_animation_name', '=', 'marquee']],				
+				],
+
+				'duration' => [
+					'type'    => 'slider',
+					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_DURATION'),
+					'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_DURATION_DESC'),
+					'min'     => 100,
+					'max'     => 5000,
+					'depends' => [['text_animation_name', '!=', 'marquee']],				
+				],
+
+				'delay' => [
+					'type'    => 'slider',
+					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_DELAY'),
+					'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_ANI_HEADING_DELAY_DESC'),
+					'min'     => 100,
+					'max'     => 5000,
 				],
 				
 				'shape_width' => [

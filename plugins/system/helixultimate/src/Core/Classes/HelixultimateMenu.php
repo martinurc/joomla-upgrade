@@ -360,7 +360,7 @@ class HelixultimateMenu
 	 */
 	private function getItem($item)
 	{
-		if ((int) $item->getParams()->get('menu_show') === 0)
+		if ((int) $item->getParams()->get('menu_show', 1) === 0)
 		{
 			return;
 		}
@@ -496,6 +496,13 @@ class HelixultimateMenu
 
 					foreach ($col->items as $builder_item)
 					{
+						$cellItemId = (int) ($builder_item->item_id ?? $builder_item->id ?? 0);
+
+						if ($cellItemId === 0)
+						{
+							continue;
+						}
+
 						$li_head = '';
 
 						if ($builder_item->type === 'menu_item')
@@ -504,7 +511,7 @@ class HelixultimateMenu
 						}
 
 						$item_class = array(
-							'item-' . $builder_item->item_id,
+							'item-' . $cellItemId,
 							$builder_item->type,
 							$li_head
 						);
@@ -513,14 +520,14 @@ class HelixultimateMenu
 
 						if ($builder_item->type === 'module')
 						{
-							$this->menu .= $this->load_module($builder_item->item_id);
+							$this->menu .= $this->load_module($cellItemId);
 						}
 						elseif ($builder_item->type === 'menu_item')
 						{
-							if (!empty($this->_items[$builder_item->item_id]))
+							if (!empty($this->_items[$cellItemId]))
 							{
-								$item 	= $this->_items[$builder_item->item_id];
-								$items  = isset($this->children[$builder_item->item_id]) ? $this->children[$builder_item->item_id] : array();
+								$item 	= $this->_items[$cellItemId];
+								$items  = isset($this->children[$cellItemId]) ? $this->children[$cellItemId] : array();
 
 								$firstitem = count($items) ? $items[0]->id : 0;
 
@@ -615,12 +622,12 @@ class HelixultimateMenu
 
 		if (isset($layout->customclass) && ($layout->customclass))
 		{
-			$class .= ' ' . $layout->customclass;
+			$class .= ' ' . Helper::sanitizeMegaMenuCustomClass($layout->customclass);
 		}
 
 		$class .= $item->class;
 
-		return '<li class="' . $class . '">';
+		return '<li class="' . htmlspecialchars($class, ENT_QUOTES, 'UTF-8') . '">';
 	}
 
 	/**
@@ -689,11 +696,11 @@ class HelixultimateMenu
 		$layout = json_decode(Helper::CheckNull($item->getParams()->get('helixultimatemenulayout')));
 
 		$showmenutitle = (isset($layout->showtitle)) ? $layout->showtitle : 1;
-		$icon = (isset($layout->faicon)) ? $layout->faicon : '';
+		$icon = Helper::sanitizeMegaMenuFaIcon(isset($layout->faicon) ? $layout->faicon : '');
 
 		if (!empty($icon) && !preg_match("@^fa[sbr]@", $icon))
 		{
-			$icon = 'fas ' . $icon;
+			$icon = Helper::sanitizeMegaMenuFaIcon('fas ' . $icon);
 		}
 		
 
@@ -705,13 +712,15 @@ class HelixultimateMenu
 		// Add Menu Icon
 		if ($icon)
 		{
+			$iconClass = htmlspecialchars($icon, ENT_QUOTES, 'UTF-8');
+
 			if ($showmenutitle)
 			{
-				$linktitle = '<span class="' . $icon . '"></span> ' . $linktitle;
+				$linktitle = '<span class="' . $iconClass . '"></span> ' . $linktitle;
 			}
 			else
 			{
-				$linktitle = '<span class="' . $icon . '"></span>';
+				$linktitle = '<span class="' . $iconClass . '"></span>';
 			}
 		}
 
@@ -725,15 +734,18 @@ class HelixultimateMenu
 		{
 			$badge_style = '';
 			$badge_class = 'sp-menu-badge sp-menu-badge-right';
+			$badgeText = Helper::sanitizeMegaMenuBadge($layout->badge);
+			$badgeBgColor = Helper::sanitizeMegaMenuColor($layout->badge_bg_color ?? '');
+			$badgeTextColor = Helper::sanitizeMegaMenuColor($layout->badge_text_color ?? '');
 
-			if (isset($layout->badge_bg_color) && $layout->badge_bg_color)
+			if ($badgeBgColor)
 			{
-				$badge_style .= 'background-color: ' . $layout->badge_bg_color . ';';
+				$badge_style .= 'background-color: ' . $badgeBgColor . ';';
 			}
 
-			if (isset($layout->badge_text_color) && $layout->badge_text_color)
+			if ($badgeTextColor)
 			{
-				$badge_style .= 'color: ' . $layout->badge_text_color . ';';
+				$badge_style .= 'color: ' . $badgeTextColor . ';';
 			}
 
 			if (isset($layout->badge_position) && $layout->badge_position === 'left')
@@ -741,7 +753,7 @@ class HelixultimateMenu
 				$badge_class = 'sp-menu-badge sp-menu-badge-left';
 			}
 
-			$badge_html = '<span class="' . $badge_class . '" style="' . $badge_style . '">' . $layout->badge . '</span>';
+			$badge_html = '<span class="' . $badge_class . '" style="' . htmlspecialchars($badge_style, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($badgeText, ENT_QUOTES, 'UTF-8') . '</span>';
 		}
 
 		$output = '';

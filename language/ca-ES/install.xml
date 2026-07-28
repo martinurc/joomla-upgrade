@@ -1,102 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<extension version="3.10" client="site" type="language" method="upgrade">
+<extension client="site" type="language" method="upgrade">
 	<name>Catalan (ca-ES)</name>
 	<tag>ca-ES</tag>
-	<version>3.10.12</version>
-	<creationDate>2024-10-17</creationDate>
+	<version>5.4.7</version>
+	<creationDate>2026-07</creationDate>
 	<author>Catalan [ca-ES] Translation Team</author>
 	<authorEmail>traduccio@joomla.cat</authorEmail>
 	<authorUrl>https://www.joomla.cat</authorUrl>
 	<copyright>(C) 2013 Open Source Matters, Inc.</copyright>
 	<license>GNU General Public License version 2 or later</license>
-	<description>ca-ES - Site language</description>
+	<description>&lt;p>Catalan [ca-ES] language pack (site) for Joomla!&lt;/p>&lt;p>&lt;/p>&lt;p>Paquet d'idioma català [ca-ES] (lloc) per a Joomla!&lt;/p></description>
 	<files>
-		<filename>ca-ES.ini</filename>
-		<filename>ca-ES.com_ajax.ini</filename>
-		<filename>ca-ES.com_config.ini</filename>
-		<filename>ca-ES.com_contact.ini</filename>
-		<filename>ca-ES.com_content.ini</filename>
-		<filename>ca-ES.com_finder.ini</filename>
-		<filename>ca-ES.com_mailto.ini</filename>
-		<filename>ca-ES.com_media.ini</filename>
-		<filename>ca-ES.com_messages.ini</filename>
-		<filename>ca-ES.com_newsfeeds.ini</filename>
-		<filename>ca-ES.com_privacy.ini</filename>
-		<filename>ca-ES.com_search.ini</filename>
-		<filename>ca-ES.com_tags.ini</filename>
-		<filename>ca-ES.com_users.ini</filename>
-		<filename>ca-ES.com_weblinks.ini</filename>
-		<filename>ca-ES.com_wrapper.ini</filename>
-		<filename>ca-ES.files_joomla.sys.ini</filename>
-		<filename>ca-ES.finder_cli.ini</filename>
-		<filename>ca-ES.lib_fof.ini</filename>
-		<filename>ca-ES.lib_fof.sys.ini</filename>
-		<filename>ca-ES.lib_idna_convert.sys.ini</filename>
-		<filename>ca-ES.lib_joomla.ini</filename>
-		<filename>ca-ES.lib_joomla.sys.ini</filename>
-		<filename>ca-ES.lib_phpass.sys.ini</filename>
-		<filename>ca-ES.lib_phputf8.sys.ini</filename>
-		<filename>ca-ES.lib_simplepie.sys.ini</filename>
-		<filename>ca-ES.mod_articles_archive.ini</filename>
-		<filename>ca-ES.mod_articles_archive.sys.ini</filename>
-		<filename>ca-ES.mod_articles_categories.ini</filename>
-		<filename>ca-ES.mod_articles_categories.sys.ini</filename>
-		<filename>ca-ES.mod_articles_category.ini</filename>
-		<filename>ca-ES.mod_articles_category.sys.ini</filename>
-		<filename>ca-ES.mod_articles_latest.ini</filename>
-		<filename>ca-ES.mod_articles_latest.sys.ini</filename>
-		<filename>ca-ES.mod_articles_news.ini</filename>
-		<filename>ca-ES.mod_articles_news.sys.ini</filename>
-		<filename>ca-ES.mod_articles_popular.ini</filename>
-		<filename>ca-ES.mod_articles_popular.sys.ini</filename>
-		<filename>ca-ES.mod_banners.ini</filename>
-		<filename>ca-ES.mod_banners.sys.ini</filename>
-		<filename>ca-ES.mod_breadcrumbs.ini</filename>
-		<filename>ca-ES.mod_breadcrumbs.sys.ini</filename>
-		<filename>ca-ES.mod_custom.ini</filename>
-		<filename>ca-ES.mod_custom.sys.ini</filename>
-		<filename>ca-ES.mod_feed.ini</filename>
-		<filename>ca-ES.mod_feed.sys.ini</filename>
-		<filename>ca-ES.mod_finder.ini</filename>
-		<filename>ca-ES.mod_finder.sys.ini</filename>
-		<filename>ca-ES.mod_footer.ini</filename>
-		<filename>ca-ES.mod_footer.sys.ini</filename>
-		<filename>ca-ES.mod_languages.ini</filename>
-		<filename>ca-ES.mod_languages.sys.ini</filename>
-		<filename>ca-ES.mod_login.ini</filename>
-		<filename>ca-ES.mod_login.sys.ini</filename>
-		<filename>ca-ES.mod_menu.ini</filename>
-		<filename>ca-ES.mod_menu.sys.ini</filename>
-		<filename>ca-ES.mod_random_image.ini</filename>
-		<filename>ca-ES.mod_random_image.sys.ini</filename>
-		<filename>ca-ES.mod_related_items.ini</filename>
-		<filename>ca-ES.mod_related_items.sys.ini</filename>
-		<filename>ca-ES.mod_search.ini</filename>
-		<filename>ca-ES.mod_search.sys.ini</filename>
-		<filename>ca-ES.mod_stats.ini</filename>
-		<filename>ca-ES.mod_stats.sys.ini</filename>
-		<filename>ca-ES.mod_syndicate.ini</filename>
-		<filename>ca-ES.mod_syndicate.sys.ini</filename>
-		<filename>ca-ES.mod_tags_popular.ini</filename>
-		<filename>ca-ES.mod_tags_popular.sys.ini</filename>
-		<filename>ca-ES.mod_tags_similar.ini</filename>
-		<filename>ca-ES.mod_tags_similar.sys.ini</filename>
-		<filename>ca-ES.mod_users_latest.ini</filename>
-		<filename>ca-ES.mod_users_latest.sys.ini</filename>
-		<filename>ca-ES.mod_weblinks.ini</filename>
-		<filename>ca-ES.mod_weblinks.sys.ini</filename>
-		<filename>ca-ES.mod_whosonline.ini</filename>
-		<filename>ca-ES.mod_whosonline.sys.ini</filename>
-		<filename>ca-ES.mod_wrapper.ini</filename>
-		<filename>ca-ES.mod_wrapper.sys.ini</filename>
-		<filename>ca-ES.tpl_beez3.ini</filename>
-		<filename>ca-ES.tpl_beez3.sys.ini</filename>
-		<filename>ca-ES.tpl_protostar.ini</filename>
-		<filename>ca-ES.tpl_protostar.sys.ini</filename>
-		<filename>ca-ES.localise.php</filename>
+		<folder>/</folder>
 		<filename file="meta">install.xml</filename>
-		<filename file="meta">ca-ES.xml</filename>
-		<filename>index.html</filename>
 	</files>
-	<params />
+	<params/>
 </extension>

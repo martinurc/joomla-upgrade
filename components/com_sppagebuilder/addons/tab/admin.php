@@ -33,6 +33,11 @@ SpAddonsConfig::addonConfig([
                             'std'   => 'Tab'
                         ],
 
+                        'item_visibility' => [
+                            'type' => 'visibility',
+                            'std'  => true,
+                        ],
+
                         'subtitle' => [
                             'type'  => 'text',
                             'title' => Text::_('COM_SPPAGEBUILDER_ADDON_TAB_ITEM_SUBTITLE'),

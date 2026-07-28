@@ -33,6 +33,11 @@ SpAddonsConfig::addonConfig([
 							'std'   => 'Gallery Item 1'
 						],
 
+						'item_visibility' => [
+							'type' => 'visibility',
+							'std'  => true,
+						],
+
 						'thumb' => [
 							'type'  => 'media',
 							'title' => Text::_('COM_SPPAGEBUILDER_ADDON_GALLERY_THUMB'),
@@ -89,6 +94,27 @@ SpAddonsConfig::addonConfig([
 					'std'     => 0,
 				],
 
+				'show_desc_on_hover' => [
+					'type'    => 'checkbox',
+					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_GALLERY_DESC_ON_HOVER'),
+					'std'     => 0,
+				],
+
+				'description_typography' => [
+					'type'     => 'typography',
+					'title'  	=> Text::_('COM_SPPAGEBUILDER_GLOBAL_TYPOGRAPHY'),
+					'fallbacks'   => [
+						'font' => 'description_font_family',
+						'size' => 'description_fontsize',
+						'line_height' => 'description_lineheight',
+						'letter_spacing' => 'description_letterspace',
+						'uppercase' => 'description_font_style.uppercase',
+						'italic' => 'description_font_style.italic',
+						'underline' => 'description_font_style.underline',
+						'weight' => 'description_font_style.weight',
+					],
+				],
+
 				'item_alignment' => [
 					'type' => 'alignment',
 					'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_ALIGNMENT'),
@@ -113,6 +139,7 @@ SpAddonsConfig::addonConfig([
 					'title'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_WIDTH'),
 					'responsive' => true,
 					'std'        => ['xl' => 200],
+					'min'		 => 10,
 					'max'        => 1000,
 				],
 
@@ -121,6 +148,7 @@ SpAddonsConfig::addonConfig([
 					'title'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_HEIGHT'),
 					'responsive' => true,
 					'std'        => ['xl' => 200],
+					'min'		 => 10,
 					'max'        => 1000,
 				],
 

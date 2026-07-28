@@ -8,7 +8,7 @@
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\Folder;
+use Joomla\Filesystem\Folder;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\HTML\HTMLHelper;
 
@@ -215,7 +215,14 @@ class RSFormProBackup
 
 		if (is_dir($this->path))
 		{
-			Folder::delete($this->path);
+			try
+			{
+				Folder::delete($this->path);
+			}
+			catch (Exception $e)
+			{
+
+			}
 		}
 
 		exit();

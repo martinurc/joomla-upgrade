@@ -110,6 +110,7 @@ $column_settings = [
                         'repeat-y' => Text::_('COM_SPPAGEBUILDER_GLOBAL_BACKGROUND_REPEAT_VERTICALLY'),
                         'inherit' => Text::_('COM_SPPAGEBUILDER_GLOBAL_INHERIT'),
                     ],
+                    'responsive' => true,
                     'std' => 'no-repeat',
                     'depends' => [
                         ['background_type', '=', 'image'],
@@ -128,6 +129,7 @@ $column_settings = [
                         'custom' => Text::_('COM_SPPAGEBUILDER_GLOBAL_CUSTOM'),
                     ],
                     'std' => 'cover',
+                    'responsive' => true,
                     'depends' => [
                         ['background_type', '=', 'image'],
                         ['background_image', '!=', ''],
@@ -142,7 +144,6 @@ $column_settings = [
                     'max' => 3000,
                     'min' => 0,
                     'depends' => [
-                        ['background_size', '=', 'custom'],
                         ['background_image', '!=', ''],
                     ],
                     'responsive' => true,
@@ -158,6 +159,7 @@ $column_settings = [
                         'scroll' => Text::_('COM_SPPAGEBUILDER_GLOBAL_BACKGROUND_ATTACHMENT_SCROLL'),
                         'inherit' => Text::_('COM_SPPAGEBUILDER_GLOBAL_INHERIT'),
                     ],
+                    'responsive' => true,
                     'std' => 'scroll',
                     'depends' => [
                         ['background_type', '=', 'image'],
@@ -181,6 +183,7 @@ $column_settings = [
                         'custom' => Text::_('COM_SPPAGEBUILDER_GLOBAL_CUSTOM'),
                     ],
                     'std' => '0 0',
+                    'responsive' => true,
                     'depends' => [
                         ['background_type', '=', 'image'],
                         ['background_image', '!=', ''],

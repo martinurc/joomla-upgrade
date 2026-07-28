@@ -1,26 +1,27 @@
 <?php
+
 /**
  * @package     JCE
  * @subpackage  Admin
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\File;
 use Joomla\CMS\Filter\InputFilter;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Form\FormHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\AdminModel;
-use Joomla\CMS\Session\Session;
 use Joomla\CMS\Table\Table;
 use Joomla\Registry\Registry;
 use Joomla\String\StringHelper;
+use Joomla\Event\DispatcherAwareInterface;
 
 require JPATH_SITE . '/components/com_jce/editor/libraries/classes/editor.php';
 
@@ -53,6 +54,20 @@ class JceModelProfile extends AdminModel
     protected $text_prefix = 'COM_JCE';
 
     /**
+     * Constructor. Wires up the event dispatcher when running on Joomla 4+.
+     *
+     * @param   array  $config  Configuration array for the model
+     */
+    public function __construct($config = array())
+    {
+        if ($this instanceof DispatcherAwareInterface) {
+            $this->setDispatcher(Factory::getApplication()->getDispatcher());
+        }
+
+        parent::__construct($config);
+    }
+
+    /**
      * Returns a Table object, always creating it.
      *
      * @param type   $type   The table type to instantiate
@@ -68,7 +83,16 @@ class JceModelProfile extends AdminModel
         return Table::getInstance($type, $prefix, $config);
     }
 
-    /* Override to prevent plugins from processing form data */
+    /**
+     * Override to prevent Joomla plugins from mutating profile form data.
+     * Decodes and normalises the config array for display instead.
+     *
+     * @param   string  $context  The context for the data
+     * @param   object  &$data    The data object to normalise in place
+     * @param   string  $group    The plugin group (unused)
+     *
+     * @return  void
+     */
     protected function preprocessData($context, &$data, $group = 'system')
     {
         if (!isset($data->config)) {
@@ -174,9 +198,21 @@ class JceModelProfile extends AdminModel
         $form->bind($data);
     }
 
+    /**
+     * Get the profile edit form.
+     *
+     * @param   array  $data      Pre-populate data (unused; form always loads from the model state)
+     * @param   bool   $loadData  Whether to load data into the form
+     *
+     * @return  Form|bool  The form, or false on failure
+     */
     public function getForm($data = array(), $loadData = true)
-    {        
-        FormHelper::addFieldPath('JPATH_ADMINISTRATOR/components/com_jce/models/fields');
+    {
+        if ($this instanceof DispatcherAwareInterface) {
+            $this->setDispatcher(Factory::getApplication()->getDispatcher());
+        }
+
+        FormHelper::addFieldPath(JPATH_ADMINISTRATOR . '/components/com_jce/models/fields');
 
         // Get the setup form.
         return $this->loadForm('com_jce.profile', 'profile', array('control' => 'jform', 'load_data' => true));
@@ -219,6 +255,11 @@ class JceModelProfile extends AdminModel
         return $data;
     }
 
+    /**
+     * Return the profile toolbar layout as a nested array of button groups indexed by row number.
+     *
+     * @return  array  [ rowIndex => [ groupIndex => [ button, ... ], ... ], ... ]
+     */
     public function getRows()
     {
         $data = $this->getItem();
@@ -280,9 +321,9 @@ class JceModelProfile extends AdminModel
     }
 
     /**
-     * An array of buttons not in the current editor layout.
+     * Return plugins/commands that are not currently placed in the toolbar layout.
      *
-     * @return array
+     * @return  array  Keyed by plugin name
      */
     public function getAvailableButtons()
     {
@@ -295,6 +336,11 @@ class JceModelProfile extends AdminModel
         return $available;
     }
 
+    /**
+     * Return editor plugins that are not placed in any toolbar row.
+     *
+     * @return  array  Keyed by plugin name
+     */
     public function getAdditionalPlugins()
     {
         $plugins = $this->getButtons();
@@ -306,6 +352,11 @@ class JceModelProfile extends AdminModel
         return $additional;
     }
 
+    /**
+     * Return the merged set of toolbar commands and editor plugins for this profile.
+     *
+     * @return  array  Keyed by item name
+     */
     public function getButtons()
     {
         $commands = $this->getCommands();
@@ -314,6 +365,12 @@ class JceModelProfile extends AdminModel
         return array_merge($commands, $plugins);
     }
 
+    /**
+     * Return all registered toolbar commands (bold, italic, undo, etc.) decorated with
+     * active state and translated labels for the current profile.
+     *
+     * @return  array  Keyed by command name
+     */
     public function getCommands()
     {
         static $commands;
@@ -359,6 +416,12 @@ class JceModelProfile extends AdminModel
         return $commands;
     }
 
+    /**
+     * Return all registered editor plugins decorated with active state, translated labels,
+     * and loaded parameter forms (including extension sub-forms) for the current profile.
+     *
+     * @return  array  Keyed by plugin name
+     */
     public function getPlugins()
     {
         static $plugins;
@@ -499,9 +562,7 @@ class JceModelProfile extends AdminModel
     /**
      * Prepare and sanitise the table data prior to saving.
      *
-     * @param JTable $table A reference to a JTable object
-     *
-     * @since   1.6
+     * @param   JTable $table A reference to a JTable object
      */
     protected function prepareTable($table)
     {
@@ -533,8 +594,6 @@ class JceModelProfile extends AdminModel
                         }
                     }
 
-                    $value = $value;
-
                     break;
                 case 'components':
                     $value = $filter->clean($value, 'STRING');
@@ -547,12 +606,36 @@ class JceModelProfile extends AdminModel
                 case 'params':
                     break;
                 case 'types':
-                case 'users':
-
                     $value = $filter->clean($value, 'INT');
 
                     if (is_array($value)) {
+                        $whitelist = array_filter(array_map('intval', (array) ComponentHelper::getParams('com_jce')->get('profile_groups_whitelist', [])));
+
+                        if (!empty($whitelist)) {
+                            $value = array_intersect($value, $whitelist);
+                        }
+
                         $value = implode(',', $value);
+                    }
+
+                    break;
+                case 'users':
+                    $value = $filter->clean($value, 'INT');
+
+                    if (is_array($value)) {
+                        $ids = array_filter(array_map('intval', $value));
+
+                        if (!empty($ids)) {
+                            $db = $this->getDbo();
+                            $query = $db->getQuery(true)
+                                ->select($db->quoteName('id'))
+                                ->from($db->quoteName('#__users'))
+                                ->where($db->quoteName('id') . ' IN (' . implode(',', $ids) . ')');
+                            $db->setQuery($query);
+                            $value = implode(',', array_map('intval', $db->loadColumn()));
+                        } else {
+                            $value = '';
+                        }
                     }
 
                     break;
@@ -562,12 +645,13 @@ class JceModelProfile extends AdminModel
                 case 'rows':
                     $value = preg_replace('#[^\w,;]+#', '', $value);
                     break;
-                case 'params':
-                    break;
             }
 
             $table->$key = $value;
         }
+
+        $user = Factory::getUser();
+        $date = Factory::getDate();
 
         if (empty($table->id)) {
             // Set ordering to the last item if not set
@@ -582,9 +666,25 @@ class JceModelProfile extends AdminModel
 
                 $table->ordering = $max + 1;
             }
+
+            $table->created    = $date->toSQL();
+            $table->created_by = $user->get('id');
         }
+
+        $table->modified    = $date->toSQL();
+        $table->modified_by = $user->get('id');
     }
 
+    /**
+     * Validate and normalise raw form submission data before it reaches the model.
+     * Moves the 'config' key to 'params' (JSON-encoded) and clears empty multi-select fields.
+     *
+     * @param   Form        $form   The form
+     * @param   array       $data   Raw POST data
+     * @param   string|null $group  Validation group (unused)
+     *
+     * @return  array  Cleaned data array ready for save()
+     */
     public function validate($form, $data, $group = null)
     {
         $filter = InputFilter::getInstance();
@@ -618,6 +718,14 @@ class JceModelProfile extends AdminModel
         return $data;
     }
 
+    /**
+     * Normalise plugin parameter arrays before saving: renames legacy keys and
+     * decodes JSON-encoded sub-values so the stored params stay clean.
+     *
+     * @param   array  $data  Plugin params keyed by plugin name
+     *
+     * @return  array
+     */
     private static function cleanParamData($data)
     {
         // clean up link plugin parameters
@@ -646,13 +754,78 @@ class JceModelProfile extends AdminModel
     }
 
     /**
-     * Method to save the form data.
+     * Recursively normalise a parameter node before it is stored:
+     * - Strings that look like JSON ({...} or [...]) are decoded when safe.
+     * - Arrays that represent an empty key/value pair are dropped (return null).
+     * - All other scalars and objects are returned as-is.
      *
-     * @param   array  The form data
+     * @param   mixed  $node  A scalar, array, or object to normalise
      *
-     * @return bool True on success
+     * @return  mixed  The normalised value, or null to signal removal
+     */
+    private static function normalizeParams($node)
+    {
+        // 1) Strings: decode JSON-in-strings when safe
+        if (is_string($node)) {
+            $trim = ltrim($node);
+
+            if ($trim !== '' && ($trim[0] === '{' || $trim[0] === '[')) {
+                $decoded = json_decode($node, true);
+
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    return self::normalizeParams($decoded);
+                }
+            }
+
+            return $node;
+        }
+
+        // 2) Arrays: handle key/value pairs & recurse
+        if (is_array($node)) {
+            // Drop empty key/value pair objects
+            if (array_key_exists('name', $node) && array_key_exists('value', $node)) {
+                $name  = trim((string) ($node['name'] ?? ''));
+                $value = $node['value'] ?? '';
+
+                $valueIsEmpty =
+                    (is_string($value) && trim($value) === '') ||
+                    $value === null ||
+                    (is_array($value) && $value === []);
+
+                if ($name === '' && $valueIsEmpty) {
+                    return null; // signal to remove
+                }
+            }
+
+            $result = [];
+
+            // Preserve numeric indexes for lists; associative for objects
+            foreach ($node as $k => $v) {
+                $normalized = self::normalizeParams($v);
+
+                // Skip nulls returned from empty key/value pairs
+                if ($normalized === null) {
+                    continue;
+                }
+
+                $result[$k] = $normalized;
+            }
+
+            return $result;
+        }
+
+        // 3) Other scalars / objects: return as-is
+        return $node;
+    }
+
+    /**
+     * Save the profile form data, merging plugin params with the existing stored params.
      *
-     * @since    2.7
+     * @param   array  $data  The validated form data
+     *
+     * @return  bool  True on success
+     *
+     * @since   2.7
      */
     public function save($data)
     {
@@ -722,8 +895,12 @@ class JceModelProfile extends AdminModel
                 // add config data
                 if (array_key_exists($item, $data['params'])) {
                     $value = $data['params'][$item];
-                    // clean and add to json array for merging
-                    $json[$item] = filter_var_array($value, FILTER_SANITIZE_SPECIAL_CHARS);
+
+                    // normalize the value
+                    $value = self::normalizeParams($value);
+                    
+                    // Add to json array for merging
+                    $json[$item] = $value;
                 }
             }
 
@@ -743,20 +920,34 @@ class JceModelProfile extends AdminModel
         return false;
     }
 
+    /**
+     * Duplicate one or more profiles. The copy is unpublished and stamped with
+     * the current user's created/modified tracking fields.
+     *
+     * @param   array  $ids  Primary keys of the profiles to copy
+     *
+     * @return  bool
+     */
     public function copy($ids)
     {
-        // Check for request forgeries
-        Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
         $table = $this->getTable();
+
+        $user = Factory::getUser();
+        $date = Factory::getDate();
 
         foreach ($ids as $id) {
             if (!$table->load($id)) {
                 $this->setError($table->getError());
+                return false;
             } else {
                 $name = Text::sprintf('WF_PROFILES_COPY_OF', $table->name);
                 $table->name = $name;
                 $table->id = 0;
                 $table->published = 0;
+                $table->created    = $date->toSQL();
+                $table->created_by = $user->get('id');
+                $table->modified    = $date->toSQL();
+                $table->modified_by = $user->get('id');
             }
 
             // Check the row.
@@ -777,6 +968,13 @@ class JceModelProfile extends AdminModel
         return true;
     }
 
+    /**
+     * Stream one or more profiles as a downloadable XML file and terminate the request.
+     *
+     * @param   array  $ids  Primary keys of the profiles to export
+     *
+     * @return  void  Does not return — exits after sending the response body
+     */
     public function export($ids)
     {
         $db = Factory::getDBO();
@@ -801,7 +999,7 @@ class JceModelProfile extends AdminModel
 
             foreach ($fields as $key => $value) {
                 // only allow a subset of fields
-                if (false == in_array($key, $validFields)) {
+                if (!in_array($key, $validFields)) {
                     continue;
                 }
 
@@ -847,23 +1045,42 @@ class JceModelProfile extends AdminModel
     }
 
     /**
-     * Process XML restore file.
+     * Validate that a file is a well-formed JCE profile export document.
      *
-     * @param object $xml
+     * @param string $path Path to the XML file
+     *
+     * @return bool
+     */
+    private static function validateProfileImport($path)
+    {
+        $content = @file_get_contents($path);
+
+        if ($content === false) {
+            return false;
+        }
+
+        // Strip DOCTYPE to prevent entity-based XXE (local file:// and network) on all PHP versions
+        $content = preg_replace('/<!DOCTYPE[^[>]*(\[[^\]]*\])?>/is', '', $content);
+
+        libxml_use_internal_errors(true);
+        $xml = simplexml_load_string($content, 'SimpleXMLElement', LIBXML_NONET);
+        libxml_clear_errors();
+        libxml_use_internal_errors(false);
+
+        return $xml
+            && $xml->getName() === 'export'
+            && (string) $xml['type'] === 'profiles'
+            && isset($xml->profiles);
+    }
+
+    /**
+     * Process XML restore file.
      *
      * @return bool
      */
     public function import()
     {
-        // Check for request forgeries
-        Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
-
-        jimport('joomla.filesystem.file');
-
         $app = Factory::getApplication();
-        $tmp = $app->getCfg('tmp_path');
-
-        jimport('joomla.filesystem.file');
 
         $file = $app->input->files->get('profile_file', null, 'raw');
 
@@ -874,32 +1091,38 @@ class JceModelProfile extends AdminModel
         }
 
         if ($file['error'] || $file['size'] < 1) {
+            if (!empty($file['tmp_name'])) {
+                @unlink($file['tmp_name']);
+            }
             $app->enqueueMessage(Text::_('WF_PROFILES_UPLOAD_NOFILE'), 'error');
             return false;
         }
 
-        // sanitize the file name
-        $name = File::makeSafe($file['name']);
-
-        if (empty($name)) {
+        // 512 KB is far more than any legitimate profile export
+        if ($file['size'] > 1024 * 512) {
+            @unlink($file['tmp_name']);
             $app->enqueueMessage(Text::_('WF_PROFILES_IMPORT_ERROR'), 'error');
             return false;
         }
 
-        // Build the appropriate paths.
-        $config = Factory::getConfig();
-        $destination = $config->get('tmp_path') . '/' . $name;
-        $source = $file['tmp_name'];
-
-        // Move uploaded file.
-        File::upload($source, $destination, false, true);
-
-        if (!is_file($destination)) {
-            $app->enqueueMessage(Text::_('WF_PROFILES_UPLOAD_FAILED'), 'error');
+        try {
+            WFUtility::isSafeFile($file, ['xml']);
+        } catch (\InvalidArgumentException $e) {
+            $app->enqueueMessage(Text::_('WF_PROFILES_IMPORT_INVALID_FILE'), 'error');
             return false;
         }
 
-        $result = JceProfilesHelper::processImport($destination);
+        $source = $file['tmp_name'];
+
+        if (!self::validateProfileImport($source)) {
+            @unlink($source);
+            $app->enqueueMessage(Text::_('WF_PROFILES_IMPORT_INVALID_FILE'), 'error');
+            return false;
+        }
+
+        $result = JceProfilesHelper::processImport($source);
+
+        @unlink($source);
 
         if ($result === false) {
             $app->enqueueMessage(Text::_('WF_PROFILES_IMPORT_ERROR'), 'error');

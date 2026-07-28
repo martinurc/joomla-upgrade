@@ -9,11 +9,27 @@
 //no direct access
 defined('_JEXEC') or die('restricted access');
 
-use Joomla\CMS\Factory;
+use Joomla\CMS\Version;
+
+$joomlaVersion = defined('JVERSION') ? JVERSION : (new Version())->getShortVersion();
+
+if (version_compare($joomlaVersion, '6.0', '>=')) {
+    if (!class_exists('Joomla\CMS\Filesystem\File')) {
+        class_alias('Joomla\Filesystem\File', 'Joomla\CMS\Filesystem\File');
+    }
+    if (!class_exists('Joomla\CMS\Filesystem\Folder')) {
+        class_alias('Joomla\Filesystem\Folder', 'Joomla\CMS\Filesystem\Folder');
+    }
+}
+
 use Joomla\CMS\Filesystem\File;
 use Joomla\CMS\Filesystem\Folder;
+
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Installer\Installer;
-use Joomla\CMS\Version;
+use Joomla\CMS\Table\Table;
+use Joomla\CMS\Factory;
+use Joomla\Database\DatabaseInterface;
 
 class com_sppagebuilderInstallerScript
 {
@@ -26,7 +42,7 @@ class com_sppagebuilderInstallerScript
 
     public function uninstall($parent)
     {
-        $db = Factory::getDBO();
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
         $status = new stdClass;
         $status->modules = array();
         $manifest = $parent->getParent()->manifest;
@@ -40,7 +56,7 @@ class com_sppagebuilderInstallerScript
             $name = (string)$plugin->attributes()->name;
             $group = (string)$plugin->attributes()->group;
 
-            $db = Factory::getDbo();
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
             $query = $db->getQuery(true);
             $query->select($db->quoteName(array('extension_id')));
             $query->from($db->quoteName('#__extensions'));
@@ -55,6 +71,7 @@ class com_sppagebuilderInstallerScript
                 foreach ($extensions as $id)
                 {
                     $installer = new Installer;
+                    $installer->setDatabase(Factory::getContainer()->get(DatabaseInterface::class));
                     $result = $installer->uninstall('plugin', $id);
                 }
                 $status->plugins[] = array('name' => $name, 'result' => $result);
@@ -68,7 +85,7 @@ class com_sppagebuilderInstallerScript
         {
             $name = (string)$module->attributes()->module;
             $client = (string)$module->attributes()->client;
-            $db = Factory::getDBO();
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
             $query = "SELECT `extension_id` FROM `#__extensions` WHERE `type`='module' AND element = " . $db->Quote($name) . "";
             $db->setQuery($query);
             $extensions = $db->loadColumn();
@@ -77,6 +94,7 @@ class com_sppagebuilderInstallerScript
                 foreach ($extensions as $id)
                 {
                     $installer = new Installer;
+                    $installer->setDatabase(Factory::getContainer()->get(DatabaseInterface::class));
                     $result = $installer->uninstall('module', $id);
                 }
                 $status->modules[] = array('name' => $name, 'client' => $client, 'result' => $result);
@@ -123,11 +141,12 @@ class com_sppagebuilderInstallerScript
             $path = $src . '/plugins/' . $group . '/' . $name;
 
             $installer = new Installer;
+            $installer->setDatabase(Factory::getContainer()->get(DatabaseInterface::class));
             $result = $installer->install($path);
 
             if ($result && $activate == "true")
             {
-                $db = Factory::getDbo();
+                $db = Factory::getContainer()->get(DatabaseInterface::class);
                 $query = $db->getQuery(true);
                 $fields = array($db->quoteName('enabled') . ' = 1');
 
@@ -159,11 +178,12 @@ class com_sppagebuilderInstallerScript
             $platform = (isset($module->attributes()->platform) && $module->attributes()->platform) ? (string)$module->attributes()->platform : 'universal';
 
             $installer = new Installer;
+            $installer->setDatabase(Factory::getContainer()->get(DatabaseInterface::class));
             $result = $installer->install($path);
 
             if ($client === 'administrator')
             {
-                $db = Factory::getDbo();
+                $db = Factory::getContainer()->get(DatabaseInterface::class);
                 $query = $db->getQuery(true);
                 $fields = array();
 
@@ -188,7 +208,7 @@ class com_sppagebuilderInstallerScript
                 $db->execute();
 
                 // Retrieve ID
-                $db = Factory::getDbo();
+                $db = Factory::getContainer()->get(DatabaseInterface::class);
                 $query = $db->getQuery(true);
                 $query->select($db->quoteName(['id']));
                 $query->from($db->quoteName('#__modules'));
@@ -198,7 +218,7 @@ class com_sppagebuilderInstallerScript
 
                 if ($id)
                 {
-                    $db = Factory::getDbo();
+                    $db = Factory::getContainer()->get(DatabaseInterface::class);
                     $db->setQuery("INSERT IGNORE INTO #__modules_menu (`moduleid`,`menuid`) VALUES (" . $id . ", 0)");
                     $db->execute();
                 }
@@ -216,6 +236,113 @@ class com_sppagebuilderInstallerScript
 
         $this->detectAndRenamePagebuilderOverrides();
         $this->fixDatabaseStructure();
+        $this->saveColorVariables();
+    }
+
+	private function getColors()
+	{
+		$db = Factory::getContainer()->get(DatabaseInterface::class);
+		$query = $db->getQuery(true);
+		$query->select(['id', 'name', 'colors'])
+			->from($db->quoteName('#__sppagebuilder_colors'))
+			->where($db->quoteName('published') . ' = 1');
+		$db->setQuery($query);
+
+		$colors = [];
+
+		try
+		{
+			$colors = $db->loadObjectList();
+		}
+		catch (\Exception $e)
+		{
+			return [];
+		}
+
+		if (!empty($colors))
+		{
+			foreach ($colors as &$color)
+			{
+				$color->colors = \json_decode($color->colors);
+			}
+
+			unset($color);
+		}
+
+		return $colors;
+	}
+
+    /**
+	 * Convert existing colors to new color variable structure
+	 * 
+	 * @param mixed $colors
+	 * 
+	 * @return mixed
+	 * 
+	 * @since 5.7.0
+	 */
+	private function convertToColorVariables($colors)
+	{
+		$updatedData = [];
+		$defaultColorMode = 'Default';
+
+		foreach($colors as $group)
+		{
+			if(!empty($group->colors))
+			{
+				foreach($group->colors as $color)
+				{
+					$path = [];
+			
+					if(!empty($group->name) && !empty($color->name))
+					{
+                        $color_variable_name = $group->name . ' ' . $color->name;
+						array_push($path, $color_variable_name, $defaultColorMode);
+						array_push($updatedData, [
+							'path' => $path,
+							'value' => $color->value,
+						]);
+					}
+				}
+			}
+		}
+
+		return $updatedData;
+	}
+
+    private function saveColorVariables()
+    {
+        $colors = $this->getColors();
+        $updatedColors = $this->convertToColorVariables($colors);
+
+        $params = ComponentHelper::getParams('com_sppagebuilder');
+        
+        if ($params->exists('sppb_color_variables'))
+        {
+            return;
+        }
+
+		$componentId = ComponentHelper::getComponent('com_sppagebuilder')->id;
+
+
+        $params->set('sppb_color_variables', $updatedColors);
+
+        $table = Table::getInstance('extension');
+
+		if (!$table->load($componentId))
+		{
+			return false;
+		}
+
+		$table->params = json_encode($params);
+
+		if (!$table->store())
+		{
+			return false;
+		}
+
+        return true;
+
     }
 
 
@@ -224,19 +351,19 @@ class com_sppagebuilderInstallerScript
 
         $dashboardViewPath = JPATH_ROOT . '/components/com_sppagebuilder/views/dashboard';
         
-        if (Folder::exists($dashboardViewPath))
+        if (is_dir($dashboardViewPath))
         {
             Folder::delete($dashboardViewPath);
         }
 
         $dashboardControllerPath = JPATH_ROOT . '/components/com_sppagebuilder/controllers/dashboard.php';
 
-        if (File::exists($dashboardControllerPath))
+        if (is_file($dashboardControllerPath))
         {
             File::delete($dashboardControllerPath);
         }
 
-        $db = Factory::getDbo();
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true);
         $query->delete($db->quoteName('#__menu'))
             ->where($db->quoteName('link') . ' = ' . $db->quote('index.php?option=com_sppagebuilder&view=dashboard'));
@@ -308,7 +435,7 @@ class com_sppagebuilderInstallerScript
      */
     private function detectMissingColumns(string $tableName, array $definedColumns)
     {
-        $db = Factory::getDbo();
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
         $columns = $db->getTableColumns($tableName);
 
         $missing = [];
@@ -336,7 +463,7 @@ class com_sppagebuilderInstallerScript
      */
     private function addMissingColumn(string $tableName, string $columnName, string $structure)
     {
-        $db = Factory::getDbo();
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
         $sqlQuery = "ALTER TABLE " . $db->quoteName($tableName) . " ADD " . $db->quoteName($columnName) . " " . $structure;
 
         $db->setQuery($sqlQuery);
@@ -361,7 +488,7 @@ class com_sppagebuilderInstallerScript
      */
     private function setSqlMode()
     {
-        $db = Factory::getDbo();
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
         $query = "SET SQL_MODE=''";
         $db->setQuery($query);
 
@@ -435,7 +562,7 @@ class com_sppagebuilderInstallerScript
 
     private function deleteExtension($extension)
     {
-        $db = Factory::getDbo();
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true);
         $query->select($db->quoteName(array('extension_id')));
         $query->from($db->quoteName('#__extensions'));
@@ -447,6 +574,7 @@ class com_sppagebuilderInstallerScript
         if (!empty($id))
         {
             $installer = new Installer;
+            $installer->setDatabase(Factory::getContainer()->get(DatabaseInterface::class));
             $installer->uninstall('module', $id);
         }
     }

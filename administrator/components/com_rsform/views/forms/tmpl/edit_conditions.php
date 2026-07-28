@@ -28,7 +28,7 @@ if (empty($this->conditions))
 		<?php
 		foreach ($this->conditions as $row)
 		{
-			$onclick = "openRSModal('" . Route::_('index.php?option=com_rsform&view=conditions&layout=edit&tmpl=component&formId=' . $this->formId . '&cid=' . $row->id) . "', 'Conditions', '1024x768'); return false;";
+			$onclick = "openRSModal('" . Route::_('index.php?option=com_rsform&view=conditions&layout=edit&tmpl=component&formId=' . $this->formId . '&cid=' . $row->id) . "', 'Conditions'); return false;";
 			?>
 			<tr>
 				<td>

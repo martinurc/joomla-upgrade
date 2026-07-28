@@ -38,8 +38,8 @@ class JsnImageFieldHelper
 		if(JFactory::getApplication()->input->get('view','profile')=='profile' && JFactory::getApplication()->input->get('option','')=='com_jsn' && $item->params->get('titleprofile','')!='') $item->title=$item->params->get('titleprofile','');
 		$defaultvalue=($item->params->get('image_defaultvalue','')!='' ? 'default="'.JsnHelper::xmlentities($item->params->get('image_defaultvalue','')).'"' : '');//(isset($item->params['image_defaultvalue']) && $item->params['image_defaultvalue']!='' ? 'default="'.$item->params['image_defaultvalue'].'"' : '');
 		
-		if($item->params->get('field_readonly','')==1 && JFactory::getApplication()->isSite()) $readonly='readonly="true"';
-		elseif($item->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('view')!='registration' && JFactory::getApplication()->isSite()) $readonly='readonly="true"';
+		if($item->params->get('field_readonly','')==1 && JFactory::getApplication()->isClient('site')) $readonly='readonly="true"';
+		elseif($item->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('view')!='registration' && JFactory::getApplication()->isClient('site')) $readonly='readonly="true"';
 		else $readonly='';
 
 		$xml='
@@ -119,8 +119,8 @@ class JsnImageFieldHelper
 			return;
 		}
 
-		//if($field->params->get('field_readonly','')==1 && JFactory::getApplication()->isSite()) return;
-		//if($field->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('task')=='profile.save' && JFactory::getApplication()->isSite()) return;
+		//if($field->params->get('field_readonly','')==1 && JFactory::getApplication()->isClient('site')) return;
+		//if($field->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('task')=='profile.save' && JFactory::getApplication()->isClient('site')) return;
 		$upload_path=$field->params->get('image_path','images/profiler/');
 
 		// Set Upload Dir

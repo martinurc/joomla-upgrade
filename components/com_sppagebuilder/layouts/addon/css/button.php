@@ -17,6 +17,7 @@ $css = '';
 $cssHelper = new CSSHelper($addon_id);
 
 $btn_style = (isset($options->button_type) && $options->button_type) ? $options->button_type : '';
+$btn_size = (isset($options->button_size) && $options->button_size) ? $options->button_size : '';
 $appearance = (isset($options->button_appearance) && $options->button_appearance) ? $options->button_appearance : '';
 
 $custom_style = '';
@@ -72,14 +73,15 @@ else
 $customProps['button_color'] = 'color';
 $customUnits['button_color'] = false;
 
-$buttonProps = ['button_padding' => 'padding'];
-$buttonUnits = ['button_padding' => false];
+$customSizeProps['button_padding'] = 'padding';
+$customSizeUnits['button_padding'] = false;
 
-$buttonProps = ['button_padding' => 'padding', 'button_margin_top' => 'margin-top', 'button_margin_bottom' => 'margin-bottom' ];
-$buttonUnits = ['button_padding' => false, 'button_margin_top' => 'px', 'button_margin_bottom' => 'px'];
+$buttonProps = ['button_margin_top' => 'margin-top', 'button_margin_bottom' => 'margin-bottom' ];
+$buttonUnits = ['button_margin_top' => 'px', 'button_margin_bottom' => 'px'];
 
 $buttonStyle = $cssHelper->generateStyle('#' . $id . '.sppb-btn-' . $btn_style, $options, $buttonProps, $buttonUnits);
 $customStyle = $cssHelper->generateStyle('#' . $id . '.sppb-btn-custom', $options, $customProps, $customUnits, ['button_padding' => 'spacing']);
+$customSizeStyle = $cssHelper->generateStyle('#' . $id . '.sppb-btn-custom', $options, $customSizeProps, $customSizeUnits);
 $hoverStyle = $cssHelper->generateStyle('#' . $id . '.sppb-btn-custom:hover', $options, $hoverProps, $hoverUnits);
 
 $fallback = [
@@ -130,5 +132,6 @@ $css .= $buttonTypography;
 $css .= $btn_style === 'custom' ? $customStyle : '';
 $css .= $hoverStyle;
 $css .= $btn_style === 'link' ? $linkButtonStyle . $linkHoverStyle : '';
+$css .= $btn_size === 'custom' ? $customSizeStyle : '';
 
 echo $css;

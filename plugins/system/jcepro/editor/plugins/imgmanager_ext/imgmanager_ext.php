@@ -3,11 +3,11 @@
  * @package     JCE
  * @subpackage  Editor
  *
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -205,6 +205,19 @@ class WFImgManagerExtPlugin extends WFMediaManager
         $settings = array(
             'always_include_dimensions' => (bool) $this->getParam('imgmanager_ext.always_include_dimensions', 1),
         );
+
+        $params = $this->getParams()->get('imgmanager_ext', []);
+
+        $attributes = array();
+
+        foreach($params as $name => $value) {
+            if (strpos($name, 'attributes_') === 0) {
+                $attr = substr($name, 11);
+                $attributes[$attr] = (bool) $value;
+            }
+        }
+
+        $settings['attributes'] = $attributes;
 
         return parent::getSettings($settings);
     }

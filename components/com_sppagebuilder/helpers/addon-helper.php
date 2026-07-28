@@ -394,4 +394,15 @@ final class AddonHelper
 		$target .= !empty($rel) ?  ' rel="' . trim($rel) . '"' : '';
 		return [$url, $target];
 	}
+
+	public static function cleanUpCustomValue($value) {
+		if (is_object($value)) {
+			foreach ($value as $key => $val) {
+				if (is_string($val) && !empty($val) && str_contains($val, 'custom') ) {
+					$value->$key = "";
+				}
+			}
+		}
+		return $value;
+	}
 }

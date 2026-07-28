@@ -32,6 +32,7 @@ SpAddonsConfig::addonConfig([
 						'inline-block' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_INLINE_BLOCK"),
 						'flex'         => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_FLEX"),
 						'inline-flex'  => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_INLINE_FLEX"),
+						'grid'         => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_GRID"),
 					],
 					'std' => 'block'
 				],
@@ -45,7 +46,7 @@ SpAddonsConfig::addonConfig([
 						['label' => 'Horizontal', 'value' => 'row'],
 						['label' => 'Vertical', 'value' => 'column'],
 					],
-					'depends' => [['display', '!=', 'block'], ['display', '!=', 'inline-block'], ['display', '!=', '']],
+					'depends' => [['display', '!=', 'block'], ['display', '!=', 'inline-block'], ['display', '!=', ''], ['display', '!=', 'grid']],
 				],
 
 				'reverse_direction' => [
@@ -53,7 +54,7 @@ SpAddonsConfig::addonConfig([
 					'title' => Text::_("COM_SPPAGEBUILDER_ADDON_DIV_REVERSED_DIRECTION"),
 					'std'        => ['xl' => 0, 'lg' => 0, 'md' => 0, 'sm' => 0, 'xs' => 0],
 					'responsive' => true,
-					'depends' => [['display', '!=', 'block'], ['display', '!=', 'inline-block'], ['display', '!=', ''], ['flex_direction', '!=', '']],
+					'depends' => [['display', '!=', 'block'], ['display', '!=', 'inline-block'], ['display', '!=', ''], ['flex_direction', '!=', ''], ['display', '!=', 'grid']]
 				],
 
 				'justify_content' => [
@@ -106,7 +107,60 @@ SpAddonsConfig::addonConfig([
 						],
 					],
 
-					'depends' => [['display', '!=', 'block'], ['display', '!=', 'inline-block'], ['display', '!=', '']],
+					'depends' => [['display', '!=', 'block'], ['display', '!=', 'inline-block'], ['display', '!=', ''], ['display', '!=', 'grid'], ['flex_direction', '!=', 'column']],
+				],
+
+				'justify_content_vertical' => [
+					'type' => 'buttons',
+					'title' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_FLEX_JUSTIFY"),
+					'std'        => ['xl' => 'center', 'lg' => '', 'md' => '', 'sm' => '', 'xs' => ''],
+					'responsive' => true,
+					'values' => [
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_FLEX_START"),
+								'icon' => 'justifyStartVertical'
+							],
+							'value' => 'flex-start'
+						],
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_FLEX_END"),
+								'icon' => 'justifyEndVertical'
+							],
+							'value' => 'flex-end'
+						],
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_FLEX_CENTER"),
+								'icon' => 'justifyCenterVertical'
+							],
+							'value' => 'center'
+						],
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_SPACE_BETWEEN"),
+								'icon' => 'justifySpaceBetweenVertical'
+							],
+							'value' => 'space-between'
+						],
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_SPACE_AROUND"),
+								'icon' => 'justifySpaceAroundVertical'
+							],
+							'value' => 'space-around'
+						],
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_SPACE_EVENLY"),
+								'icon' => 'justifySpaceEvenlyVertical'
+							],
+							'value' => 'space-evenly'
+						],
+					],
+
+					'depends' => [['display', '!=', 'block'], ['display', '!=', 'inline-block'], ['display', '!=', ''], ['display', '!=', 'grid'], ['flex_direction', '=', 'column']],
 				],
 
 				'align_items' => [
@@ -145,7 +199,46 @@ SpAddonsConfig::addonConfig([
 						],
 					],
 
-					'depends' => [['display', '!=', 'block'], ['display', '!=', 'inline-block'], ['display', '!=', '']],
+					'depends' => [['display', '!=', 'block'], ['display', '!=', 'inline-block'], ['display', '!=', ''], ['display', '!=', 'grid'], ['flex_direction', '!=', 'column']],
+				],
+
+				'align_items_vertical' => [
+					'type' => 'buttons',
+					'title' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_FLEX_ALIGN"),
+					'std'        => ['xl' => 'center', 'lg' => '', 'md' => '', 'sm' => '', 'xs' => ''],
+					'responsive' => true,
+					'values' => [
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_ALIGN_START"),
+								'icon' => 'alignStartVertical'
+							],
+							'value' => 'flex-start'
+						],
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_ALIGN_CENTER"),
+								'icon' => 'alignCenterVertical'
+							],
+							'value' => 'center'
+						],
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_ALIGN_END"),
+								'icon' => 'alignEndVertical'
+							],
+							'value' => 'flex-end'
+						],
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_ALIGN_STRETCH"),
+								'icon' => 'alignStretchVertical'
+							],
+							'value' => 'stretch'
+						],
+					],
+
+					'depends' => [['display', '!=', 'block'], ['display', '!=', 'inline-block'], ['display', '!=', ''], ['display', '!=', 'grid'], ['flex_direction', '=', 'column']],
 				],
 
 				'flex_wrap' => [
@@ -177,7 +270,7 @@ SpAddonsConfig::addonConfig([
 						],
 					],
 
-					'depends' => [['display', '!=', 'block'], ['display', '!=', 'inline-block'], ['display', '!=', '']],
+					'depends' => [['display', '!=', 'block'], ['display', '!=', 'inline-block'], ['display', '!=', ''], ['display', '!=', 'grid']],
 				],
 
 				'flex_gap' => [
@@ -186,8 +279,156 @@ SpAddonsConfig::addonConfig([
 					'desc' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_FLEX_GAP_DESC"),
 					'std'        => ['xl' => '', 'lg' => '', 'md' => '', 'sm' => '', 'xs' => ''],
 					'responsive' => true,
-					'depends' => [['display', '!=', 'block'], ['display', '!=', 'inline-block'], ['display', '!=', '']],
-				]
+					'depends' => [['display', '!=', 'block'], ['display', '!=', 'inline-block'], ['display', '!=', ''], ['display', '!=', 'grid']],
+				],
+
+				'grid_template_columns' => [
+					'type' => 'grid-template',
+					'template_type' => 'column',
+					'title' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_GRID_TEMPLATE_COLUMNS"),
+					'desc' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_GRID_TEMPLATE_COLUMNS_DESC"),
+					'std'        => ['xl' => '', 'lg' => '', 'md' => '', 'sm' => '', 'xs' => ''],
+					'responsive' => true,
+					'depends' => [['display', '=', 'grid'], ['display', '!=', '']],
+					'min' => 1,
+					'max' => 5,
+				],
+
+				'grid_template_rows' => [
+					'type' => 'grid-template',
+					'template_type' => 'row',
+					'title' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_GRID_TEMPLATE_ROWS"),
+					'desc' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_GRID_TEMPLATE_ROWS_DESC"),
+					'std'        => ['xl' => '', 'lg' => '', 'md' => '', 'sm' => '', 'xs' => ''],
+					'responsive' => true,
+					'depends' => [['display', '=', 'grid'], ['display', '!=', '']],
+					'min' => 1,
+					'max' => 5,
+				],
+
+				'gap_separator_start' => [
+					'type' => 'separator',
+				],
+
+				'grid_gap' => [
+					'type' => 'grid-gap',
+					'title' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_GRID_GAP"),
+					'desc' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_GRID_GAP_DESC"),
+					'std'        => ['xl' => '', 'lg' => '', 'md' => '', 'sm' => '', 'xs' => ''],
+					'responsive' => true,
+					'depends' => [['display', '=', 'grid'], ['display', '!=', '']],
+				],
+
+				'gap_separator_end' => [
+					'type' => 'separator',
+					'depends' => [['display', '=', 'grid'], ['display', '!=', '']],
+				],
+
+				'grid_auto_flow' => [
+					'type' => 'select',
+					'title' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_GRID_AUTO_FLOW"),
+					'desc' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_GRID_AUTO_FLOW_DESC"),
+					'values' => [
+						'row' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_GRID_AUTO_FLOW_ROW"),
+						'column' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_GRID_AUTO_FLOW_COLUMN"),
+						'dense' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_GRID_AUTO_FLOW_DENSE"),
+						'row dense' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_GRID_AUTO_FLOW_ROW_DENSE"),
+						'column dense' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_GRID_AUTO_FLOW_COLUMN_DENSE"),
+					],
+					'std' => 'row',
+					'responsive' => true,
+					'depends' => [['display', '=', 'grid'], ['display', '!=', '']],
+				],
+
+				'grid_justify' => [
+					'type' => 'buttons',
+					'title' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_GRID_JUSTIFY"),
+					'std'        => ['xl' => 'center', 'lg' => '', 'md' => '', 'sm' => '', 'xs' => ''],
+					'responsive' => true,
+					'values' => [
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_FLEX_START"),
+								'icon' => 'justifyStart'
+							],
+							'value' => 'start'
+						],
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_FLEX_END"),
+								'icon' => 'justifyEnd'
+							],
+							'value' => 'end'
+						],
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_FLEX_CENTER"),
+								'icon' => 'justifyCenter'
+							],
+							'value' => 'center'
+						],
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_SPACE_BETWEEN"),
+								'icon' => 'justifySpaceBetween'
+							],
+							'value' => 'space-between'
+						],
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_SPACE_AROUND"),
+								'icon' => 'justifySpaceAround'
+							],
+							'value' => 'space-around'
+						],
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_SPACE_EVENLY"),
+								'icon' => 'justifySpaceEvenly'
+							],
+							'value' => 'space-evenly'
+						],
+					],
+					'depends' => [['display', '=', 'grid'], ['display', '!=', '']],
+				],
+
+				'grid_align' => [
+					'type' => 'buttons',
+					'title' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_GRID_ALIGN"),
+					'std'        => ['xl' => 'center', 'lg' => '', 'md' => '', 'sm' => '', 'xs' => ''],
+					'responsive' => true,
+					'values' => [
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_ALIGN_START"),
+								'icon' => 'alignStart'
+							],
+							'value' => 'start'
+						],
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_ALIGN_CENTER"),
+								'icon' => 'alignCenter'
+							],
+							'value' => 'center'
+						],
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_ALIGN_END"),
+								'icon' => 'alignEnd'
+							],
+							'value' => 'end'
+						],
+						[
+							'label' => [
+								'tooltip' => Text::_("COM_SPPAGEBUILDER_ADDON_DISPLAY_ALIGN_STRETCH"),
+								'icon' => 'alignStretch'
+							],
+							'value' => 'stretch'
+						],
+					],
+					'depends' => [['display', '=', 'grid'], ['display', '!=', '']],
+				],
 			],
 		],
 
@@ -203,10 +444,28 @@ SpAddonsConfig::addonConfig([
 					'responsive' => true
 				],
 
+				'max_width' => [
+					'type' => 'slider',
+					'title' => Text::_("COM_SPPAGEBUILDER_ADDON_DIV_MAX_WIDTH"),
+					'desc' => Text::_("COM_SPPAGEBUILDER_ADDON_DIV_MAX_WIDTH_DESC"),
+					'min' => 0,
+					'max' => 1000,
+					'responsive' => true
+				],
+
 				'height' => [
 					'type' => 'slider',
 					'title' => Text::_("COM_SPPAGEBUILDER_ADDON_DIV_HEIGHT"),
 					'desc' => Text::_("COM_SPPAGEBUILDER_ADDON_DIV_HEIGHT_DESC"),
+					'min' => 0,
+					'max' => 1000,
+					'responsive' => true
+				],
+
+				'max_height' => [
+					'type' => 'slider',
+					'title' => Text::_("COM_SPPAGEBUILDER_ADDON_DIV_MAX_HEIGHT"),
+					'desc' => Text::_("COM_SPPAGEBUILDER_ADDON_DIV_MAX_HEIGHT_DESC"),
 					'min' => 0,
 					'max' => 1000,
 					'responsive' => true

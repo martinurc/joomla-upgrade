@@ -58,7 +58,7 @@ Text::script('RSFP_ARE_YOU_SURE_DELETE');
 				</div>
 				<div id="emailsdiv">
 					<p>
-						<button type="button" onclick="openRSModal('<?php echo Route::_('index.php?option=com_rsform&task=emails.edit&type=directory&tmpl=component&formId='.$this->formId); ?>', 'Emails', '800x750');" class="btn btn-primary"><?php echo Text::_('RSFP_FORM_EMAILS_NEW'); ?></button>
+						<button type="button" onclick="openRSModal('<?php echo Route::_('index.php?option=com_rsform&task=emails.edit&type=directory&tmpl=component&formId='.$this->formId); ?>', 'Emails');" class="btn btn-primary"><?php echo Text::_('RSFP_FORM_EMAILS_NEW'); ?></button>
 					</p>
 					<div id="emailsContent">
 						<?php echo $this->loadTemplate('emails'); ?>

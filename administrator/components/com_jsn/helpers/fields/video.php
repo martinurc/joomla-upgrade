@@ -40,8 +40,8 @@ class JsnVideoFieldHelper
 		$maxlength=($item->params->get('video_maxlength','')!='' ? 'maxlength="'.$item->params->get('video_maxlength','').'"' : '');
 		$placeholder=($item->params->get('video_placeholder','')!='' ? 'hint="'.JsnHelper::xmlentities($item->params->get('video_placeholder','')).'"' : '');
 
-		if($item->params->get('field_readonly','')==1 && JFactory::getApplication()->isSite()) $readonly='readonly="true"';
-		elseif($item->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('view')!='registration' && JFactory::getApplication()->isSite()) $readonly='readonly="true"';
+		if($item->params->get('field_readonly','')==1 && JFactory::getApplication()->isClient('site')) $readonly='readonly="true"';
+		elseif($item->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('view')!='registration' && JFactory::getApplication()->isClient('site')) $readonly='readonly="true"';
 		else $readonly='';
 
 		$type='video';
@@ -78,8 +78,8 @@ class JsnVideoFieldHelper
 	
 	public static function storeData($field, $data, &$storeData)
 	{
-		//if($field->params->get('field_readonly','')==1 && JFactory::getApplication()->isSite()) return;
-		//if($field->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('task')=='profile.save' && JFactory::getApplication()->isSite()) return;
+		//if($field->params->get('field_readonly','')==1 && JFactory::getApplication()->isClient('site')) return;
+		//if($field->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('task')=='profile.save' && JFactory::getApplication()->isClient('site')) return;
 		$alias=$field->alias;
 		if(isset($data[$alias])){
 			if(substr(trim($data[$alias]), 0, 4)=='http') $storeData[$alias]=$data[$alias];

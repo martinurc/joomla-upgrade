@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2016-2023 Joomlashack.com. All rights reserved
+ * @copyright 2016-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -25,10 +26,10 @@ namespace Alledia\Framework\Joomla\Extension;
 
 use Alledia\Framework\Factory;
 use Joomla\CMS\Plugin\CMSPlugin;
-use Joomla\CMS\Version;
 
 // phpcs:disable PSR1.Files.SideEffects
 defined('_JEXEC') or die();
+
 // phpcs:enable PSR1.Files.SideEffects
 
 abstract class AbstractPlugin extends CMSPlugin

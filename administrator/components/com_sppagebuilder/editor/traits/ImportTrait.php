@@ -17,6 +17,7 @@ use Joomla\CMS\Filesystem\Path;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Filesystem\Folder;
 use Joomla\CMS\Uri\Uri;
+use JoomShaper\SPPageBuilder\DynamicContent\Models\Page;
 
 // No direct access
 defined('_JEXEC') or die('Restricted access');
@@ -26,6 +27,8 @@ defined('_JEXEC') or die('Restricted access');
  */
 trait ImportTrait
 {
+    use CommonTrait;
+
     public function importJson()
     {
         $method = $this->getInputMethod();
@@ -54,10 +57,28 @@ trait ImportTrait
             {
                 $content = file_get_contents($file['tmp_name']);
                 $importingContent = (object)['template' => '', 'css' => '', 'seo' => ''];
+                $updatedFieldIds = [];
+                $updatedCollectionIds = [];
 
                 if (!empty($content))
                 {
                     $parsedContent = json_decode($content);
+
+                    if(isset($parsedContent->dynamicContentData) && !empty($parsedContent->dynamicContentData))
+                    {
+                        $updatedData = $this->importDynamicContentData($parsedContent->dynamicContentData);
+                        $updatedFieldIds = $updatedData['globalFieldsMap'] ?? [];
+                        $updatedCollectionIds = $updatedData['globalCollectionsIdMap'] ?? [];
+
+                        $isDetailPage = isset($parsedContent->type) && $parsedContent->type === Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL;
+                        $isIndexPage = isset($parsedContent->type) && $parsedContent->type === Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX;
+
+                        if (($isDetailPage || $isIndexPage) && isset($parsedContent->view_id) && !empty($parsedContent->view_id)) {
+                            if (isset($updatedCollectionIds[$parsedContent->view_id])) {
+                                $parsedContent->view_id = $updatedCollectionIds[$parsedContent->view_id];
+                            }
+                        }
+                    }
 
                     if (!isset($parsedContent->template))
                     {
@@ -76,6 +97,7 @@ trait ImportTrait
 
                     $templateContent = !is_string($importingContent->template) ? json_encode($importingContent->template) : $importingContent->template;
                     $content = ApplicationHelper::sanitizePageText($templateContent);
+                    $content = $this->updateDynamicIds($content, $updatedFieldIds, $updatedCollectionIds);
                     $content = json_encode($content);
 
                     /** Sanitize the old data with new data format. */
@@ -110,7 +132,10 @@ trait ImportTrait
             $zip->extractTo($extractedPath);
             $zip->close();
 
-            $pageData = $this->getPageDataFromZip($extractedPath);
+            $updatedFieldIds = [];
+            $updatedCollectionIds = [];
+
+            $pageData = $this->getPageDataFromZip($extractedPath, $updatedFieldIds, $updatedCollectionIds);
 
             $localMediaSources = $pageData->localMediaSources;
             $extractedMediaSources = $this->scanDirectory($extractedPath);
@@ -124,7 +149,18 @@ trait ImportTrait
 
             if (is_array($localMediaSources) && !empty($localMediaSources))
             {
-                foreach ($localMediaSources as $source)
+                    if (!$this->extractZipSafely($zip, $extractedPath))
+                    {
+                        $zip->close();
+                        Folder::delete($extractedPath);
+
+                        $response = [
+                            'status' => false,
+                            'data' => 'Invalid zip file contents.'
+                        ];
+
+                        $this->sendResponse($response, 400);
+                    }
             {
                 $sourceBasename = basename($source);
 
@@ -152,6 +188,7 @@ trait ImportTrait
                     $importingContent = (object)['template' => '', 'css' => '', 'seo' => ''];
                     $templateContent = !is_string($pageData->template) ? json_encode($pageData->template) : $pageData->template;
                     $content = ApplicationHelper::sanitizePageText($templateContent);
+                    $content = $this->updateDynamicIds($content, $updatedFieldIds, $updatedCollectionIds);
                     $content = json_encode($content);
                     /** Sanitize the old data with new data format. */
                     $importingContent->template = SppagebuilderHelperSite::sanitizeImportJSON($content);
@@ -169,7 +206,7 @@ trait ImportTrait
         $this->sendResponse($response, 500);
     }
 
-    private function getPageDataFromZip($extractedPath)
+    private function getPageDataFromZip($extractedPath, &$updatedFieldIds, &$updatedCollectionIds)
     {
         $pageData = [];
     
@@ -189,6 +226,22 @@ trait ImportTrait
                     if (!empty($content))
                     {
                         $parsedContent = json_decode($content);
+
+                        if(isset($parsedContent->dynamicContentData) && !empty($parsedContent->dynamicContentData))
+                        {
+                            $updatedData = $this->importDynamicContentData($parsedContent->dynamicContentData);
+                            $updatedFieldIds = $updatedData['globalFieldsMap'] ?? [];
+                            $updatedCollectionIds = $updatedData['globalCollectionsIdMap'] ?? [];
+
+                            $isDetailPage = isset($parsedContent->type) && $parsedContent->type === Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL;
+                            $isIndexPage = isset($parsedContent->type) && $parsedContent->type === Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX;
+
+                            if (($isDetailPage || $isIndexPage) && isset($parsedContent->view_id) && !empty($parsedContent->view_id)) {
+                                if (isset($updatedCollectionIds[$parsedContent->view_id])) {
+                                    $parsedContent->view_id = $updatedCollectionIds[$parsedContent->view_id];
+                                }
+                            }
+                        }
     
                         if (!isset($parsedContent->template))
                         {
@@ -447,6 +500,57 @@ trait ImportTrait
             
            }
         }
+    }
+
+    private function extractZipSafely(ZipArchive $zip, string $destinationPath)
+    {
+        for ($i = 0; $i < $zip->numFiles; $i++)
+        {
+            $entryName = $zip->getNameIndex($i);
+
+            if ($entryName === false || !$this->isSafeZipEntryPath($entryName))
+            {
+                return false;
+            }
+        }
+
+        return $zip->extractTo($destinationPath);
+    }
+
+    private function isSafeZipEntryPath(string $entryName)
+    {
+        $entryName = str_replace('\\', '/', $entryName);
+
+        if ($entryName === '' || str_starts_with($entryName, '/') || preg_match('#^[a-zA-Z]:/#', $entryName))
+        {
+            return false;
+        }
+
+        $depth = 0;
+        $segments = explode('/', $entryName);
+
+        foreach ($segments as $segment)
+        {
+            if ($segment === '' || $segment === '.')
+            {
+                continue;
+            }
+
+            if ($segment === '..')
+            {
+                if ($depth === 0)
+                {
+                    return false;
+                }
+
+                $depth--;
+                continue;
+            }
+
+            $depth++;
+        }
+
+        return true;
     }
 
     private function mediaItemExists($source)

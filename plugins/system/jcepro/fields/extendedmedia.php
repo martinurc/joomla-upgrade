@@ -4,14 +4,14 @@
  * @subpackage  Fields.MediaJce
  *
  * @copyright   Copyright (C) 2005 - 2023 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (C) 2020 - 2024 Ryan Demmer. All rights reserved.
+ * @copyright   Copyright (c) 2020-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 namespace Joomla\CMS\Form\Field;
 
 // phpcs:disable PSR1.Files.SideEffects
-\defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\CMS\Form\Form;
@@ -147,7 +147,7 @@ class ExtendedMediaField extends FormField
      *
      * @since   2.9.31
      */
-    public function postProcess($value, $group = null, Registry $input = null)
+    public function postProcess($value, $group = null, ?Registry $input = null)
     {        
         $media = array('img', 'video', 'audio', 'iframe', 'a', 'object');
 

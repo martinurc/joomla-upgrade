@@ -10,7 +10,6 @@
 namespace Joomla\CMS\Installer;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\Folder;
 use Joomla\CMS\Filter\InputFilter;
 use Joomla\CMS\Installer\Manifest\PackageManifest;
 use Joomla\CMS\Language\Text;
@@ -27,9 +26,10 @@ use Joomla\DI\ContainerAwareInterface;
 use Joomla\DI\ContainerAwareTrait;
 use Joomla\DI\Exception\ContainerNotFoundException;
 use Joomla\DI\ServiceProviderInterface;
+use Joomla\Filesystem\Folder;
 
 // phpcs:disable PSR1.Files.SideEffects
-\defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
 /**
@@ -930,8 +930,14 @@ abstract class InstallerAdapter implements ContainerAwareInterface, DatabaseAwar
         // If there is a manifest class file, lets load it; we'll copy it later (don't have dest yet)
         $manifestScript = (string) $this->getManifest()->scriptfile;
 
-        // When no script file, do nothing
+        /**
+         * When no script file, reset the manifest which might be set by installer for the previous extension. This prevents
+         * accidental usage of the previous manifest class if the current extension does not have a script file.
+         */
         if (!$manifestScript) {
+            $this->parent->manifestClass = null;
+            $this->manifest_script       = null;
+
             return;
         }
 
@@ -955,6 +961,9 @@ abstract class InstallerAdapter implements ContainerAwareInterface, DatabaseAwar
                 'Installer file must exist when defined. In version 5.0 this will crash.',
                 E_USER_DEPRECATED
             );
+
+            $this->parent->manifestClass = null;
+            $this->manifest_script       = null;
 
             return;
         }
@@ -1054,9 +1063,9 @@ abstract class InstallerAdapter implements ContainerAwareInterface, DatabaseAwar
 
         if ($this->parent->manifestClass && method_exists($this->parent->manifestClass, $method)) {
             switch ($method) {
-                    // The preflight and postflight take the route as a param
                 case 'preflight':
                 case 'postflight':
+                    // The preflight and postflight take the route as a param
                     if ($this->parent->manifestClass->$method($this->route, $this) === false) {
                         if ($method !== 'postflight') {
                             // Clean and close the output buffer
@@ -1073,10 +1082,10 @@ abstract class InstallerAdapter implements ContainerAwareInterface, DatabaseAwar
                     }
                     break;
 
-                    // The install, uninstall, and update methods only pass this object as a param
                 case 'install':
                 case 'uninstall':
                 case 'update':
+                    // The install, uninstall, and update methods only pass this object as a param
                     if ($this->parent->manifestClass->$method($this) === false) {
                         if ($method !== 'uninstall') {
                             // Clean and close the output buffer
@@ -1128,7 +1137,9 @@ abstract class InstallerAdapter implements ContainerAwareInterface, DatabaseAwar
             Log::add(Text::_('JLIB_INSTALLER_ERROR_UNINSTALL_LOCKED_EXTENSION'), Log::WARNING, 'jerror');
 
             return false;
-        } elseif (!isset($this->extension->locked) && $this->extension->protected) {
+        }
+
+        if (!isset($this->extension->locked) && $this->extension->protected) {
             // Joomla 3 ('locked' property does not exist yet): Protected extensions cannot be removed.
             Log::add(Text::_('JLIB_INSTALLER_ERROR_UNINSTALL_PROTECTED_EXTENSION'), Log::WARNING, 'jerror');
 
@@ -1141,7 +1152,7 @@ abstract class InstallerAdapter implements ContainerAwareInterface, DatabaseAwar
          */
         if ($this->extension->package_id && !$this->parent->isPackageUninstall() && !$this->canUninstallPackageChild($this->extension->package_id)) {
             Log::add(
-                Text::sprintf('JLIB_INSTALLER_ERROR_CANNOT_UNINSTALL_CHILD_OF_PACKAGE', $this->extension->name),
+                Text::sprintf('JLIB_INSTALLER_ERROR_CANNOT_UNINSTALL_CHILD_OF_PACKAGE', $this->extension->name, $this->extension->package_id),
                 Log::WARNING,
                 'jerror'
             );

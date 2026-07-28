@@ -10,8 +10,10 @@
 
 namespace Joomla\Plugin\Content\LoadModule\Extension;
 
+use Joomla\CMS\Event\Content\ContentPrepareEvent;
 use Joomla\CMS\Helper\ModuleHelper;
 use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\Event\SubscriberInterface;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -23,28 +25,44 @@ use Joomla\CMS\Plugin\CMSPlugin;
  *
  * @since  1.5
  */
-final class LoadModule extends CMSPlugin
+final class LoadModule extends CMSPlugin implements SubscriberInterface
 {
     protected static $modules = [];
 
     protected static $mods = [];
 
+    protected static $recursionProtection = [];
+
+    /**
+     * Returns an array of events this subscriber will listen to.
+     *
+     * @return array
+     *
+     * @since   5.3.0
+     */
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            'onContentPrepare' => 'onContentPrepare',
+        ];
+    }
+
     /**
      * Plugin that loads module positions within content
      *
-     * @param   string   $context   The context of the content being passed to the plugin.
-     * @param   object   &$article  The article object.  Note $article->text is also available
-     * @param   mixed    &$params   The article params
-     * @param   integer  $page      The 'page' number
+     * @param   ContentPrepareEvent $event  The event instance.
      *
      * @return  void
      *
      * @since   1.6
      */
-    public function onContentPrepare($context, &$article, &$params, $page = 0)
+    public function onContentPrepare(ContentPrepareEvent $event)
     {
+        $context = $event->getContext();
+        $article = $event->getItem();
+
         // Only execute if $article is an object and has a text property
-        if (!is_object($article) || !property_exists($article, 'text') || is_null($article->text)) {
+        if (!\is_object($article) || !property_exists($article, 'text') || \is_null($article->text)) {
             return;
         }
 
@@ -89,10 +107,16 @@ final class LoadModule extends CMSPlugin
             // No matches, skip this
             if ($matches) {
                 foreach ($matches as $match) {
+                    if (isset(self::$recursionProtection[$match[1]])) {
+                        continue;
+                    }
+
+                    self::$recursionProtection[$match[1]] = true;
+
                     $matcheslist = explode(',', $match[1]);
 
                     // We may not have a module style so fall back to the plugin default.
-                    if (!array_key_exists(1, $matcheslist)) {
+                    if (!\array_key_exists(1, $matcheslist)) {
                         $matcheslist[1] = $defaultStyle;
                     }
 
@@ -103,8 +127,10 @@ final class LoadModule extends CMSPlugin
 
                     // We should replace only first occurrence in order to allow positions with the same name to regenerate their content:
                     if (($start = strpos($article->text, $match[0])) !== false) {
-                        $article->text = substr_replace($article->text, $output, $start, strlen($match[0]));
+                        $article->text = substr_replace($article->text, $output, $start, \strlen($match[0]));
                     }
+
+                    unset(self::$recursionProtection[$match[1]]);
                 }
             }
         }
@@ -116,6 +142,12 @@ final class LoadModule extends CMSPlugin
             // If no matches, skip this
             if ($matchesmod) {
                 foreach ($matchesmod as $matchmod) {
+                    if (isset(self::$recursionProtection[$matchmod[1]])) {
+                        continue;
+                    }
+
+                    self::$recursionProtection[$matchmod[1]] = true;
+
                     $matchesmodlist = explode(',', $matchmod[1]);
 
                     // First parameter is the module, will be prefixed with mod_ later
@@ -124,14 +156,14 @@ final class LoadModule extends CMSPlugin
                     // Second parameter is the title
                     $title = '';
 
-                    if (array_key_exists(1, $matchesmodlist)) {
+                    if (\array_key_exists(1, $matchesmodlist)) {
                         $title = htmlspecialchars_decode(trim($matchesmodlist[1]));
                     }
 
                     // Third parameter is the module style, (fallback is the plugin default set earlier).
                     $stylemod = $defaultStyle;
 
-                    if (array_key_exists(2, $matchesmodlist)) {
+                    if (\array_key_exists(2, $matchesmodlist)) {
                         $stylemod = trim($matchesmodlist[2]);
                     }
 
@@ -139,8 +171,10 @@ final class LoadModule extends CMSPlugin
 
                     // We should replace only first occurrence in order to allow positions with the same name to regenerate their content:
                     if (($start = strpos($article->text, $matchmod[0])) !== false) {
-                        $article->text = substr_replace($article->text, $output, $start, strlen($matchmod[0]));
+                        $article->text = substr_replace($article->text, $output, $start, \strlen($matchmod[0]));
                     }
+
+                    unset(self::$recursionProtection[$matchmod[1]]);
                 }
             }
         }
@@ -152,13 +186,21 @@ final class LoadModule extends CMSPlugin
             // If no matches, skip this
             if ($matchesmodid) {
                 foreach ($matchesmodid as $match) {
+                    if (isset(self::$recursionProtection[$match[1]])) {
+                        continue;
+                    }
+
+                    self::$recursionProtection[$match[1]] = true;
+
                     $id     = trim($match[1]);
                     $output = $this->loadID($id);
 
                     // We should replace only first occurrence in order to allow positions with the same name to regenerate their content:
                     if (($start = strpos($article->text, $match[0])) !== false) {
-                        $article->text = substr_replace($article->text, $output, $start, strlen($match[0]));
+                        $article->text = substr_replace($article->text, $output, $start, \strlen($match[0]));
                     }
+
+                    unset(self::$recursionProtection[$match[1]]);
                 }
             }
         }

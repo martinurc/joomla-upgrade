@@ -8,6 +8,7 @@
 
 namespace JoomShaper\SPPageBuilder\DynamicContent\Services;
 
+use Joomla\CMS\Factory;
 use JoomShaper\SPPageBuilder\DynamicContent\Constants\Conditions;
 use JoomShaper\SPPageBuilder\DynamicContent\Constants\FieldTypes;
 use JoomShaper\SPPageBuilder\DynamicContent\Model;
@@ -28,6 +29,13 @@ use Throwable;
 class CollectionDataService
 {
     /**
+     * Cache for option field data by field ID.
+     * 
+     * @var array
+     * @since 6.2.0
+     */
+    protected $optionFieldCache = [];
+    /**
      * Fetch collection items for the given collection id.
      *
      * @param int $collectionId
@@ -36,10 +44,10 @@ class CollectionDataService
      *
      * @since 5.5.0
      */
-    public function fetchCollectionItems(int $collectionId, string $direction = 'ASC')
+    public function fetchCollectionItems(int $collectionId, string $direction = 'ASC', ?int $sortingColumn = null)
     {
         try {
-            $items = $this->getCollectionItemsByCollectionId($collectionId, $direction);
+            $items = $this->getCollectionItemsByCollectionId($collectionId, $direction, $sortingColumn);
             $items = Arr::make($items);
             return $this->prepareCollectionItems($items);
         } catch (Throwable $error) {
@@ -77,7 +85,9 @@ class CollectionDataService
             return null;
         }
 
-        return $this->prepareCollectionIndividualItem($item, true);
+        $this->preloadOptionFieldData([$item]);
+
+        return $this->prepareCollectionIndividualItem($item);
     }
 
     /**
@@ -232,6 +242,8 @@ class CollectionDataService
      */
     protected function prepareCollectionItems(Arr $items)
     {
+        $this->preloadOptionFieldData($items->toArray());
+        
         return $items->map(function ($item) {
             $item = $this->prepareCollectionIndividualItem($item);
             $item['url'] = CollectionHelper::createRouteUrl($item);
@@ -249,27 +261,98 @@ class CollectionDataService
      */
     protected function getCollectionOptionFieldsData(int $fieldId)
     {
+        if (isset($this->optionFieldCache[$fieldId])) {
+            return $this->optionFieldCache[$fieldId];
+        }
+
         $field = CollectionField::where('id', $fieldId)->where('type', FieldTypes::OPTION)->first(['options']);
         if ($field->isEmpty()) {
+            $this->optionFieldCache[$fieldId] = [];
             return [];
         }
 
         if (empty($field->options)) {
+            $this->optionFieldCache[$fieldId] = [];
             return [];
         }
 
         $options = Str::toArray($field->options);
 
         if (empty($options)) {
+            $this->optionFieldCache[$fieldId] = [];
             return [];
         }
 
-        return Arr::make($options)->reduce(function ($carry, $option) {
+        $optionData = Arr::make($options)->reduce(function ($carry, $option) {
             $carry[$option['value']] = $option['label'];
             return $carry;
         }, [])->toArray();
 
-        return $options ?? [];
+        $this->optionFieldCache[$fieldId] = $optionData;
+
+        return $optionData;
+    }
+
+    /**
+     * Pre-load option field data for all option fields to optimize batch processing.
+     * This method analyzes all items and pre-fetches option data for all option fields.
+     * 
+     * @param array $items The collection items.
+     * 
+     * @return void
+     * @since 6.2.0
+     */
+    protected function preloadOptionFieldData(array $items)
+    {
+        $optionFieldIds = [];
+        
+        foreach ($items as $item) {
+            if (!empty($item->values)) {
+                foreach ($item->values as $value) {
+                    if ($value->field_type === FieldTypes::OPTION) {
+                        $optionFieldIds[] = $value->field_id;
+                    }
+                }
+            }
+        }
+        
+        $optionFieldIds = array_unique($optionFieldIds);
+        
+        if (!empty($optionFieldIds)) {
+            $optionFields = CollectionField::whereIn('id', $optionFieldIds)
+                ->where('type', FieldTypes::OPTION)
+                ->get(['id', 'options']);
+            
+            foreach ($optionFields as $field) {
+                if (!empty($field->options)) {
+                    $options = Str::toArray($field->options);
+                    
+                    if (!empty($options)) {
+                        $optionData = Arr::make($options)->reduce(function ($carry, $option) {
+                            $carry[$option['value']] = $option['label'];
+                            return $carry;
+                        }, [])->toArray();
+                        
+                        $this->optionFieldCache[$field->id] = $optionData;
+                    } else {
+                        $this->optionFieldCache[$field->id] = [];
+                    }
+                } else {
+                    $this->optionFieldCache[$field->id] = [];
+                }
+            }
+        }
+    }
+
+    /**
+     * Clear the option field cache.
+     * 
+     * @return void
+     * @since 6.2.0
+     */
+    public function clearOptionFieldCache()
+    {
+        $this->optionFieldCache = [];
     }
 
     /**
@@ -288,10 +371,18 @@ class CollectionDataService
 
         $values = Arr::make($item['values']);
         $item['option_store'] ??= [];
+        $item['reference_store'] ??= [];
+        $item['multi_reference_store'] ??= [];
 
         foreach ($values as $value) {
             if ($value['field_type'] === FieldTypes::OPTION) {
-                $item['option_store'] = array_merge($item['option_store'], $this->getCollectionOptionFieldsData($value['field_id'], $value['value']));
+                $item['option_store'] = array_merge($item['option_store'], $this->getCollectionOptionFieldsData($value['field_id']));
+            } elseif($value['field_type'] === FieldTypes::REFERENCE){
+                $item['reference_store'] = array_merge($item['reference_store'], ['field_' . $value['field_id'] => $value['reference_item_id']]);
+            } elseif($value['field_type'] === FieldTypes::MULTI_REFERENCE){
+                $fieldKey = 'field_' . $value['field_id'];
+                $item['multi_reference_store'][$fieldKey] ??= [];
+                $item['multi_reference_store'][$fieldKey][] = $value['reference_item_id'];
             }
         }
 
@@ -309,26 +400,79 @@ class CollectionDataService
      *
      * @since 5.5.0
      */
-    protected function getCollectionItemsByCollectionId(int $collectionId, string $direction = 'ASC')
+    protected function getCollectionItemsByCollectionId(int $collectionId, string $direction = 'ASC', ?int $sortingColumn = null)
     {
-        $items = CollectionItem::where('collection_id', $collectionId)
-            ->where('published', 1)
-            ->orderBy('ordering', $direction)
-            ->with([
-                'values' => function ($query) {
-                    $query = $query->select([
-                        'field_name' => 'collection_field.name',
-                        'field_type' => 'collection_field.type'
-                    ]);
+        $user = Factory::getUser();
+        $userAccessLevels = $user->getAuthorisedViewLevels();
+        $langTag = Factory::getLanguage()->getTag();
+        $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
+        
+        $sortingColumnType = null;
 
-                    return $query->leftJoin(
-                        CollectionField::class,
-                        'collection_item_value.field_id',
-                        'collection_field.id'
-                    );
-                }
-            ])->get();
+        if($sortingColumn){
+            $sortingColumnField = CollectionField::where('id', $sortingColumn)->first(['type']);
+            $sortingColumnType = $sortingColumnField->isEmpty() ? null : $sortingColumnField->type;
+        }
+        
+        $query = CollectionItem::where('collection_id', $collectionId)
+            ->where('published', 1)
+            ->whereIn('language', [$langTag, '*'])
+            ->whereIn('access', $userAccessLevels);
+
+        if (!empty($sortingColumn)) {
+            $query = $query->join(
+                CollectionItemValue::class,
+                'collection_item.id',
+                'collection_item_value.item_id'
+            )
+            ->where('collection_item_value.field_id', $sortingColumn);
+
+            if ($sortingColumnType === FieldTypes::NUMBER) {
+                $query = $query->rawQuery(function ($query) use ($direction) {
+                    $query->getQuery()->order('CAST(collection_item_value.value AS DECIMAL(20,10)) ' . $direction);
+                    return $query;
+                });
+            } else {
+                $query = $query->orderBy('collection_item_value.value', $direction);
+            }
+        } else {
+            $query = $query->orderBy('ordering', $direction);
+        }
+
+        $items = $query->with([
+            'values' => function ($query) {
+                $query = $query->select([
+                    'field_name' => 'collection_field.name',
+                    'field_type' => 'collection_field.type'
+                ]);
+
+                return $query->leftJoin(
+                    CollectionField::class,
+                    'collection_item_value.field_id',
+                    'collection_field.id'
+                );
+            }
+        ])->get();
 
         return $items;
+    }
+
+    public static function getItemTitleById(int $itemId, int $collectionId)
+    {
+        $titleFieldId = CollectionField::where('collection_id', $collectionId)
+            ->where('type', FieldTypes::TITLE)
+            ->first(['id']);
+
+        if($titleFieldId){
+            $itemTitle = CollectionItemValue::where('item_id', $itemId)
+                ->where('field_id', $titleFieldId->id)
+                ->first(['value']);
+
+            if($itemTitle){
+                return $itemTitle->value;
+            }
+        }
+
+        return '';
     }
 }

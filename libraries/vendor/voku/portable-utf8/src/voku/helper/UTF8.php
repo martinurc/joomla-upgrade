@@ -628,7 +628,6 @@ final class UTF8
         }
 
         if ($code_point <= 0x80) { // only for "simple"-chars
-
             if (self::$CHR === null) {
                 self::$CHR = self::getData('chr');
             }
@@ -1622,7 +1621,7 @@ final class UTF8
     public static function extract_text(
         string $str,
         string $search = '',
-        int $length = null,
+        ?int $length = null,
         string $replacer_for_skipped_text = '…',
         string $encoding = 'UTF-8'
     ): string {
@@ -1843,8 +1842,8 @@ final class UTF8
         string $filename,
         bool $use_include_path = false,
         $context = null,
-        int $offset = null,
-        int $max_length = null,
+        ?int $offset = null,
+        ?int $max_length = null,
         int $timeout = 10,
         bool $convert_to_utf8 = true,
         string $from_encoding = ''
@@ -2577,7 +2576,7 @@ final class UTF8
      *               return bool-value, if $key is used and available<br>
      *               otherwise return <strong>null</strong>
      */
-    public static function getSupportInfo(string $key = null)
+    public static function getSupportInfo(?string $key = null)
     {
         if ($key === null) {
             return self::$SUPPORT;
@@ -3028,7 +3027,7 @@ final class UTF8
      */
     public static function html_entity_decode(
         string $str,
-        int $flags = null,
+        ?int $flags = null,
         string $encoding = 'UTF-8'
     ): string {
         if (
@@ -4302,7 +4301,7 @@ final class UTF8
         string $str,
         string $encoding = 'UTF-8',
         bool $clean_utf8 = false,
-        string $lang = null,
+        ?string $lang = null,
         bool $try_to_keep_the_string_length = false
     ): string {
         if ($clean_utf8) {
@@ -4368,7 +4367,7 @@ final class UTF8
         string $char_list = '',
         string $encoding = 'UTF-8',
         bool $clean_utf8 = false,
-        string $lang = null,
+        ?string $lang = null,
         bool $try_to_keep_the_string_length = false
     ): string {
         if (!$str) {
@@ -4441,7 +4440,7 @@ final class UTF8
      *
      * @return string the string with unwanted characters stripped from the left
      */
-    public static function ltrim(string $str = '', string $chars = null): string
+    public static function ltrim(string $str = '', ?string $chars = null): string
     {
         if ($str === '') {
             return '';
@@ -5622,7 +5621,7 @@ final class UTF8
      * @return string
      *                <p>A string with unwanted characters stripped from the right.</p>
      */
-    public static function rtrim(string $str = '', string $chars = null): string
+    public static function rtrim(string $str = '', ?string $chars = null): string
     {
         if ($str === '') {
             return '';
@@ -5763,7 +5762,7 @@ final class UTF8
         string $str,
         string $encoding = 'UTF-8',
         bool $clean_utf8 = false,
-        string $lang = null,
+        ?string $lang = null,
         bool $try_to_keep_the_string_length = false
     ): string {
         if ($clean_utf8) {
@@ -6024,7 +6023,7 @@ final class UTF8
         string $delimiter,
         string $encoding = 'UTF-8',
         bool $clean_utf8 = false,
-        string $lang = null,
+        ?string $lang = null,
         bool $try_to_keep_the_string_length = false
     ): string {
         if (self::$SUPPORT['mbstring'] === true) {
@@ -6933,6 +6932,46 @@ final class UTF8
     }
 
     /**
+     * Limit the number of characters in a string in bytes.
+     *
+     * @param string      $str        <p>The input string.</p>
+     * @param int<1, max> $length     [optional] <p>Default: 100</p>
+     * @param string      $str_add_on [optional] <p>Default: ...</p>
+     * @param string      $encoding   [optional] <p>Set the charset for e.g. "mb_" function</p>
+     *
+     * @psalm-pure
+     *
+     * @return string
+     *
+     * @template T as string
+     * @phpstan-param T $str
+     * @phpstan-return (T is non-empty-string ? non-empty-string : string)
+     */
+    public static function str_limit_in_byte(
+        string $str,
+        int $length = 100,
+        string $str_add_on = '...',
+        string $encoding = 'UTF-8'
+    ): string {
+        if (
+            $str === ''
+            ||
+            /* @phpstan-ignore-next-line | we do not trust the phpdoc check */
+            $length <= 0
+        ) {
+            return '';
+        }
+
+        $encoding = self::normalize_encoding($encoding, 'UTF-8');
+
+        if ((int) self::strlen_in_byte($str, $encoding) <= $length) {
+            return $str;
+        }
+
+        return ((string) self::substr_in_byte($str, 0, $length - (int) self::strlen_in_byte($str_add_on), $encoding)) . $str_add_on;
+    }
+
+    /**
      * Limit the number of characters in a string, but also after the next word.
      *
      * EXAMPLE: <code>UTF8::str_limit_after_word('fòô bàř fòô', 8, ''); // 'fòô bàř'</code>
@@ -7639,7 +7678,7 @@ final class UTF8
         $search,
         $replace,
         $subject,
-        int &$count = null
+        ?int &$count = null
     ) {
         /**
          * @psalm-suppress PossiblyNullArgument
@@ -7873,7 +7912,7 @@ final class UTF8
     public static function str_slice(
         string $str,
         int $start,
-        int $end = null,
+        ?int $end = null,
         string $encoding = 'UTF-8'
     ) {
         if ($encoding === 'UTF-8') {
@@ -8137,7 +8176,6 @@ final class UTF8
             \preg_match_all('/./us', $str, $return_array);
             $ret = $return_array[0] ?? [];
         } else {
-
             // fallback
 
             $ret = [];
@@ -8663,13 +8701,13 @@ final class UTF8
      */
     public static function str_titleize(
         string $str,
-        array $ignore = null,
+        ?array $ignore = null,
         string $encoding = 'UTF-8',
         bool $clean_utf8 = false,
-        string $lang = null,
+        ?string $lang = null,
         bool $try_to_keep_the_string_length = false,
         bool $use_trim_first = true,
-        string $word_define_chars = null
+        ?string $word_define_chars = null
     ): string {
         if ($str === '') {
             return '';
@@ -9021,7 +9059,7 @@ final class UTF8
      *
      * @return string[]
      */
-    public static function str_to_lines(string $str, bool $remove_empty_values = false, int $remove_short_values = null): array
+    public static function str_to_lines(string $str, bool $remove_empty_values = false, ?int $remove_short_values = null): array
     {
         if ($str === '') {
             return $remove_empty_values ? [] : [''];
@@ -9072,7 +9110,7 @@ final class UTF8
         string $str,
         string $char_list = '',
         bool $remove_empty_values = false,
-        int $remove_short_values = null
+        ?int $remove_short_values = null
     ): array {
         if ($str === '') {
             return $remove_empty_values ? [] : [''];
@@ -9157,13 +9195,13 @@ final class UTF8
         }
 
         return (
-               (string) self::substr(
-                   $str,
-                   0,
-                   $length,
-                   $encoding
-               )
-               ) . $substring;
+            (string) self::substr(
+                $str,
+                0,
+                $length,
+                $encoding
+            )
+        ) . $substring;
     }
 
     /**
@@ -9313,7 +9351,7 @@ final class UTF8
         string $str,
         string $encoding = 'UTF-8',
         bool $clean_utf8 = false,
-        string $lang = null,
+        ?string $lang = null,
         bool $try_to_keep_the_string_length = false
     ): string {
         return self::ucfirst(self::str_camelize($str, $encoding), $encoding, $clean_utf8, $lang, $try_to_keep_the_string_length);
@@ -9476,7 +9514,7 @@ final class UTF8
         string $str,
         string $char_list,
         int $offset = 0,
-        int $length = null,
+        ?int $length = null,
         string $encoding = 'UTF-8'
     ): int {
         if ($encoding !== 'UTF-8' && $encoding !== 'CP850') {
@@ -9611,7 +9649,7 @@ final class UTF8
      */
     public static function strip_tags(
         string $str,
-        string $allowable_tags = null,
+        ?string $allowable_tags = null,
         bool $clean_utf8 = false
     ): string {
         if ($str === '') {
@@ -11079,7 +11117,7 @@ final class UTF8
         string $str,
         string $mask,
         int $offset = 0,
-        int $length = null,
+        ?int $length = null,
         string $encoding = 'UTF-8'
     ) {
         if ($encoding !== 'UTF-8' && $encoding !== 'CP850') {
@@ -11310,7 +11348,7 @@ final class UTF8
         bool $full = true,
         bool $clean_utf8 = false,
         string $encoding = 'UTF-8',
-        string $lang = null,
+        ?string $lang = null,
         bool $lower = true
     ): string {
         if ($str === '') {
@@ -11364,7 +11402,7 @@ final class UTF8
         $str,
         string $encoding = 'UTF-8',
         bool $clean_utf8 = false,
-        string $lang = null,
+        ?string $lang = null,
         bool $try_to_keep_the_string_length = false
     ): string {
         // init
@@ -11444,7 +11482,7 @@ final class UTF8
         $str,
         string $encoding = 'UTF-8',
         bool $clean_utf8 = false,
-        string $lang = null,
+        ?string $lang = null,
         bool $try_to_keep_the_string_length = false
     ): string {
         // init
@@ -11658,7 +11696,7 @@ final class UTF8
     public static function substr(
         string $str,
         int $offset = 0,
-        int $length = null,
+        ?int $length = null,
         string $encoding = 'UTF-8',
         bool $clean_utf8 = false
     ) {
@@ -11829,7 +11867,7 @@ final class UTF8
         string $str1,
         string $str2,
         int $offset = 0,
-        int $length = null,
+        ?int $length = null,
         bool $case_insensitivity = false,
         string $encoding = 'UTF-8'
     ): int {
@@ -11887,7 +11925,7 @@ final class UTF8
         string $haystack,
         string $needle,
         int $offset = 0,
-        int $length = null,
+        ?int $length = null,
         string $encoding = 'UTF-8',
         bool $clean_utf8 = false
     ) {
@@ -11979,7 +12017,7 @@ final class UTF8
         string $haystack,
         string $needle,
         int $offset = 0,
-        int $length = null
+        ?int $length = null
     ) {
         if ($haystack === '' || $needle === '') {
             return 0;
@@ -12129,7 +12167,7 @@ final class UTF8
      *                      <i>length</i> parameters.</p><p>If <i>str</i> is shorter than <i>offset</i>
      *                      characters long, <b>FALSE</b> will be returned.</p>
      */
-    public static function substr_in_byte(string $str, int $offset = 0, int $length = null)
+    public static function substr_in_byte(string $str, int $offset = 0, ?int $length = null)
     {
         // empty string
         if ($str === '' || $length === 0) {
@@ -12527,7 +12565,7 @@ final class UTF8
         string $str,
         string $encoding = 'UTF-8',
         bool $clean_utf8 = false,
-        string $lang = null,
+        ?string $lang = null,
         bool $try_to_keep_the_string_length = false
     ): string {
         if ($clean_utf8) {
@@ -12765,9 +12803,7 @@ final class UTF8
             $c1 = $str[$i];
 
             if ($c1 >= "\xC0") { // should be converted to UTF8, if it's not UTF8 already
-
                 if ($c1 <= "\xDF") { // looks like 2 bytes UTF8
-
                     $c2 = $i + 1 >= $max ? "\x00" : $str[$i + 1];
 
                     if ($c2 >= "\x80" && $c2 <= "\xBF") { // yeah, almost sure it's UTF8 already
@@ -12777,7 +12813,6 @@ final class UTF8
                         $buf .= self::to_utf8_convert_helper($c1);
                     }
                 } elseif ($c1 >= "\xE0" && $c1 <= "\xEF") { // looks like 3 bytes UTF8
-
                     $c2 = $i + 1 >= $max ? "\x00" : $str[$i + 1];
                     $c3 = $i + 2 >= $max ? "\x00" : $str[$i + 2];
 
@@ -12788,7 +12823,6 @@ final class UTF8
                         $buf .= self::to_utf8_convert_helper($c1);
                     }
                 } elseif ($c1 >= "\xF0" && $c1 <= "\xF7") { // looks like 4 bytes UTF8
-
                     $c2 = $i + 1 >= $max ? "\x00" : $str[$i + 1];
                     $c3 = $i + 2 >= $max ? "\x00" : $str[$i + 2];
                     $c4 = $i + 3 >= $max ? "\x00" : $str[$i + 3];
@@ -12800,14 +12834,11 @@ final class UTF8
                         $buf .= self::to_utf8_convert_helper($c1);
                     }
                 } else { // doesn't look like UTF8, but should be converted
-
                     $buf .= self::to_utf8_convert_helper($c1);
                 }
             } elseif (($c1 & "\xC0") === "\x80") { // needs conversion
-
                 $buf .= self::to_utf8_convert_helper($c1);
             } else { // it doesn't need conversion
-
                 $buf .= $c1;
             }
         }
@@ -12941,7 +12972,7 @@ final class UTF8
      * @return string
      *                <p>The trimmed string.</p>
      */
-    public static function trim(string $str = '', string $chars = null): string
+    public static function trim(string $str = '', ?string $chars = null): string
     {
         if ($str === '') {
             return '';
@@ -12991,7 +13022,7 @@ final class UTF8
         string $str,
         string $encoding = 'UTF-8',
         bool $clean_utf8 = false,
-        string $lang = null,
+        ?string $lang = null,
         bool $try_to_keep_the_string_length = false
     ): string {
         if ($str === '') {
@@ -13222,7 +13253,7 @@ final class UTF8
                 case "\xF0":
                     ++$i;
 
-                // no break
+                    // no break
 
                 case "\xE0":
                     $str[$j] = $no_char_found;
@@ -13459,7 +13490,7 @@ final class UTF8
         string $break = "\n",
         bool $cut = false,
         bool $add_final_break = true,
-        string $delimiter = null
+        ?string $delimiter = null
     ): string {
         if ($delimiter === null) {
             $strings = \preg_split('/\\r\\n|\\r|\\n/', $str);
@@ -13602,7 +13633,6 @@ final class UTF8
                     return false;
                 }
             } elseif ((0xC0 & $in) === 0x80) {
-
                 // When mState is non-zero, we expect a continuation of the multi-octet
                 // sequence
 
@@ -13787,7 +13817,7 @@ final class UTF8
     private static function reduce_string_array(
         array $strings,
         bool $remove_empty_values,
-        int $remove_short_values = null
+        ?int $remove_short_values = null
     ) {
         // init
         $return = [];

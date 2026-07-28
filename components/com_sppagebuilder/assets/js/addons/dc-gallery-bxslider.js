@@ -1,7 +1,7 @@
 (() => {
     'use strict';
     
-    document.addEventListener('DOMContentLoaded', function () {
+    jQuery(document).ready(function ($) {
         const bxSliderSelector = '.sppb-dc-bxslider';
         const observeAttributes = ['data-enable-slider', 'data-enable-arrows', 'data-slider-style', 'data-image-per-slide'];
         let sliderInstance = {};

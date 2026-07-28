@@ -1,24 +1,25 @@
 <?php
+
 /**
- * @package   OSCampus
+ * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2021-2023 Joomlashack.com. All rights reserved
+ * @copyright 2022-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
- * This file is part of OSCampus.
+ * This file is part of AllediaFramework.
  *
- * OSCampus is free software: you can redistribute it and/or modify
+ * AllediaFramework is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
  *
- * OSCampus is distributed in the hope that it will be useful,
+ * AllediaFramework is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with OSCampus.  If not, see <https://www.gnu.org/licenses/>.
+ * along with AllediaFramework.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 namespace Alledia\Framework\Joomla\Controller;
@@ -56,23 +57,23 @@ trait TraitController
      */
     protected function callerReturn($message = null, ?string $type = null, ?string $return = null)
     {
-        $url = $return ?: $this->app->input->getBase64('return');
+        $url = $return ?: $this->input->getBase64('return');
         if ($url) {
             $url = base64_decode($url);
 
         } else {
             $url = new Uri('index.php');
 
-            if ($itemId = $this->app->input->getInt('Itemid')) {
+            if ($itemId = $this->input->getInt('Itemid')) {
                 $url->setVar('Itemid', $itemId);
 
-            } elseif ($option = $this->app->input->getCmd('option')) {
+            } elseif ($option = $this->input->getCmd('option')) {
                 $url->setVar('option', $option);
             }
 
-            if ($view = $this->app->input->getCmd('view')) {
+            if ($view = $this->input->getCmd('view')) {
                 $url->setVar('view', $view);
-                if ($layout = $this->app->input->getCmd('layout')) {
+                if ($layout = $this->input->getCmd('layout')) {
                     $url->setVar('layout', $layout);
                 }
             }

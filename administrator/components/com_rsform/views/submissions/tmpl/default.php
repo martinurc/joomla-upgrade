@@ -52,7 +52,7 @@ if (version_compare(JVERSION, '4.0', '<'))
 		), $this->loadTemplate('modal_columns'));
 	?>
     <div class="table-responsive">
-	<table class="table table-striped table-responsive">
+	<table class="table table-striped table-responsive rsfp-submissions-table">
 		<caption id="captionTable" class="sr-only">
 			<?php echo Text::_('COM_RSFORM_SUBMISSIONS_TABLE_CAPTION'); ?>,
 			<span id="orderedBy"><?php echo Text::_('JGLOBAL_SORTED_BY'); ?> </span>,

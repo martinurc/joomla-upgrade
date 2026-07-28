@@ -10,9 +10,11 @@
 // No direct access
 defined('_JEXEC') or die('Restricted access');
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Version;
 
 class SppagebuilderAddonSocial_share extends SppagebuilderAddons
 {
@@ -37,7 +39,7 @@ class SppagebuilderAddonSocial_share extends SppagebuilderAddons
 
 		$uri = Uri::getInstance();
 		$current_url = $uri->toString();
-		$page_title = $doc->getTitle();
+		$page_title = rawurlencode($doc->getTitle());
 
 		// Assign col
 		$share_col = 'sppb-col-sm-12';
@@ -64,23 +66,19 @@ class SppagebuilderAddonSocial_share extends SppagebuilderAddons
 			$output .= '</li>';
 		}
 
-		if (\in_array('twitter', $show_socials)) {
+		if (!empty(array_intersect(['twitter', 'twitter-x'], $show_socials))) {
 			//twitter
-			$output .= '<li class="sppb-social-share-twitter">';
-			$output .= '<a onClick="window.open(\'https://twitter.com/share?url=' . urlencode($current_url) . '&amp;text=' . str_replace(" ", "%20", $page_title) . '\',\'Twitter share\',\'width=600,height=300,left=\'+(screen.availWidth/2-300)+\',top=\'+(screen.availHeight/2-150)+\'\'); return false;" href="https://twitter.com/share?url=' . $current_url . '&amp;text=' . str_replace(" ", "%20", $page_title) . '">';
-			$output .= '<i class="fab fa-twitter" aria-hidden="true" title="Twitter"></i>';
-			if ($show_social_names) {
-				$output .= '<span class="sppb-social-share-title">' . Text::_('COM_SPPAGEBUILDER_ADDON_SOCIALSHARE_TWITTER') . '</span>';
-			}
-			$output .= '</a>';
-			$output .= '</li>';
-		}
+			$version = Version::MAJOR_VERSION;
+			$params = ComponentHelper::getParams('com_sppagebuilder');
+			$twitterIcon = 'fab fa-twitter';
 
-		if (\in_array('twitter-x', $show_socials)) {
-			//twitter
-			$output .= '<li class="sppb-social-share-twitter-x">';
-			$output .= '<a onClick="window.open(\'https://twitter.com/share?url=' . urlencode($current_url) . '&amp;text=' . str_replace(" ", "%20", $page_title) . '\',\'Twitter share\',\'width=600,height=300,left=\'+(screen.availWidth/2-300)+\',top=\'+(screen.availHeight/2-150)+\'\'); return false;" href="https://twitter.com/share?url=' . $current_url . '&amp;text=' . str_replace(" ", "%20", $page_title) . '">';
-			$output .= '<i class="fa-brands fa-x-twitter" aria-hidden="true" title="X (Twitter)"></i>';
+			if(version_compare($version, '5', '>=') || ($params->get('fontawesome', 1))){
+				$twitterIcon = 'fa-brands fa-x-twitter';
+			}
+
+			$output .= '<li class="sppb-social-share-twitter' . ($twitterIcon === 'fa-brands fa-x-twitter' ? '-x' : '') . '">';
+			$output .= '<a onClick="window.open(\'https://twitter.com/share?url=' . urlencode($current_url) . '&amp;text=' . $page_title . '\',\'Twitter share\',\'width=600,height=300,left=\'+(screen.availWidth/2-300)+\',top=\'+(screen.availHeight/2-150)+\'\'); return false;" href="https://twitter.com/share?url=' . $current_url . '&amp;text=' . $page_title . '">';
+			$output .= '<i class="' . $twitterIcon . '" aria-hidden="true" title="X (Twitter)"></i>';
 			if ($show_social_names) {
 				$output .= '<span class="sppb-social-share-title">' . Text::_('COM_SPPAGEBUILDER_ADDON_SOCIALSHARE_TWITTER') . '</span>';
 			}
@@ -262,7 +260,7 @@ class SppagebuilderAddonSocial_share extends SppagebuilderAddons
 		$lodash = new Lodash('#sppb-addon-{{ data.id }}');
 		$uri = Uri::getInstance();
 		$current_url = $uri->toString();
-		$page_title = Factory::getDocument()->getTitle();
+		$page_title = rawurlencode(Factory::getDocument()->getTitle());
 
 		$output = '
 			<#

@@ -7,4 +7,5 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'JoomShaper\\SPPageBuilder\\DynamicContent\\' => array($baseDir . '/dynamic-content'),
+    'JoomShaper\\SPPageBuilder\\Comment\\' => array($baseDir . '/comment'),
 );

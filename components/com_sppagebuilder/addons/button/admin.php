@@ -37,6 +37,21 @@ SpAddonsConfig::addonConfig([
                     'mediaType' => 'attachment'
                 ],
 
+                'link_download' => [
+                    'type'  => 'checkbox',
+                    'title' => Text::_('COM_SPPAGEBUILDER_ADDON_BUTTON_DOWNLOAD'),
+                    'desc'  => Text::_('COM_SPPAGEBUILDER_ADDON_BUTTON_DOWNLOAD_DESC'),
+                    'std'   => 0,
+                ],
+
+                'link_download_filename' => [
+                    'type'    => 'text',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_BUTTON_DOWNLOAD_FILENAME'),
+                    'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_BUTTON_DOWNLOAD_FILENAME_DESC'),
+                    'std'     => '',
+                    'depends' => [['link_download', '=', 1]],
+                ],
+
                 'aria_label' => [
                     'type' => 'text',
                     'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_ARIA_LABEL'),

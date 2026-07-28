@@ -28,7 +28,10 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Registry\Registry;
 
+// phpcs:disable PSR1.Files.SideEffects.FoundWithSymbols
 defined('_JEXEC') or die();
+// phpcs:enable PSR1.Files.SideEffects.FoundWithSymbols
+// phpcs:disable PSR1.Classes.ClassDeclaration.MissingNamespace
 
 class OSMapTableSitemap extends Table
 {
@@ -88,7 +91,7 @@ class OSMapTableSitemap extends Table
     public $menus_ordering = '';
 
     /**
-     * @param JDatabaseDriver $db
+     * @inheritDoc
      */
     public function __construct($db)
     {
@@ -145,7 +148,7 @@ class OSMapTableSitemap extends Table
             'menus',
             'menus_priority',
             'menus_changefreq',
-            'menus_ordering'
+            'menus_ordering',
         ];
         $menus    = [];
         foreach ($menuKeys as $menuKey) {
@@ -170,7 +173,7 @@ class OSMapTableSitemap extends Table
      */
     protected function checkDefault()
     {
-        $db = Factory::getDbo();
+        $db = Factory::getDatabase();
 
         // Make sure we have only one default sitemap
         if ($this->get('is_default')) {
@@ -214,7 +217,7 @@ class OSMapTableSitemap extends Table
         $id = (int)$this->id;
 
         if ($id) {
-            $db           = Factory::getDbo();
+            $db           = Factory::getDatabase();
             $ordering     = 1;
             $insertValues = [];
 
@@ -233,7 +236,7 @@ class OSMapTableSitemap extends Table
                     'menutype_id' => (int)$menuId,
                     'priority'    => (float)$priority[$index],
                     'changefreq'  => $db->quote($changeFreq[$index]),
-                    'ordering'    => $ordering++
+                    'ordering'    => $ordering++,
                 ];
             }
 
@@ -265,7 +268,7 @@ class OSMapTableSitemap extends Table
     {
         if (parent::load($keys, $reset)) {
             // Load the menus information
-            $db       = Factory::getDbo();
+            $db       = Factory::getDatabase();
             $ordering = [];
 
             $query = $db->getQuery(true)

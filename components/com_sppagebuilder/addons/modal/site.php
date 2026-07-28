@@ -212,6 +212,8 @@ class SppagebuilderAddonModal extends SppagebuilderAddons
 		$selector_image = (isset($settings->selector_image) && $settings->selector_image) ? $settings->selector_image : '';
 		$selector_style	.= (isset($settings->selector_margin_top) && $settings->selector_margin_top) ? 'margin-top:' . (int) $settings->selector_margin_top .'px;' : '';
 		$selector_style	.= (isset($settings->selector_margin_bottom) && $settings->selector_margin_bottom) ? 'margin-bottom:' . (int) $settings->selector_margin_bottom .'px;' : '';
+		$button_text_alignment = (isset($settings->button_text_alignment) && !empty($settings->button_text_alignment)) ? $settings->button_text_alignment : 'left';
+
 		$css = '';
 
 		if( $modal_selector == 'icon' || $modal_selector == 'image' ) {
@@ -277,6 +279,9 @@ class SppagebuilderAddonModal extends SppagebuilderAddons
 			}
 		} else {
 			$selectorStyle = $cssHelper->generateStyle('.sppb-modal-selector', $settings, ['selector_margin_top' => 'margin-top', 'selector_margin_bottom' => 'margin-bottom']);
+			if ($button_text_alignment !== 'left' && !empty($settings->button_block)) {
+				$css .= $cssHelper->generateStyle('.sppb-modal-selector', $settings, ['button_text_alignment' => 'display: block; text-align'], null);
+			}
 			$css .= $selectorStyle;
 		}
 
@@ -305,7 +310,21 @@ class SppagebuilderAddonModal extends SppagebuilderAddons
 		$css_path = new FileLayout('addon.css.button', $layout_path);
 		$css .= $css_path->render(array('addon_id' => $addon_id, 'options' => $settings, 'id' => 'sppb-modal-' . $this->addon->id . '-selector'));
 
+		if ($modal_selector == 'button') {
+			$css .= $cssHelper->generateStyle('.sppb-btn i', $settings, ['button_icon_margin' => 'margin'], false, ['button_icon_margin' => 'spacing']);
+		}
+
 		$transformCss = $cssHelper->generateTransformStyle('.sppb-modal-selector', $settings, 'transform');
+
+		if(isset($settings->modal_content_type) && $settings->modal_content_type === 'video' && isset($settings->enable_vertical_video) && $settings->enable_vertical_video) {
+			$css .= '.mfp-iframe-scaler iframe {
+				width: auto;
+				background: transparent;
+				box-shadow: none;
+				left: 50%;
+				transform: translateX(-50%);
+			}';
+		}
 
 		$css .= $transformCss;
 
@@ -330,6 +349,8 @@ class SppagebuilderAddonModal extends SppagebuilderAddons
 		let buttonIconPosition = data.button_icon_position || "left"
 		let modalUniqueId = "sppb-modal-"+ data.id
 		let modalUrl = "#" + modalUniqueId
+		let buttonTextAlignment = data.button_text_alignment || "left"
+		let buttonBlock = data.button_block || ""
 		let attribs = \'data-popup_type="inline" data-mainclass="mfp-no-margins mfp-with-zoom"\'
 
 		let buttonClass = ( data.button_type )? "sppb-btn-" + data.button_type : "sppb-btn-default"
@@ -343,6 +364,9 @@ class SppagebuilderAddonModal extends SppagebuilderAddons
 		<style type="text/css">';
 
 		$output .= $lodash->alignment('text-align', '', 'data.alignment');
+		$output .= '<# if(modalSelectorType == "button" && buttonTextAlignment != "left" && buttonBlock != "") { #>';
+		$output .= '#sppb-addon-{{ data.id }} .sppb-modal-selector { display: block; text-align: {{ buttonTextAlignment }}; }';
+		$output .= '<# } #>';
 
 		$buttonTypographyFallbacks = [
 			'font'           => 'data.button_font_family',
@@ -355,6 +379,10 @@ class SppagebuilderAddonModal extends SppagebuilderAddons
 		];
 
 		$output .= $lodash->typography('#sppb-modal-{{ data.id }}-selector.sppb-btn-{{ data.button_type }}', 'data.button_typography', $buttonTypographyFallbacks);
+
+		$output .= '<# if(modalSelectorType == "button" && data.button_icon) { #>';
+		$output .= $lodash->spacing('margin', '#sppb-modal-{{ data.id }}-selector i', 'data.button_icon_margin');
+		$output .= '<# } #>';
 
 		$output .= '<# if (modalSelectorType == "image" && modalSelectorImageHeight ) { #>';
 		$output .= $lodash->unit('height', '#sppb-modal-{{ data.id }}-selector .modal-selector-image', 'modalSelectorImageHeight', 'px');

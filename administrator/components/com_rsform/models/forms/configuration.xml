@@ -45,6 +45,15 @@
             <option value="0">JNO</option>
             <option value="1">JYES</option>
         </field>
+        <field name="global.scroll_page" type="radio" class="btn-group btn-group-yesno" default="0" description="COM_RSFORM_SCROLL_PAGE_DESC" label="COM_RSFORM_SCROLL_PAGE">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field name="global.scroll_page_offset" type="text" default="500" description="COM_RSFORM_SCROLL_PAGE_OFFSET_DESC" label="COM_RSFORM_SCROLL_PAGE_OFFSET" showon="global.scroll_page:1" />
+        <field name="global.trigger_thankyou_content_plugins" type="radio" class="btn-group btn-group-yesno" default="0" description="COM_RSFORM_THANKYOUMESSAGE_TRIGGER_CONTENT_PLUGINS_DESC" label="COM_RSFORM_THANKYOUMESSAGE_TRIGGER_CONTENT_PLUGINS">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
 	</fieldset>
 	<fieldset name="grid" label="COM_RSFORM_GRID_SETTINGS">
 		<field name="global.grid_show_previews" type="radio" class="btn-group btn-group-yesno" description="COM_RSFORM_GRID_SHOW_PREVIEWS_DESC" label="COM_RSFORM_GRID_SHOW_PREVIEWS" default="1">

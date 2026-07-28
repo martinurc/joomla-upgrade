@@ -27,6 +27,7 @@ class SppagebuilderAddonIcon extends SppagebuilderAddons
 		$class .= (isset($settings->hover_effect) && $settings->hover_effect) ? ' sppb-icon-hover-effect-' . $settings->hover_effect : '';
 		$name = (isset($settings->name) && $settings->name) ? $settings->name : '';
 		$title = (isset($settings->title) && $settings->title) ? $settings->title : '';
+		$role = (isset($settings->role) && $settings->role) ? $settings->role : '';
 		// $link = (isset($settings->link) && $settings->link) ? $settings->link : '';
 		// $target = (isset($settings->target) && $settings->target) ? 'rel="noopener noreferrer" target="' . $settings->target . '"' : '';
 
@@ -46,7 +47,7 @@ class SppagebuilderAddonIcon extends SppagebuilderAddons
 				$name = 'fa ' . $name;
 			}
 
-			$output  .= '<i class="' . $name . '" aria-hidden="true" title="' . $title . '" ' . (empty($link) ? $ariaLabel : 'aria-hidden="true"') .'role="img"'. '></i>';
+			$output  .= '<i class="' . $name . '" aria-hidden="true" title="' . $title . '" ' . (empty($link) ? $ariaLabel : 'aria-hidden="true"') .($role ? ' role="' . $role . '"' : ''). '></i>';
 			$output  .= '<span class="sppb-form-label-visually-hidden">' . (empty($title) ? $name : $title) . '</span>';
 			$output  .= '</span>';
 			if (!empty($link)) {
@@ -102,9 +103,12 @@ class SppagebuilderAddonIcon extends SppagebuilderAddons
 			['hover_color' => false, 'hover_background' => false, 'hover_border_color' => false]
 		);
 
+		$rotationStyle = $cssHelper->generateStyle('.sppb-icon-inner', $settings, ['rotate' => 'transform: rotate(%sdeg)'], false);
+
 		$css .= $iconStyle;
 		$css .= $iconHoverStyle;
 		$css .= $fontStyle;
+		$css .= $rotationStyle;
 
 		$css .= $cssHelper->generateStyle(':self', $settings, ['alignment' => 'text-align'], false);
 		$transformCss = $cssHelper->generateTransformStyle('.sppb-icon-inner', $settings, 'transform');
@@ -150,6 +154,7 @@ class SppagebuilderAddonIcon extends SppagebuilderAddons
 		$output .= $lodash->unit('border-width', '.sppb-icon-inner:hover', 'data.hover_border_width', 'px');
 		$output .= $lodash->unit('border-radius', '.sppb-icon-inner:hover', 'data.hover_border_radius', 'px');
 		$output .= $lodash->generateTransformCss('.sppb-icon-inner', 'data.transform');
+		$output .= $lodash->transform('rotate', '.sppb-icon-inner', 'data.rotate', 'deg');
 
 		$output .= '
 		</style>

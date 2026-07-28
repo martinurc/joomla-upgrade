@@ -90,7 +90,7 @@ class SppagebuilderTableEditor extends Table
 	 * We provide our global ACL as parent
 	 * @see Table::_getAssetParentId()
 	 */
-	protected function _getAssetParentId(Table $table = NULL, $id = NULL)
+	protected function _getAssetParentId(?Table $table = NULL, $id = NULL)
 	{
 		/** @var Joomla\CMS\Table */
 		$asset = Table::getInstance('Asset');

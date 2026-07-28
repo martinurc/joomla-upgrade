@@ -4,11 +4,11 @@
  * @subpackage  Fields.MediaJce
  *
  * @copyright   Copyright (C) 2005 - 2023 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (C) 2020 - 2024 Ryan Demmer. All rights reserved.
+ * @copyright   Copyright (c) 2020-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Plugin\PluginHelper;
@@ -108,29 +108,48 @@ class JFormFieldMediaJce extends MediaField
             return $data;
         }
 
+        $data['class'] .= ' input-medium wf-media-input';
+
+        // not enabled for media field
+        if (!WfBrowserHelper::isMediaFieldEnabled()) {
+            $data['readonly'] = true;
+            $data['link'] = '';
+            return $data;
+        }
+
+        $converted = (bool) $this->element['converted'];
+
+        $mediafolder = isset($this->element['media_folder']) ? (string) $this->element['media_folder'] : '';
+
+        // Apply a configured "Directory" as a root restriction only when the field has no value (Joomla itself drops
+        // the directory once a value is set, so an existing selection elsewhere stays reachable - the Banners case).
+        // Joomla 3 modals bind the browse URL at initialisation, so it must be encoded in the server-rendered link
+        // itself (a JS rewrite would be too late). Pass it as a ":"-prefixed root "mediafolder".
+        if ($mediafolder === '' && !empty($this->directory) && empty($this->value)) {
+            $mediafolder = ':' . trim($this->directory, '/');
+        }
+
         $config = array(
             'element' => $this->id,
             'mediatype' => strtolower($this->mediatype),
-            'converted' => false,
-            'mediafolder' => isset($this->element['media_folder']) ? (string) $this->element['media_folder'] : '',
+            'converted' => $converted,
+            'mediafolder' => $mediafolder,
         );
 
-        $options = WfBrowserHelper::getMediaFieldOptions($config);
-
-        $this->link = $options['url'];
-
-        $data['class'] .= ' input-medium wf-media-input';
-
-        // not a valid file browser link
-        if (!$this->link) {
-            $data['readonly'] = true;
-            return $data;
-        }
+        // get individual field link
+        $this->link = WfBrowserHelper::getMediaFieldUrl($config);
 
         $extraData = array(
             'link'  => $this->link,
             'class' => $data['class'] .= ' wf-media-input-active',
         );
+
+        if ($converted) {
+            $extraData['class'] .= ' wf-media-input-converted';;
+        }
+
+        // get global field options
+        $options = WfBrowserHelper::getMediaFieldOptions();
 
         if ($options['upload'] == 1) {
             $extraData['class'] .= ' wf-media-input-upload';
@@ -141,6 +160,13 @@ class JFormFieldMediaJce extends MediaField
         }
 
         $extraData['class'] .= ' wf-media-input-core';
+
+        // when the "Directory" is encoded as mediafolder (or there is no directory), don't emit Joomla's "folder"
+        // param - the file browser would treat it as a value folder and use it to override the restriction.
+        // otherwise (a field with a value) leave the value's folder so the browser opens there but stays navigable.
+        if ($mediafolder !== '' || empty($this->directory)) {
+            $extraData['folder'] = '';
+        }
 
         return array_merge($data, $extraData);
     }

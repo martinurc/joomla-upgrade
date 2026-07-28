@@ -1,8 +1,8 @@
 <?php
 /**
- * @copyright    Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright    Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @copyright   Copyright (C) 2005 - 2012 Open Source Matters, Inc. All rights reserved
- * @license    GNU/GPL 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * @license    GNU General Public License version 2 or later; see LICENSE.txt
  * JCE is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
  * is derivative of works licensed under the GNU General Public License or
@@ -10,7 +10,7 @@
  *
  * Based on JImage library from Joomla.Platform 11.3
  */
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 /**
  * Class to manipulate an image.
@@ -136,7 +136,13 @@ class WFImageImagick
             throw new InvalidArgumentException('The image file does not exist.');
         }
 
-        $this->handle = new Imagick($path);
+        // Read via a blob rather than passing the path to Imagick directly. ImageMagick treats
+        // its filename argument as "magick" syntax - coder prefixes (msl:, url:, ...), [..] read
+        // modifiers, @file-lists etc. - so a legitimately named file such as "photo[1].jpg" or
+        // "report:v2.jpg" could be misread. Loading from a blob means ImageMagick never parses the
+        // name, keeping this immune to any character WFUtility::checkPath() permits in a filename.
+        $this->handle = new Imagick();
+        $this->handle->readImageBlob(file_get_contents($path));
 
         // Set the filesystem path to the source image.
         $this->source = $path;

@@ -1,8 +1,8 @@
 <?php
 
 /**
- * @copyright     Copyright (c) 2009-2022 Ryan Demmer. All rights reserved
- * @license       GNU/GPL 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * @copyright     Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
+ * @license       GNU General Public License version 2 or later; see LICENSE.txt
  * JCE is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
  * is derivative of works licensed under the GNU General Public License or
@@ -21,6 +21,7 @@ class WFColumnsPluginConfig
 
         $settings['columns_classes']    = $wf->getParam('columns.classes', '', '');
 
-        $settings['columns_custom_classes'] = $wf->getParam('columns.custom_classes', '');
+        $custom_classes = (array) $wf->getParam('columns.custom_classes', []);
+        $settings['columns_custom_classes'] = array_filter($custom_classes);
     }
 }

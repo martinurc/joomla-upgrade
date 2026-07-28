@@ -4,17 +4,17 @@
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Client\ClientHelper;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\File;
-use Joomla\CMS\Filesystem\Folder;
-use Joomla\CMS\Filesystem\Path;
+use Joomla\Filesystem\File;
+use Joomla\Filesystem\Folder;
+use Joomla\Filesystem\Path;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
@@ -90,17 +90,41 @@ class WFMediaManager extends WFMediaManagerBase
         if ($layout === 'plugin') {
             if ($this->get('can_edit_images')) {
                 if ($this->checkAccess('image_editor', 1)) {
-                    $this->addFileBrowserButton('file', 'image_editor', array('action' => 'editImage', 'title' => Text::_('WF_BUTTON_EDIT_IMAGE'), 'restrict' => 'jpg,jpeg,png,gif,webp', 'multiple' => true));
+                    $this->addFileBrowserButton('file', 'image_editor', array(
+                        'action' => 'editImage', 
+                        'title' => Text::_('WF_BUTTON_EDIT_IMAGE'), 
+                        'restrict' => 'jpg,jpeg,png,gif,webp', 
+                        'multiple' => true,
+                        'mobile' => false
+                    ));
                 }
 
                 if ($this->checkAccess('thumbnail_editor', 1)) {
-                    $this->addFileBrowserButton('file', 'thumb_create', array('action' => 'createThumbnail', 'title' => Text::_('WF_BUTTON_CREATE_THUMBNAIL'), 'trigger' => true, 'multiple' => true, 'icon' => 'thumbnail'));
-                    $this->addFileBrowserButton('file', 'thumb_delete', array('action' => 'deleteThumbnail', 'title' => Text::_('WF_BUTTON_DELETE_THUMBNAIL'), 'trigger' => true, 'multiple' => true, 'icon' => 'thumbnail-remove'));
+                    $this->addFileBrowserButton('file', 'thumb_create', array(
+                        'action' => 'createThumbnail', 
+                        'title' => Text::_('WF_BUTTON_CREATE_THUMBNAIL'), 
+                        'trigger' => true, 
+                        'multiple' => true, 
+                        'icon' => 'thumbnail',
+                        'mobile' => false
+                    ));
+                    
+                    $this->addFileBrowserButton('file', 'thumb_delete', array(
+                        'action' => 'deleteThumbnail', 
+                        'title' => Text::_('WF_BUTTON_DELETE_THUMBNAIL'), 
+                        'trigger' => true, 
+                        'multiple' => true, 
+                        'icon' => 'thumbnail-remove'
+                    ));
                 }
             }
 
             if ($this->checkAccess('text_editor', 0)) {
-                $this->addFileBrowserButton('file', 'text_editor', array('action' => 'editText', 'title' => Text::_('WF_BUTTON_EDIT_FILE'), 'restrict' => 'txt,json,html,htm,xml,md,csv,css,scss,less,js,ts'));
+                $this->addFileBrowserButton('file', 'text_editor', array(
+                    'action' => 'editText', 
+                    'title' => Text::_('WF_BUTTON_EDIT_FILE'), 
+                    'restrict' => 'txt,json,html,htm,xml,md,csv,css,scss,less,js,ts'
+                ));
             }
 
             // get parent display data
@@ -257,172 +281,238 @@ class WFMediaManager extends WFMediaManagerBase
         return $list;
     }
 
+    /**
+     * Check if FTP is enabled in the client configuration.
+     *
+     * Retrieves the FTP credentials using ClientHelper and checks if the
+     * 'enabled' option is set to 1.
+     *
+     * @return bool True if FTP is enabled, false otherwise.
+     */
     private function isFtp()
     {
-        // Initialize variables
-
+        // Retrieve FTP credentials from client configuration
         $FTPOptions = ClientHelper::getCredentials('ftp');
 
-        return $FTPOptions['enabled'] == 1;
+        // Return true if 'enabled' is explicitly set to 1
+        return isset($FTPOptions['enabled']) && $FTPOptions['enabled'] == 1;
     }
 
+    /**
+     * Convert an INI-style memory value string (e.g. "128M", "1G") to bytes.
+     *
+     * @param string $value The memory value as defined in php.ini.
+     *
+     * @return int The value in bytes.
+     */
     private static function convertIniValue($value)
     {
         $suffix = '';
+        $num = 0;
 
-        preg_match('#([0-9]+)\s?([a-z]+)#i', $value, $matches);
-
-        // get unit
-        if (isset($matches[2])) {
-            $suffix = $matches[2];
-        }
-        // get value
-        if (isset($matches[1])) {
-            $value = (int) $matches[1];
+        // Match numeric part and optional unit (e.g., "128M", "1 G")
+        if (preg_match('#^(\d+)\s*([a-zA-Z]*)$#', trim($value), $matches)) {
+            $num = (int) $matches[1];
+            $suffix = strtolower($matches[2]);
+        } else {
+            // If no unit match, assume it's a raw byte value
+            return (int) $value;
         }
 
         // Convert to bytes
-        switch (strtolower($suffix)) {
+        switch ($suffix) {
             case 'g':
             case 'gb':
-                $value *= 1073741824;
-                break;
+                return $num * 1073741824; // 1024 * 1024 * 1024
             case 'm':
             case 'mb':
-                $value *= 1048576;
-                break;
+                return $num * 1048576; // 1024 * 1024
             case 'k':
             case 'kb':
-                $value *= 1024;
-                break;
+                return $num * 1024;
+            default:
+                return $num;
         }
-
-        return (int) $value;
     }
 
+    /**
+     * Check if there is enough memory available to safely process the image.
+     *
+     * Uses memory_get_usage() and compares against memory_limit to estimate
+     * if loading the image would exceed PHP's memory limits.
+     *
+     * @param array $image An image array including width, height, and mime type.
+     *                     Indexed as: [0] => width, [1] => height, 'mime' => mime type.
+     *
+     * @return bool True if memory is sufficient, false if not.
+     */
     private static function checkMem($image)
     {
-        $channels = ($image['mime'] == 'image/png') ? 4 : 3;
+        // Estimate channels: 4 for PNG (RGBA), 3 for others (RGB)
+        $channels = ($image['mime'] === 'image/png') ? 4 : 3;
 
+        // Ensure the function exists
         if (function_exists('memory_get_usage')) {
-            // try ini_get
-            $limit = ini_get('memory_limit');
+            // Get memory limit from configuration
+            $limit = ini_get('memory_limit') ?: get_cfg_var('memory_limit');
 
-            // try get_cfg_var
-            if (empty($limit)) {
-                $limit = get_cfg_var('memory_limit');
-            }
-
-            // no limit set...
-            if ($limit === '-1') {
+            // Unlimited memory (-1) or unknown limit
+            if (!$limit || $limit === '-1') {
                 return true;
             }
 
-            // can't get from ini, assume low value of 32M
-            if (empty($limit)) {
-                $limit = 32 * 1048576;
-            } else {
-                $limit = self::convertIniValue($limit);
-            }
+            $limit = self::convertIniValue($limit); // Convert to bytes
+            $used  = memory_get_usage(true);         // Get current usage (includes overhead)
 
-            // get memory used so far
-            $used = memory_get_usage(true);
+            // Estimate memory needed for image, include safety margin
+            $required = $image[0] * $image[1] * $channels * 1.7;
 
-            return $image[0] * $image[1] * $channels * 1.7 < $limit - $used;
+            return $required < ($limit - $used);
         }
 
+        // If memory_get_usage is unavailable, assume sufficient memory
         return true;
     }
 
     /**
-     * Get and temporarily store the exif data of an image
+     * Get and temporarily store the EXIF data of an image.
      *
-     * @param [String] $file The aboslute path to the image
-     * @param [String] $key The key to store the data under
-     * @return void
+     * Caches the result using a local key to avoid redundant reads.
+     *
+     * @param string $file The absolute path to the image.
+     * @param string|null $key Optional key to store and retrieve the data from cache.
+     *
+     * @return array|null EXIF data array if available, or null if not.
      */
     protected function getExifData($file, $key = null)
     {
-        // use file name as key
+        // Use file name as cache key if none provided
         if (empty($key)) {
             $key = $file;
         }
 
+        // Return cached data if already retrieved
         if (array_key_exists($key, $this->exifCache)) {
             return $this->exifCache[$key];
         }
 
         $exif = null;
 
+        // Ensure exif_read_data is available and the file exists
         if (!function_exists('exif_read_data') || !is_file($file)) {
             return $exif;
         }
 
+        // Suppress warnings when reading EXIF data
         $exif = @exif_read_data($file);
 
-        if ($exif && is_array($exif) && array_key_exists('EXIF', $exif)) {
+        // Only cache EXIF data if it's a valid array and contains the EXIF section
+        if (is_array($exif) && array_key_exists('EXIF', $exif)) {
             $this->exifCache[$key] = $exif;
         }
 
         return $exif;
     }
 
+    /**
+     * Cleans an EXIF string by removing potentially unsafe characters,
+     * normalizing encoding, stripping tags, and converting to safe HTML.
+     *
+     * @param string $string The raw EXIF string.
+     *
+     * @return string The cleaned and HTML-safe string.
+     */
     protected function cleanExifString($string)
     {
+        // Remove control characters and backticks
         $string = (string) filter_var($string, FILTER_UNSAFE_RAW, FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_BACKTICK);
-        return htmlspecialchars(strip_tags($string));
+
+        // Normalize encoding to UTF-8 if needed (EXIF often uses ISO-8859-1)
+        if (!mb_detect_encoding($string, 'UTF-8', true)) {
+            $string = mb_convert_encoding($string, 'UTF-8', 'ISO-8859-1');
+        }
+
+        // Strip HTML tags, trim whitespace, and convert special characters to HTML entities
+        return htmlspecialchars(trim(strip_tags($string)), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 
+    /**
+     * Extracts and cleans the EXIF "ImageDescription" value from a JPEG file, if present.
+     *
+     * @param string $image The file path to the image.
+     *
+     * @return string The cleaned image description, or an empty string if unavailable or invalid.
+     */
     protected function getImageDescription($image)
     {
         $description = '';
 
-        // must be a jpeg
-        if (!preg_match('#\.(jpg|jpeg)$#', strtolower($image))) {
+        // Only process files with a .jpg or .jpeg extension
+        $ext = strtolower(pathinfo($image, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg', 'jpeg'], true)) {
             return $description;
         }
 
+        // Retrieve EXIF data using a helper method
         $data = $this->getExifData($image, WFUtility::mb_basename($image));
 
-        if (!empty($data) && isset($data['ImageDescription'])) {
+        // If EXIF data exists and includes an ImageDescription, sanitize and return it
+        if (is_array($data) && isset($data['ImageDescription'])) {
             $description = $this->cleanExifString($data['ImageDescription']);
         }
 
         return $description;
     }
 
+    /**
+     * Process the file before upload, removing EXIF data if configured.
+     *
+     * This method optionally strips EXIF metadata from JPEG files before upload,
+     * and adjusts the filename based on the mimetype if necessary.
+     *
+     * @param array  $file Reference to the uploaded file data array ($_FILES-like).
+     * @param string $dir  Target upload directory (passed by reference).
+     * @param string $name Filename for the uploaded file (passed by reference).
+     *
+     * @return void
+     *
+     * @throws InvalidArgumentException If EXIF removal fails.
+     */
     public function onBeforeUpload(&$file, &$dir, &$name)
     {
         $app = Factory::getApplication();
 
+        // Attempt to get the mimetype (e.g. image/jpeg)
         $mimetype = $app->input->get('mimetype', '', 'STRING');
 
         if ($mimetype) {
-            $ext = basename($mimetype);
+            $ext = basename($mimetype); // Use basename to isolate extension-like part
 
-            // must be an image
-            if ($ext && in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'apng', 'webp'])) {
-                // remove extension
+            // Only act if file is a known image type
+            if (in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'apng', 'webp'])) {
+                // Remove existing extension from name
                 $name = WFUtility::stripExtension($name);
 
-                // rebuild file name - name + extension
+                // Rebuild name using mimetype-derived extension
                 $name = $name . '.' . $ext;
             }
         }
 
+        // Get actual file extension (lowercase)
         $extension = WFUtility::getExtension($file['name'], true);
 
-        // check for and reset image orientation
-        if ($extension == 'jpg' || $extension == 'jpeg') {
+        // Only process EXIF for JPEG images
+        if ($extension === 'jpg' || $extension === 'jpeg') {
 
-            // store exif data
+            // Read EXIF metadata
             $exif = $this->getExifData($file['tmp_name'], $file['name']);
 
+            // Check if EXIF data should be removed
             $remove_exif = (bool) $this->getParam('editor.upload_remove_exif', false);
 
-            // data exists and we are allowed to remove it
             if ($exif && $remove_exif) {
-                if (false == $this->removeExifData($file['tmp_name'])) {
+                // Attempt to remove EXIF metadata
+                if (!$this->removeExifData($file['tmp_name'])) {
                     throw new InvalidArgumentException(Text::_('WF_MANAGER_UPLOAD_EXIF_REMOVE_ERROR'));
                 }
             }
@@ -454,65 +544,87 @@ class WFMediaManager extends WFMediaManagerBase
                 continue;
             }
 
-            // only some image types
-            if (!preg_match('#\.(jpg|jpeg|png|webp)$#i', $file['id'])) {
+            // Enrichment must never break the listing: if any per-item step throws (e.g. a
+            // filename the path validator rejects), skip enrichment for that file and leave
+            // it in the list unchanged.
+            try {
+                $path = $browser->resolvePath($file['id']);
+
+                // only some image types
+                if (!preg_match('#\.(jpg|jpeg|png|webp)$#i', $path)) {
+                    continue;
+                }
+
+                $thumbnail = $this->getThumbnail($path);
+
+                $classes = array();
+                $properties = array();
+                $trigger = array();
+
+                // add thumbnail properties
+                if ($thumbnail && $thumbnail !== $path) {
+                    $classes[] = 'thumbnail';
+                    $properties['thumbnail-src'] = $thumbnail;
+
+                    $dim = @getimagesize($filesystem->toAbsolute($thumbnail));
+
+                    if ($dim) {
+                        $properties['thumbnail-width'] = $dim[0];
+                        $properties['thumbnail-height'] = $dim[1];
+                    }
+                    $trigger[] = 'thumb_delete';
+                } else {
+                    $trigger[] = 'thumb_create';
+                }
+
+                // add trigger properties
+                $properties['trigger'] = implode(',', $trigger);
+
+                $image = $filesystem->toAbsolute($path);
+                $description = $this->getImageDescription($image);
+
+                if ($description) {
+                    $properties['description'] = $description;
+                }
+
+                $result['files'][$i] = array_merge($file,
+                    array(
+                        'classes' => implode(' ', array_merge(explode(' ', $file['classes']), $classes)),
+                        'properties' => array_merge($file['properties'], $properties),
+                    )
+                );
+            } catch (\Exception $e) {
                 continue;
             }
-
-            $thumbnail = $this->getThumbnail($file['id']);
-
-            $classes = array();
-            $properties = array();
-            $trigger = array();
-
-            // add thumbnail properties
-            if ($thumbnail && $thumbnail != $file['id']) {
-                $classes[] = 'thumbnail';
-                $properties['thumbnail-src'] = WFUtility::makePath($filesystem->getRootDir(), $thumbnail, '/');
-
-                $dim = @getimagesize(WFUtility::makePath($browser->getBaseDir(), $thumbnail));
-
-                if ($dim) {
-                    $properties['thumbnail-width'] = $dim[0];
-                    $properties['thumbnail-height'] = $dim[1];
-                }
-                $trigger[] = 'thumb_delete';
-            } else {
-                $trigger[] = 'thumb_create';
-            }
-
-            // add trigger properties
-            $properties['trigger'] = implode(',', $trigger);
-
-            $image = $filesystem->toAbsolute($file['id']);
-            $description = $this->getImageDescription($image);
-
-            if ($description) {
-                $properties['description'] = $description;
-            }
-
-            $result['files'][$i] = array_merge($file,
-                array(
-                    'classes' => implode(' ', array_merge(explode(' ', $file['classes']), $classes)),
-                    'properties' => array_merge($file['properties'], $properties),
-                )
-            );
         }
     }
 
+    /**
+     * Get a WFImage instance for a file with orientation correction and backup.
+     *
+     * Caches the image object per file for efficiency, and applies configuration
+     * for EXIF removal, Imagick preference, and image resampling. Returns false if
+     * the file does not exist, or null on error.
+     *
+     * @param string $file The absolute file path to the image.
+     *
+     * @return WFImage|false|null Returns a WFImage instance on success, false if file does not exist, null on error.
+     */
     protected function getImageLab($file)
     {
         static $instance = array();
 
+        // Return cached instance if available
         if (!isset($instance[$file])) {
             $browser = $this->getFileBrowser();
             $filesystem = $browser->getFileSystem();
 
+            // File must exist
             if (!$filesystem->is_file($file)) {
                 return false;
             }
 
-            // get the image as data
+            // Read file contents
             $data = $filesystem->read($file);
 
             if (!$data) {
@@ -520,30 +632,31 @@ class WFMediaManager extends WFMediaManagerBase
             }
 
             try {
+                // Initialize WFImage with configuration
                 $image = new WFImage(null, array(
-                    'preferImagick' => (bool) $this->getParam('editor.prefer_imagick', true),
-                    'removeExif' => (bool) $this->getParam('editor.upload_remove_exif', false),
-                    'resampleImage' => (bool) $this->getParam('editor.resample_image', false),
+                    'preferImagick'   => (bool) $this->getParam('editor.prefer_imagick', true),
+                    'removeExif'      => (bool) $this->getParam('editor.upload_remove_exif', false),
+                    'resampleImage'   => (bool) $this->getParam('editor.resample_image', false),
                 ));
 
+                // Load image from binary string
                 $image->loadString($data);
 
-                // get extension
+                // Set type based on file extension
                 $extension = WFUtility::getExtension($file);
-
-                // set image type
                 $image->setType($extension);
 
-                // correct orientation
+                // Correct image orientation if needed
                 $image->orientate();
 
-                // create backup of original image resource
+                // Backup the current image state
                 $image->backup();
 
-                // store instance
+                // Cache the instance
                 $instance[$file] = $image;
 
             } catch (Exception $e) {
+                // Store null on error and report
                 $instance[$file] = null;
                 $browser->setResult($e->getMessage(), 'error');
             }
@@ -583,7 +696,11 @@ class WFMediaManager extends WFMediaManagerBase
         $extension = WFUtility::getExtension($file);
 
         // get passed in options
-        extract($options);
+        $resize_width   = $options['resize_width'];
+        $resize_height  = $options['resize_height'];
+        $resize_crop    = $options['resize_crop'];
+        $resize_suffix  = $options['resize_suffix'];
+        $resize_quality = $options['resize_quality'];
 
         $count = max(count($resize_width), count($resize_height));
 
@@ -734,11 +851,9 @@ class WFMediaManager extends WFMediaManagerBase
 
         $resize_quality = array_map('intval', $resize_quality);
 
-        foreach (array('resize_width', 'resize_height', 'resize_crop') as $var) {
-            $$var = $app->input->get($var, array(), 'array');
-            // pass each value through intval
-            $$var = array_map('intval', $$var);
-        }
+        $resize_width  = array_map('intval', $app->input->get('resize_width', array(), 'array'));
+        $resize_height = array_map('intval', $app->input->get('resize_height', array(), 'array'));
+        $resize_crop   = array_map('intval', $app->input->get('resize_crop', array(), 'array'));
 
         $resize_suffix = $app->input->get('resize_suffix', array(), 'array');
 
@@ -750,6 +865,8 @@ class WFMediaManager extends WFMediaManagerBase
         foreach ($files as $file) {
             // check path
             WFUtility::checkPath($file);
+
+            $file = $browser->resolvePath($file);
 
             // create resize options array
             $options = compact(array('resize_width', 'resize_height', 'resize_crop', 'resize_suffix', 'resize_quality'));
@@ -828,11 +945,12 @@ class WFMediaManager extends WFMediaManagerBase
                 $file_resize_height = array();
                 $file_resize_crop = array();
 
-                foreach (array('resize_width', 'resize_height', 'resize_crop', 'file_resize_width', 'file_resize_height', 'file_resize_crop') as $var) {
-                    $$var = $app->input->get('upload_' . $var, array(), 'array');
-                    // pass each value through intval
-                    $$var = array_map('intval', $$var);
-                }
+                $resize_width       = array_map('intval', $app->input->get('upload_resize_width', array(), 'array'));
+                $resize_height      = array_map('intval', $app->input->get('upload_resize_height', array(), 'array'));
+                $resize_crop        = array_map('intval', $app->input->get('upload_resize_crop', array(), 'array'));
+                $file_resize_width  = array_map('intval', $app->input->get('upload_file_resize_width', array(), 'array'));
+                $file_resize_height = array_map('intval', $app->input->get('upload_file_resize_height', array(), 'array'));
+                $file_resize_crop   = array_map('intval', $app->input->get('upload_file_resize_crop', array(), 'array'));
 
                 $resize_suffix = $app->input->get('upload_resize_suffix', array(), 'array');
 
@@ -887,7 +1005,6 @@ class WFMediaManager extends WFMediaManagerBase
     {
         $app = Factory::getApplication();
         $browser = $this->getFileBrowser();
-        $filesystem = $browser->getFileSystem();
 
         // get imagelab instance
         $instance = $this->getImageLab($file);
@@ -916,22 +1033,28 @@ class WFMediaManager extends WFMediaManagerBase
 
         // process options with passed in values or parameters
         foreach ($vars as $key => $value) {
-            $value = $app->input->get('watermark_' . $key, $this->getParam('editor.watermark_' . $key, $value));
+            $value = $this->getParam('editor.watermark_' . $key, $value);
 
             if ($key == 'font_style') {
                 // default LiberationSans fonts
                 if (preg_match('#^LiberationSans-(Regular|Bold|BoldItalic|Italic)\.ttf$#', $value)) {
                     $value = WFUtility::makePath(WF_EDITOR_PRO_MEDIA, '/fonts/' . $value);
-                    // custom font
                 } else {
+                    // custom font — validate path before use
+                    if (empty($value)) {
+                        continue;
+                    }
+
+                    WFUtility::checkPath($value);
                     $value = WFUtility::makePath(JPATH_SITE, $value);
                 }
             }
 
             if ($key == 'image') {
-                if (strpos($value, '://') !== false) {
+                if (strpos($value, '://') !== false || empty($value)) {
                     $value = '';
                 } else {
+                    WFUtility::checkPath($value);
                     $value = WFUtility::makePath(JPATH_SITE, $value);
                 }
             }
@@ -956,7 +1079,7 @@ class WFMediaManager extends WFMediaManagerBase
             // valid data string
             if ($data) {
                 // write to file and update cache
-                if ($filesystem->write($destination, $data)) {
+                if ($browser->writeFile($destination, $data)) {
                     $cache[$destination] = $data;
                 } else {
                     $browser->setResult(Text::_('WF_MANAGER_WATERMARK_ERROR'), 'error');
@@ -976,8 +1099,12 @@ class WFMediaManager extends WFMediaManagerBase
 
         $cache = array();
 
+        $browser = $this->getFileBrowser();
+
         foreach ($files as $file) {
             $cache[$file] = '';
+
+            $file = $browser->resolvePath($file);
 
             $this->watermarkImage($file, $cache);
         }
@@ -1113,6 +1240,9 @@ class WFMediaManager extends WFMediaManagerBase
                     $instance->resize($tw, $th);
                 }
 
+                // remove exif data
+                $instance->removeExif();
+
                 $data = $instance->toString($extension, array('quality' => $tq));
 
                 if ($data) {
@@ -1155,8 +1285,10 @@ class WFMediaManager extends WFMediaManagerBase
             return array();
         }
 
+        $browser = $this->getFileBrowser();
+
         // get filesystem reference
-        $filesystem = $this->getFileBrowser()->getFileSystem();
+        $filesystem = $browser->getFileSystem();
 
         // make file path relative
         $file = $filesystem->toRelative($file);
@@ -1267,7 +1399,7 @@ class WFMediaManager extends WFMediaManagerBase
             $tmp = 'wf_ie_' . md5($file) . '.' . $ext;
             $path = WFUtility::makePath($this->getCacheDirectory(), $tmp);
 
-            self::validateFilePath($file);
+            self::validatePath($file);
 
             $result = false;
 
@@ -1308,7 +1440,9 @@ class WFMediaManager extends WFMediaManagerBase
         $browser = $this->getFileBrowser();
 
         // check file
-        self::validateFilePath($file);
+        self::validatePath($file);
+
+        $file = $browser->resolvePath($file);
 
         $upload = $app->input->files->get('file', array(), 'array');
 
@@ -1338,10 +1472,10 @@ class WFMediaManager extends WFMediaManagerBase
 
             switch ($task) {
                 case 'resize':
-                    $image->resize($value->width, $value->height);
+                    $image->resize((int) $value->width, (int) $value->height);
                     break;
                 case 'crop':
-                    $image->crop($value->width, $value->height, $value->x, $value->y, false, 1);
+                    $image->crop((int) $value->width, (int) $value->height, (int) $value->x, (int) $value->y, false);
                     break;
             }
 
@@ -1382,13 +1516,15 @@ class WFMediaManager extends WFMediaManagerBase
         $filesystem = $browser->getFileSystem();
 
         // check file
-        self::validateFilePath($file);
+        self::validatePath($file);
+
+        $file = $browser->resolvePath($file);
 
         // clean temp
         $this->cleanEditorTmp($file, false);
 
         // check new name
-        self::validateFilePath($name);
+        self::validatePath($name);
 
         $upload = $app->input->files->get('file', '', 'files', 'array');
 
@@ -1406,7 +1542,6 @@ class WFMediaManager extends WFMediaManagerBase
             // set upload as false - JSON request
             $upload = false;
 
-            $file = WFUtility::makePath($filesystem->getBaseDir(), $file);
             $dest = WFUtility::mb_dirname($file) . '/' . WFUtility::mb_basename($name);
 
             // get extension
@@ -1421,17 +1556,17 @@ class WFMediaManager extends WFMediaManagerBase
 
                     switch ($filter->task) {
                         case 'resize':
-                            $w = $args[0];
-                            $h = $args[1];
+                            $w = (int) $args[0];
+                            $h = (int) $args[1];
 
                             $image->resize($w, $h);
                             break;
                         case 'crop':
-                            $w = $args[0];
-                            $h = $args[1];
+                            $w = (int) $args[0];
+                            $h = (int) $args[1];
 
-                            $x = $args[2];
-                            $y = $args[3];
+                            $x = (int) $args[2];
+                            $y = (int) $args[3];
 
                             $image->crop($w, $h, $x, $y);
                             break;
@@ -1448,9 +1583,6 @@ class WFMediaManager extends WFMediaManagerBase
             // get image data
             $data = $image->toString($ext);
 
-            // make path relative
-            $dest = $filesystem->toRelative($dest);
-
             // write to file
             if ($data) {
                 $result->state = (bool) $filesystem->write($dest, $data);
@@ -1460,17 +1592,25 @@ class WFMediaManager extends WFMediaManagerBase
             $result->path = $dest;
         }
 
-        if ($result->state === true) {
+        if ($result->state === true) { 
+            // make relative           
+            $result->path = $filesystem->toRelative($result->path);
+
+            // resolve from complex path
+            $result->path = $browser->resolvePath($result->path);
+
+            // make absolute
+            $absolute = $filesystem->toAbsolute($result->path);
+
             // check if its a valid image
-            if (@getimagesize($result->path) === false) {
-                File::delete($result->path);
+            if (@getimagesize($absolute) === false) {
+                File::delete($absolute);
                 throw new InvalidArgumentException('Invalid image file');
             } else {
-                $result->path = str_replace(WFUtility::cleanPath(JPATH_SITE), '', $result->path);
-                $browser->setResult(WFUtility::cleanPath($result->path, '/'), 'files');
+                $browser->setResult(WFUtility::cleanPath($result->path), 'files');
             }
         } else {
-            $browser->setResult($result->message || Text::_('WF_MANAGER_EDIT_SAVE_ERROR'), 'error');
+            $browser->setResult($result->message ?: Text::_('WF_MANAGER_EDIT_SAVE_ERROR'), 'error');
         }
 
         // return to WFRequest
@@ -1488,10 +1628,10 @@ class WFMediaManager extends WFMediaManagerBase
         }
 
         // check file
-        self::validateFilePath($file);
+        self::validatePath($file);
 
         // check new name
-        self::validateFilePath($name);
+        self::validatePath($name);
 
         $allowedFiles = array('txt', 'html', 'htm', 'xml', 'md', 'csv', 'json', 'css', 'less', 'scss', 'js', 'ts');
 
@@ -1517,14 +1657,12 @@ class WFMediaManager extends WFMediaManagerBase
         $browser = $this->getFileBrowser();
         $filesystem = $browser->getFileSystem();
 
+        $file = $browser->resolvePath($file);
+
         // create a filesystem result object
         $result = new WFFileSystemResult();
 
-        $file = WFUtility::makePath($filesystem->getBaseDir(), $file);
         $dest = WFUtility::mb_dirname($file) . '/' . WFUtility::mb_basename($name);
-
-        // make path relative
-        $dest = $filesystem->toRelative($dest);
 
         $data = $app->input->post->get('data', '', 'RAW');
         $data = rawurldecode($data);
@@ -1541,7 +1679,7 @@ class WFMediaManager extends WFMediaManagerBase
             $result->path = str_replace(WFUtility::cleanPath(JPATH_SITE), '', $result->path);
             $browser->setResult(WFUtility::cleanPath($result->path, '/'), 'files');
         } else {
-            $browser->setResult($result->message || Text::_('WF_MANAGER_EDIT_TEXT_SAVE_ERROR'), 'error');
+            $browser->setResult($result->message ?: Text::_('WF_MANAGER_EDIT_TEXT_SAVE_ERROR'), 'error');
         }
 
         // return to WFRequest
@@ -1576,7 +1714,6 @@ class WFMediaManager extends WFMediaManagerBase
 
     private function cleanCacheDir()
     {
-
         $cache_max_size = intval($this->getParam('editor.cache_size', 10, 0)) * 1024 * 1024;
         $cache_max_age = intval($this->getParam('editor.cache_age', 30, 0)) * 86400;
         $cache_max_files = intval($this->getParam('editor.cache_files', 0, 0));
@@ -1729,6 +1866,7 @@ class WFMediaManager extends WFMediaManagerBase
         $browser = $this->getFileBrowser();
 
         $thumbnails = array();
+
         foreach ($files as $file) {
             $thumbnails[$file['name']] = $this->getCacheThumb(WFUtility::makePath($browser->getBaseDir(), $file['url']), true, 50, 50, WFUtility::getExtension($file['name']), 50);
         }
@@ -1748,7 +1886,7 @@ class WFMediaManager extends WFMediaManagerBase
      *
      * @throws InvalidArgumentException
      */
-    protected static function validateFilePath($path)
+    protected static function validatePath($path)
     {
         // nothing to validate
         if (empty($path)) {
@@ -1827,10 +1965,11 @@ class WFMediaManager extends WFMediaManagerBase
     public function createThumbnail($file, $width = null, $height = null, $quality = 100, $box = null)
     {
         // check path
-        self::validateFilePath($file);
+        self::validatePath($file);
 
         $browser = $this->getFileBrowser();
-        $filesystem = $browser->getFileSystem();
+
+        $file = $browser->resolvePath($file);
 
         $thumb = WFUtility::makePath($this->getThumbDir($file, true), $this->getThumbName($file));
 
@@ -1841,16 +1980,19 @@ class WFMediaManager extends WFMediaManagerBase
         if ($instance) {
             if ($box) {
                 $box = (array) $box;
-                $instance->crop($box['sw'], $box['sh'], $box['sx'], $box['sy']);
+                $instance->crop((int) $box['sw'], (int) $box['sh'], (int) $box['sx'], (int) $box['sy']);
             }
 
-            $instance->resize($width, $height);
+            $instance->resize((int) $width, (int) $height);
 
-            $data = $instance->toString($extension, array('quality' => $quality));
+            // remove exif data
+            $instance->removeExif();
+
+            $data = $instance->toString($extension, array('quality' => (int) $quality));
 
             if ($data) {
                 // write to file
-                if (!$filesystem->write($thumb, $data)) {
+                if (!$browser->writeFile($thumb, $data)) {
                     $browser->setResult(Text::_('WF_IMGMANAGER_EXT_THUMBNAIL_ERROR'), 'error');
                 }
             }
@@ -1870,7 +2012,6 @@ class WFMediaManager extends WFMediaManagerBase
 
         $app = Factory::getApplication();
         $browser = $this->getFileBrowser();
-        $filesystem = $browser->getFileSystem();
 
         $tw = $app->input->getInt('thumbnail_width');
         $th = $app->input->getInt('thumbnail_height');
@@ -1887,6 +2028,8 @@ class WFMediaManager extends WFMediaManagerBase
 
                 // check path
                 WFUtility::checkPath($file);
+
+                $file = $browser->resolvePath($file);
 
                 // get extension
                 $extension = WFUtility::getExtension($file);
@@ -1921,11 +2064,14 @@ class WFMediaManager extends WFMediaManagerBase
                     $instance->resize($tw, $th);
                 }
 
+                // remove exif data
+                $instance->removeExif();
+
                 $data = $instance->toString($extension, array('quality' => $tq));
 
                 if ($data) {
                     // write to file
-                    if (!$filesystem->write($thumb, $data)) {
+                    if (!$browser->writeFile($thumb, $data)) {
                         $browser->setResult(Text::_('WF_IMGMANAGER_EXT_THUMBNAIL_ERROR'), 'error');
                     }
                 }
@@ -2018,6 +2164,120 @@ class WFMediaManager extends WFMediaManagerBase
         return false;
     }
 
+    /**
+     * Check for the thumbnail for a given file.
+     *
+     * @param string $file The complex path of the file
+     *
+     * @return The thumbnail URL or false if none
+     */
+    private function getThumbnail($file)
+    {
+        // get browser
+        $browser = $this->getFileBrowser();
+
+        // get the absolute path of the file
+        $path = $browser->toAbsolute($file);
+
+        $dim = @getimagesize($path);
+
+        if (empty($dim)) {
+            return false;
+        }
+
+        $file = $browser->resolvePath($file);
+
+        /*$thumbfolder = $this->getParam('thumbnail_folder', '', 'thumbnails');
+
+        $dir = WFUtility::makePath(str_replace('\\', '/', dirname($relative)), $thumbfolder);
+        $thumbnail = WFUtility::makePath($dir, $this->getThumbName($relative));*/
+
+        $thumbnail = $this->getThumbPath($file);
+
+        // Image is a thumbnail
+        if ($file === $thumbnail) {
+            return $file;
+        }
+
+        // The original image is smaller than a thumbnail so just return the url to the original image.
+        if ($dim[0] <= $this->getParam('thumbnail_size', 120) && $dim[1] <= $this->getParam('thumbnail_size', 90)) {
+            return $file;
+        }
+
+        //check for thumbnails, if exists return the thumbnail url
+        if ($browser->is_file($thumbnail)) {
+            return $thumbnail;
+        }
+
+        return false;
+    }
+
+    private function getThumbPath($file)
+    {
+        return WFUtility::makePath($this->getThumbDir($file, false), $this->getThumbName($file));
+    }
+
+    /**
+     * Perform an action when files are deleted.
+     *
+     * @param [string] $file The file that was deleted
+     * @return void
+     */
+    public function onFilesDelete($file)
+    {
+        $browser = $this->getFileBrowser();
+        $filesystem = $browser->getFileSystem();
+
+        // get the thumbnail path for this file
+        $thumb = $this->getThumbPath($file);
+
+        // check if the thumbnail exists, if so delete it
+        if ($browser->is_file($thumb)) {
+            $this->deleteThumbnail($file);
+        }
+    }
+
+    public function getThumbnailDimensions($file)
+    {
+        return $this->getDimensions($this->getThumbPath($file));
+    }
+
+    public function deleteThumbnail($files)
+    {
+        if (!$this->checkAccess('thumbnail_editor', 1)) {
+            throw new Exception(Text::_('JERROR_ALERTNOAUTHOR'));
+        }
+
+        $files = (array) $files;
+
+        for ($i = 0; $i < count($files); $i++) {
+            $file = $files[$i];
+
+            // check path
+            WFUtility::checkPath($file);
+
+            $browser = $this->getFileBrowser();
+            $filesystem = $browser->getFileSystem();
+
+            $file = $browser->resolvePath($file);
+
+            $dir = $this->getThumbDir($file, false);
+            $thumb = $this->getThumbPath($file);
+
+            if ($filesystem->delete($thumb)) {
+                if ($i == count($files) - 1) {
+                    if ($filesystem->countFiles($dir) == 0 && $filesystem->countFolders($dir) == 0) {
+                        if (!$filesystem->delete($dir)) {
+                            $browser->setResult(Text::_('WF_IMGMANAGER_EXT_THUMBNAIL_FOLDER_DELETE_ERROR'), 'error');
+                        }
+                    }
+                }
+            }
+        }
+
+        return $browser->getResult();
+    }
+
     protected function getFileBrowserConfig($config = array())
     {
         $resize_width = $this->getParam('editor.resize_width', '', 640);
@@ -2091,105 +2351,5 @@ class WFMediaManager extends WFMediaManagerBase
         $config = WFUtility::array_merge_recursive_distinct($data, $config);
 
         return parent::getFileBrowserConfig($config);
-    }
-
-    /**
-     * Check for the thumbnail for a given file.
-     *
-     * @param string $relative The relative path of the file
-     *
-     * @return The thumbnail URL or false if none
-     */
-    private function getThumbnail($relative)
-    {
-        // get browser
-        $browser = $this->getFileBrowser();
-        $filesystem = $browser->getFileSystem();
-
-        $path = WFUtility::makePath($browser->getBaseDir(), $relative);
-        $dim = @getimagesize($path);
-
-        if (empty($dim)) {
-            return false;
-        }
-
-        /*$thumbfolder = $this->getParam('thumbnail_folder', '', 'thumbnails');
-
-        $dir = WFUtility::makePath(str_replace('\\', '/', dirname($relative)), $thumbfolder);
-        $thumbnail = WFUtility::makePath($dir, $this->getThumbName($relative));*/
-
-        $thumbnail = $this->getThumbPath($relative);
-
-        // Image is a thumbnail
-        if ($relative === $thumbnail) {
-            return $relative;
-        }
-
-        // The original image is smaller than a thumbnail so just return the url to the original image.
-        if ($dim[0] <= $this->getParam('thumbnail_size', 120) && $dim[1] <= $this->getParam('thumbnail_size', 90)) {
-            return $relative;
-        }
-
-        //check for thumbnails, if exists return the thumbnail url
-        if (file_exists(WFUtility::makePath($browser->getBaseDir(), $thumbnail))) {
-            return $thumbnail;
-        }
-
-        return false;
-    }
-
-    private function getThumbPath($file)
-    {
-        return WFUtility::makePath($this->getThumbDir($file, false), $this->getThumbName($file));
-    }
-
-    public function onFilesDelete($file)
-    {
-        $browser = $this->getFileBrowser();
-
-        if (file_exists(WFUtility::makePath($browser->getBaseDir(), $this->getThumbPath($file)))) {
-            $this->deleteThumbnail($file);
-        }
-
-        return array();
-    }
-
-    public function getThumbnailDimensions($file)
-    {
-        return $this->getDimensions($this->getThumbPath($file));
-    }
-
-    public function deleteThumbnail($files)
-    {
-        if (!$this->checkAccess('thumbnail_editor', 1)) {
-            throw new Exception(Text::_('JERROR_ALERTNOAUTHOR'));
-        }
-
-        $files = (array) $files;
-
-        for ($i = 0; $i < count($files); $i++) {
-            $file = $files[$i];
-
-            // check path
-            WFUtility::checkPath($file);
-
-            $browser = $this->getFileBrowser();
-            $filesystem = $browser->getFileSystem();
-            $dir = $this->getThumbDir($file, false);
-
-            $thumb = $this->getThumbPath($file);
-
-            if ($browser->deleteItem($thumb)) {
-                if ($i == count($files) - 1) {
-                    if ($filesystem->countFiles($dir) == 0 && $filesystem->countFolders($dir) == 0) {
-                        if (!$browser->deleteItem($dir)) {
-                            $browser->setResult(Text::_('WF_IMGMANAGER_EXT_THUMBNAIL_FOLDER_DELETE_ERROR'), 'error');
-                        }
-                    }
-                }
-            }
-        }
-
-        return $browser->getResult();
     }
 }

@@ -91,6 +91,9 @@ $column_styles .= $borderRadiusStyle;
 
 $background_image = (isset($options->background_image) && $options->background_image) ? $options->background_image : '';
 $background_image_src = isset($background_image->src) ? $background_image->src : $background_image;
+
+$backgroundRepeat = $backgroundSize = $backgroundAttachment = $backgroundPosition = false;
+
 if (isset($options->background_type)) {
 	if (($options->background_type == 'image' || $options->background_type == 'color') && isset($options->background) && $options->background) $style .= 'background-color:' . $options->background . ';';
 
@@ -114,33 +117,105 @@ if (isset($options->background_type)) {
 			}
 		}
 
-		if (isset($options->background_repeat) && $options->background_repeat) $style .= 'background-repeat:' . $options->background_repeat . ';';
-		if (isset($options->background_size) && $options->background_size && $options->background_size != 'custom') $style .= 'background-size:' . $options->background_size . ';';
-		if (isset($options->background_attachment) && $options->background_attachment) $style .= 'background-attachment:' . $options->background_attachment . ';';
-		if (isset($options->background_position) && $options->background_position && $options->background_position != 'custom') $style .= 'background-position:' . $options->background_position . ';';
-
-		if (isset($options->background_size) && $options->background_size === 'custom') {
-			if (isset($options->background_size_custom) && \is_object($options->background_size_custom)) {
-				$customBackgroundSize = AddonHelper::generateMultiDeviceObject($options, 'background_size_custom', 'background-size', $device, false, ($options->background_size_custom->unit ?? 'px'));
-				$styleX .= $customBackgroundSize->$device;
+		if(isset($options->background_repeat) && $options->background_repeat) {
+			if(is_object($options->background_repeat)) {
+				$backgroundRepeat = AddonHelper::generateMultiDeviceObject($options, 'background_repeat', 'background-repeat', $device, false, false);
+				$styleX .= $backgroundRepeat->$device;
+				$style .= $backgroundRepeat->$device;
+			} else {
+				$style .= 'background-repeat:' . ($options->background_repeat ?? 'no-repeat') . ';';
+			}
+		}
+		if(isset($options->background_size) && $options->background_size) {
+			if(is_object($options->background_size)) {
+				$backgroundSize = AddonHelper::generateMultiDeviceObject($options, 'background_size', 'background-size', $device, false, false);
+				$backgroundSize = AddonHelper::cleanUpCustomValue($backgroundSize);
+				$styleX .= $backgroundSize->$device;
+				$style .= $backgroundSize->$device;
+			} else {
+				if($options->background_size != 'custom') {
+					$style .= 'background-size:' . ($options->background_size ?? 'cover') . ';';
+				}
+			}
+		}
+		if(isset($options->background_attachment) && $options->background_attachment) {
+			if(is_object($options->background_attachment)) {
+				$backgroundAttachment = AddonHelper::generateMultiDeviceObject($options, 'background_attachment', 'background-attachment', $device, false, false);
+				$styleX .= $backgroundAttachment->$device;
+				$style .= $backgroundAttachment->$device;
+			} else {
+				$style .= 'background-attachment:' . ($options->background_attachment ?? 'fixed') . ';';
+			}
+		}
+		if(isset($options->background_position) && $options->background_position) {
+			if(is_object($options->background_position)) {
+				$backgroundPosition = AddonHelper::generateMultiDeviceObject($options, 'background_position', 'background-position', $device, false, false);
+				$backgroundPosition = AddonHelper::cleanUpCustomValue($backgroundPosition);
+				$styleX .= $backgroundPosition->$device;
+				$style .= $backgroundPosition->$device;
+			} else {
+				if($options->background_position != 'custom') {
+					$style .= 'background-position:' . ($options->background_position ?? 'left-top') . ';';
+				}
+			}
+		}
+		if (isset($options->background_size)) {
+			if(!is_object($options->background_size) && $options->background_size == 'custom'){
+				if (isset($options->background_size_custom) && \is_object($options->background_size_custom)) {
+					$backgroundSize = AddonHelper::generateMultiDeviceObject($options, 'background_size_custom', 'background-size', $device, false, ($options->background_size_custom->unit ?? 'px'));
+					$styleX .= $backgroundSize->$device;
+				}
+			}
+			if(is_object($options->background_size)){
+				foreach ($options->background_size as $key => $value) {
+					if ($value == 'custom') {
+						if (isset($options->background_size_custom) && \is_object($options->background_size_custom)) {
+							$backgroundSizeCustom = AddonHelper::generateMultiDeviceObject($options, 'background_size_custom', 'background-size', $device, false, ($options->background_size_custom->unit ?? 'px'));
+							$styleX .= $backgroundSizeCustom->$key;
+							$backgroundSize->$key = $backgroundSizeCustom->$key;
+						}
+						break; 
+					}
+				}
 			}
 		}
 	}
 
-	if (isset($options->background_position) && $options->background_position === 'custom') {
-		$customBackgroundPosition = AddonHelper::initDeviceObject();
+	if (isset($options->background_position)) {
+		$customBackgroundPosition = null;
 
-		foreach ($customBackgroundPosition as $key => $_) {
-			if (isset($options->background_position_custom_x->$key) && isset($options->background_position_custom_y->$key)) {
-				$xUnit = $options->background_position_custom_x->unit;
-				$yUnit = $options->background_position_custom_y->unit;
-				$customBackgroundPosition->$key = \is_object($options->background_position_custom_x) && \is_object($options->background_position_custom_y)
-					? 'background-position: ' . $options->background_position_custom_x->$key . $xUnit . ' ' . $options->background_position_custom_y->$key . $yUnit . ';'
-					: 'background-position: ' . $options->background_position_custom_x . $xUnit . ' ' . $options->background_position_custom_y . $yUnit . ';';
+		if (isset($options->background_position_custom_x) && isset($options->background_position_custom_y)) {
+			$customBackgroundPosition = AddonHelper::initDeviceObject();
+
+			foreach ($customBackgroundPosition as $key => $_) {
+				if (isset($options->background_position_custom_x->$key) && isset($options->background_position_custom_y->$key)) {
+					$xUnit = $options->background_position_custom_x->unit;
+					$yUnit = $options->background_position_custom_y->unit;
+					$customBackgroundPosition->$key = \is_object($options->background_position_custom_x) && \is_object($options->background_position_custom_y)
+						? 'background-position: ' . $options->background_position_custom_x->$key . $xUnit . ' ' . $options->background_position_custom_y->$key . $yUnit . ';'
+						: 'background-position: ' . $options->background_position_custom_x . $xUnit . ' ' . $options->background_position_custom_y . $yUnit . ';';
+				}
 			}
 		}
 
-		$styleX .= $customBackgroundPosition->$device;
+		if (!is_object($options->background_position) && $options->background_position == 'custom' && $customBackgroundPosition) {
+			$backgroundPosition = $customBackgroundPosition;
+			$styleX .= $backgroundPosition->$device;
+		}
+
+		if (is_object($options->background_position) && $customBackgroundPosition) {
+			if (!is_object($backgroundPosition)) {
+				$backgroundPosition = AddonHelper::initDeviceObject();
+			}
+			foreach ($options->background_position as $key => $value) {
+				if ($value == 'custom' && !empty($customBackgroundPosition->$key)) {
+					$backgroundPosition->$key = $customBackgroundPosition->$key;
+					if ($key === $device) {
+						$styleX .= $customBackgroundPosition->$key;
+					}
+				}
+			}
+		}
 	}
 
 	if ($options->background_type == 'gradient' && isset($options->background_gradient) && is_object($options->background_gradient)) {
@@ -199,42 +274,79 @@ if (isset($options->background_type)) {
 		}
 	}
 
-	if (isset($options->background_position) && $options->background_position == 'custom') {
-		$customBackgroundPosition2 = AddonHelper::initDeviceObject();
+	if (isset($options->background_position)) {
+		$customBackgroundPosition2 = null;
 
-		foreach ($customBackgroundPosition2 as $key => $_) {
-			if (isset($options->background_position_custom_x->$key) && isset($options->background_position_custom_y->$key)) {
-				$xUnit = $options->background_position_custom_x->unit;
-				$yUnit = $options->background_position_custom_y->unit;
-				$customBackgroundPosition2->$key = \is_object($options->background_position_custom_x) && \is_object($options->background_position_custom_y)
-					? 'background-position: ' . $options->background_position_custom_x->$key . $xUnit . ' ' . $options->background_position_custom_y->$key . $yUnit . ';'
-					: 'background-position: ' . $options->background_position_custom_x . $xUnit . ' ' . $options->background_position_custom_y . $yUnit . ';';
+		if (isset($options->background_position_custom_x) && isset($options->background_position_custom_y)) {
+			$customBackgroundPosition2 = AddonHelper::initDeviceObject();
+
+			foreach ($customBackgroundPosition2 as $key => $_) {
+				if (isset($options->background_position_custom_x->$key) && isset($options->background_position_custom_y->$key)) {
+					$xUnit = $options->background_position_custom_x->unit;
+					$yUnit = $options->background_position_custom_y->unit;
+					$customBackgroundPosition2->$key = \is_object($options->background_position_custom_x) && \is_object($options->background_position_custom_y)
+						? 'background-position: ' . $options->background_position_custom_x->$key . $xUnit . ' ' . $options->background_position_custom_y->$key . $yUnit . ';'
+						: 'background-position: ' . $options->background_position_custom_x . $xUnit . ' ' . $options->background_position_custom_y . $yUnit . ';';
+				}
 			}
 		}
 
-		$styleX .= $customBackgroundPosition2->$device;
+		if (!is_object($options->background_position) && $options->background_position == 'custom' && $customBackgroundPosition2) {
+			$backgroundPosition = $customBackgroundPosition2;
+			$styleX .= $backgroundPosition->$device;
+		}
+
+		if (is_object($options->background_position) && $customBackgroundPosition2) {
+			if (!is_object($backgroundPosition)) {
+				$backgroundPosition = AddonHelper::initDeviceObject();
+			}
+			foreach ($options->background_position as $key => $value) {
+				if ($value == 'custom' && !empty($customBackgroundPosition2->$key)) {
+					$backgroundPosition->$key = $customBackgroundPosition2->$key;
+					if ($key === $device) {
+						$styleX .= $customBackgroundPosition2->$key;
+					}
+				}
+			}
+		}
 	}
 }
 
 $customBackgroundSize = $customBackgroundSize ?? null;
-$customBackgroundPosition = $customBackgroundPosition ?? null;
 $customBackgroundSize2 = $customBackgroundSize2 ?? null;
-$customBackgroundPosition2 = $customBackgroundPosition2 ?? null;
 
 $columnMediaStyle = array_map(function ($size) use (
 	$columnSelector,
 	$customBackgroundSize,
-	$customBackgroundPosition,
 	$customBackgroundSize2,
-	$customBackgroundPosition2
+	$backgroundSize,
+	$backgroundPosition,
+	$backgroundRepeat,
+	$backgroundAttachment
 ) {
 	$str = '';
 	$str .= AddonHelper::mediaQuery($size);
+
+	$getVal = function ($var, $key) {
+		if (empty($var)) {
+			return '';
+		}
+		if (is_object($var)) {
+			return isset($var->$key) ? $var->$key : '';
+		}
+		if (is_array($var)) {
+			return isset($var[$key]) ? $var[$key] : '';
+		}
+		return '';
+	};
+
 	$str .= $columnSelector . '{';
 	$str .= $customBackgroundSize ? $customBackgroundSize->$size : '';
-	$str .= $customBackgroundPosition ? $customBackgroundPosition->$size : '';
 	$str .= $customBackgroundSize2 ? $customBackgroundSize2->$size : '';
-	$str .= $customBackgroundPosition2 ? $customBackgroundPosition2->$size : '';
+	$str .= $getVal($backgroundSize, $size);
+	$str .= $getVal($backgroundPosition, $size);
+	$str .= $getVal($backgroundRepeat, $size);
+	$str .= $getVal($backgroundAttachment, $size);
 	$str .= '}';
 	$str .= '}';
 
@@ -252,14 +364,14 @@ if (!empty($borderRadius->$device)) {
 	$column_styles .= '#column-id-' . $options->dynamicId . ' .sppb-column-overlay {' . $borderRadius->$device . '}';
 }
 
-if ($columnMediaStyle) {
-	$column_styles .= $columnMediaStyle;
-}
-
 if ($style) {
 	$column_styles .= '#column-id-' . $options->dynamicId . '{' . $style . '}';
 	$column_styles .= '#column-id-' . $options->dynamicId . '{' . $placeholder_bg_image . '}';
 	$column_styles .= '#column-id-' . $options->dynamicId . '.sppb-element-loaded {' . $lazy_bg_image . '}';
+}
+
+if ($columnMediaStyle) {
+	$column_styles .= $columnMediaStyle;
 }
 
 //Overlay

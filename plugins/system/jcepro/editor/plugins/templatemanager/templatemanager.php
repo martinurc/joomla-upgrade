@@ -1,19 +1,19 @@
 <?php
+
 /**
  * @package     JCE
  * @subpackage  Editor
  *
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\File;
+use Joomla\Filesystem\File;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Uri\Uri;
-use Michelf\Markdown;
 
 final class WFTemplateManagerPlugin extends WFMediaManager
 {
@@ -24,9 +24,9 @@ final class WFTemplateManagerPlugin extends WFMediaManager
     public function __construct($config = array())
     {
         $config = array(
-            'base_path' => __DIR__
+            'base_path' => __DIR__,
         );
-        
+
         parent::__construct($config);
 
         // add a request to the stack
@@ -34,7 +34,7 @@ final class WFTemplateManagerPlugin extends WFMediaManager
         $request->setRequest(array($this, 'loadTemplate'));
         $request->setRequest(array($this, 'getTemplateList'));
 
-        if ($this->getParam('allow_save', 1)) {
+        if ($this->getParam('allow_save', 0)) {
             $request->setRequest(array($this, 'createTemplate'));
             $this->addFileBrowserAction('save', array('action' => 'createTemplate', 'title' => Text::_('WF_TEMPLATEMANAGER_CREATE')));
         }
@@ -59,19 +59,55 @@ final class WFTemplateManagerPlugin extends WFMediaManager
 
         $document->addScript(
             array(
-                'plugins/templatemanager/js/templatemanager'
-            ), 
+                'plugins/templatemanager/js/templatemanager',
+            ),
             'pro'
         );
 
         $document->addStyleSheet(
             array(
-                'plugins/templatemanager/css/templatemanager'
-            ), 
+                'plugins/templatemanager/css/templatemanager',
+            ),
             'pro'
         );
 
         $document->addScriptDeclaration('TemplateManager.settings=' . json_encode($this->getSettings()) . ';');
+    }
+
+    private function cleanHtmlData($html)
+    {
+        require_once WF_EDITOR_PRO_LIBRARIES . '/vendor/wfe/Purify.php';
+
+        $purifier = new WfePurify();
+
+        // Use HTMLPurifier to clean the HTML
+        $html = $purifier->purify($html);
+
+        // trim
+        $html = trim($html);
+
+        return $html;
+    }   
+
+    public function onBeforeUpload(&$file, &$dir, &$name)
+    {
+        $ext = WFUtility::getExtension($file['name'], true);
+
+        if (in_array($ext, ['htm', 'html'])) {
+            $data = @file_get_contents($file['tmp_name']);
+
+            if ($data === false) {
+                throw new \RuntimeException('Action Failed: Unable to read the file data.');
+            }
+
+            $data = $this->cleanHtmlData($data);
+
+            if (@file_put_contents($file['tmp_name'], $data) === false) {
+                throw new \RuntimeException('Action Failed: Unable to write the sanitised file.');
+            }
+        }
+
+        return parent::onBeforeUpload($file, $dir, $name);
     }
 
     public function onUpload($file, $relative = '')
@@ -84,15 +120,6 @@ final class WFTemplateManagerPlugin extends WFMediaManager
 
         // get the relative filesystem path
         $path = $browser->getFileSystem()->toRelative($file);
-
-        // write back if html
-        if (preg_match('#\.(htm|html)$#', $file)) {
-            $data = $this->processTemplate($path);
-
-            if (!empty($data)) {
-                $browser->getFileSystem()->write($path, stripslashes($data));
-            }
-        }
 
         if ($app->input->getInt('inline', 0) === 1) {
             $result = array(
@@ -108,8 +135,12 @@ final class WFTemplateManagerPlugin extends WFMediaManager
         return array();
     }
 
-    public function createTemplate($dir, $name)
+    public function createTemplate($dir, $name, $type = 'txt')
     {
+        if ((int) $this->getParam('allow_save', 0) === 0) {
+            throw new RuntimeException('Action Failed: Saving templates is not allowed.');
+        }
+
         $browser = $this->getFileBrowser();
 
         $app = Factory::getApplication();
@@ -120,8 +151,15 @@ final class WFTemplateManagerPlugin extends WFMediaManager
         // check name
         WFUtility::checkPath($name);
 
+        // check type
+        WFUtility::checkPath($type);
+
         // validate name
         if (WFUtility::validateFileName($name) === false) {
+            throw new InvalidArgumentException('Action Failed: The file name is invalid.');
+        }
+
+        if (strtolower($name) == 'index') {
             throw new InvalidArgumentException('Action Failed: The file name is invalid.');
         }
 
@@ -129,8 +167,29 @@ final class WFTemplateManagerPlugin extends WFMediaManager
         $data = $app->input->post->get('data', '', 'RAW');
         $data = rawurldecode($data);
 
-        $name = File::makeSafe($name) . '.html';
-        $path = WFUtility::makePath($dir, $name);
+        // clean data based on Joomla Text Filter settings
+        $data = $this->cleanHtmlData($data);
+
+        if (empty($data)) {
+            throw new RuntimeException('Action Failed: The template data is empty.');
+        }
+
+        $type = strtolower($type);
+        $type = trim($type);
+
+        // check type is valid and rewrite to txt if not
+        if (!in_array($type, ['txt', 'md'])) {
+            $type = 'txt';
+        }
+
+        // create file name
+        $name = File::makeSafe($name) . '.' . $type;
+
+        // resolve complex path
+        $path = $browser->resolvePath($dir);
+
+        // create relative path to file
+        $path = WFUtility::makePath($path, $name);
 
         // Remove any existing template div
         $data = preg_replace('/<div(.*?)class="mceTmpl"([^>]*?)>([\s\S]*?)<\/div>/i', '$3', $data);
@@ -139,6 +198,8 @@ final class WFTemplateManagerPlugin extends WFMediaManager
 
         if (!$browser->getFileSystem()->write($path, $data)) {
             $browser->setResult(Text::_('WF_TEMPLATEMANAGER_WRITE_ERROR'), 'error');
+        } else {
+            $browser->setResult(WFUtility::cleanPath($path), 'files');
         }
 
         return $browser->getResult();
@@ -152,10 +213,16 @@ final class WFTemplateManagerPlugin extends WFMediaManager
         if ($params) {
             if (is_string($params)) {
                 foreach (explode(',', $params) as $param) {
-                    list($key, $value) = preg_split('/[:=]/', $param);
+                    $parts = preg_split('/[:=]/', $param, 2);
 
-                    $key = trim($key, chr(0x22) . chr(0x27) . chr(0x38));
-                    $value = trim($value, chr(0x22) . chr(0x27) . chr(0x38));
+                    if (count($parts) !== 2) {
+                        continue;
+                    }
+
+                    [$key, $value] = $parts;
+
+                    $key = trim($key, chr(0x22) . chr(0x27));
+                    $value = trim($value, chr(0x22) . chr(0x27));
 
                     $data[$key] = trim($value);
                 }
@@ -177,10 +244,8 @@ final class WFTemplateManagerPlugin extends WFMediaManager
         switch ($key) {
             case 'modified':
                 return WFUtility::formatDate($this->getParam('mdate_format', 'Y-m-d H:i:s'));
-                break;
             case 'created':
                 return WFUtility::formatDate($this->getParam('cdate_format', 'Y-m-d H:i:s'));
-                break;
             case 'username':
             case 'usertype':
             case 'name':
@@ -188,20 +253,14 @@ final class WFTemplateManagerPlugin extends WFMediaManager
                 $user = Factory::getUser();
 
                 return isset($user->$key) ? $user->$key : $key;
-                break;
             default:
-
-                // Replace other pre-defined variables
                 $values = $this->replaceValuesToArray();
 
                 if (isset($values[$key])) {
                     return $values[$key];
                 }
 
-                // return raw variable for user replacement
                 return $matches[0];
-
-                break;
         }
     }
 
@@ -212,6 +271,8 @@ final class WFTemplateManagerPlugin extends WFMediaManager
         // check path
         WFUtility::checkPath($file);
 
+        $file = $browser->resolvePath($file);
+
         // read content
         $content = $browser->getFileSystem()->read($file);
 
@@ -219,9 +280,12 @@ final class WFTemplateManagerPlugin extends WFMediaManager
             return '';
         }
 
-        // Remove body etc.
-        if (preg_match('/<body[^>]*>([\s\S]+?)<\/body>/', $content, $matches)) {
-            $content = trim($matches[1]);
+        // quick pre-trim
+        $content = trim($content);
+
+        // extract body content if it exists
+        if (preg_match('~<body[^>]*>(.*)</body>~is', $content, $matches)) {
+            $content = $matches[1];
         }
 
         return $content;
@@ -235,11 +299,11 @@ final class WFTemplateManagerPlugin extends WFMediaManager
 
         // process markdown
         if ($ext === 'md') {
-            require_once WF_EDITOR_PRO_PLUGINS . '/textpattern/vendor/wfe/Markdown.php';
+            require_once WF_EDITOR_PRO_LIBRARIES . '/vendor/wfe/Markdown.php';
 
             $content = WfeMarkdownParser::defaultTransform($content);
         }
-        
+
         // normalize variables to use ${var} syntax
         $content = preg_replace('/\{\$(.*?)\}/', '${$1}', $content);
 
@@ -256,10 +320,12 @@ final class WFTemplateManagerPlugin extends WFMediaManager
 
     protected function getFileBrowserConfig($config = array())
     {
-        $config['expandable'] = false;
-        $config['position'] = 'bottom';
+        $config = parent::getFileBrowserConfig($config);
+        
+        // ensure upload is disabled by default
+        $config['features']['upload'] = $this->getParam('upload', 0);
 
-        return parent::getFileBrowserConfig($config);
+        return $config;
     }
 
     public function getTemplateList()
@@ -273,10 +339,8 @@ final class WFTemplateManagerPlugin extends WFMediaManager
         }
 
         if (!empty($templates)) {
-            foreach ($templates as $template) {
-                $value = "";
-                $thumbnail = "";
 
+            foreach ($templates as $template) {
                 // ensure an array
                 $template = (array) $template;
 
@@ -284,23 +348,39 @@ final class WFTemplateManagerPlugin extends WFMediaManager
                 if (!isset($template['name'])) {
                     continue;
                 }
+
                 // check for thumbnail (optional)
                 if (!isset($template['thumbnail'])) {
                     $template['thumbnail'] = '';
                 }
+
                 // check for url (optional)
                 if (!isset($template['url'])) {
                     $template['url'] = '';
                 }
+
                 // check for html (optional)
                 if (!isset($template['html'])) {
                     $template['html'] = '';
                 }
 
-                extract($template);
+                if (!isset($template['description'])) {
+                    $template['description'] = '';
+                }
 
-                $url = trim($url);
-                $html = trim($html);
+                // clean up template description so that it only contains text
+                $template['description'] = strip_tags($template['description']);
+                // encode
+                $template['description'] = htmlspecialchars($template['description'], ENT_QUOTES, 'UTF-8');
+                // trim
+                $template['description'] = trim($template['description']);
+
+                $name        = $template['name'];
+                $url         = trim($template['url']);
+                $html        = trim($template['html']);
+                $thumbnail   = $template['thumbnail'];
+                $description = $template['description'];
+                $value       = '';
 
                 // some values must be set
                 if (empty($url) && empty($html)) {
@@ -308,8 +388,10 @@ final class WFTemplateManagerPlugin extends WFMediaManager
                 }
 
                 if (!empty($url)) {
-                    if (preg_match("#\.(htm|html|txt)$#", $url) && strpos('://', $url) === false) {
+                    if (preg_match("#\.(htm|html|txt)$#", $url) && strpos($url, '://') === false) {
                         $url = trim($url, '/');
+
+                        WFUtility::checkPath($url);
 
                         $file = JPATH_SITE . '/' . $url;
 
@@ -334,6 +416,7 @@ final class WFTemplateManagerPlugin extends WFMediaManager
                 $list[$name] = array(
                     'data' => $value,
                     'image' => $thumbnail,
+                    'description' => $description,
                 );
             }
         }
@@ -341,15 +424,19 @@ final class WFTemplateManagerPlugin extends WFMediaManager
         // try files list
         if (empty($list)) {
             $browser = $this->getFileBrowser();
-            $filesystem = $browser->getFileSystem();
 
             // skip for external filesystems
-            if (!$filesystem->get('local')) {
+            if (!$browser->getFileSystem()->get('local')) {
                 return $list;
             }
 
+            // search only the root folder
+            $browser->set('search_depth', 0);
+
+            $limit = (int) $this->getParam('templates_limit', 25);
+
             // get items
-            $items = $browser->getItems('', 0);
+            $items = $browser->searchItems('', $limit, 0, '*.html OR *.htm OR *.txt OR *.md', '');
 
             foreach ($items['files'] as $item) {
                 if ($item['name'] === "index.html") {
@@ -365,6 +452,9 @@ final class WFTemplateManagerPlugin extends WFMediaManager
                 );
             }
         }
+
+        // sort list by name ignoring case
+        ksort($list, SORT_NATURAL | SORT_FLAG_CASE);
 
         return $list;
     }

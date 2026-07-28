@@ -193,6 +193,17 @@ SpAddonsConfig::addonConfig([
                     ]
                 ],
 
+                'fetch_priority' => [
+                    'type' => 'select',
+                    'title' => Text::_('COM_SPPAGEBUILDER_ADDON_IMAGE_FETCH_PRIORITY'),
+                    'desc' => Text::_('COM_SPPAGEBUILDER_ADDON_IMAGE_FETCH_PRIORITY_DESC'),
+                    'std' => '',
+                    'values' => [
+                        'high' => Text::_('COM_SPPAGEBUILDER_ADDON_IMAGE_FETCH_PRIORITY_HIGH'),
+                        'low' => Text::_('COM_SPPAGEBUILDER_ADDON_IMAGE_FETCH_PRIORITY_LOW'),
+                    ]
+                ],
+
                 'open_lightbox' => [
                     'type' => 'checkbox',
                     'title' => Text::_('COM_SPPAGEBUILDER_ADDON_IMAGE_OPEN_LIGHTBOX'),

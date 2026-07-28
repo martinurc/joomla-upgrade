@@ -9,8 +9,8 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\Folder;
-use Joomla\CMS\Filesystem\File;
+use Joomla\Filesystem\Folder;
+use Joomla\Filesystem\File;
 
 class RsformModelFiles extends BaseDatabaseModel
 {
@@ -92,7 +92,15 @@ class RsformModelFiles extends BaseDatabaseModel
 	    $upload = Factory::getApplication()->input->files->get('upload');
 		if (!$upload['error'])
 		{
-            return File::upload($upload['tmp_name'], $this->getCurrent() . '/' . $upload['name']);
+			try
+			{
+				return File::upload($upload['tmp_name'], $this->getCurrent() . '/' . $upload['name']);
+			}
+			catch (Exception $e)
+			{
+				Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+				return false;
+			}
         }
 
 		return false;

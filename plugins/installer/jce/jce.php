@@ -4,11 +4,11 @@
  * @subpackage  Installer.Jce
  * 
  * @copyright   Copyright (C) 2005 - 2023 Open Source Matters, Inc. All rights reserved
- * @copyright   Copyright (C) 2023 - 2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2023-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 JLoader::registerNamespace('Joomla\\Plugin\\Installer\\Jce', JPATH_PLUGINS . '/installer/jce/src', false, false, 'psr4');
 

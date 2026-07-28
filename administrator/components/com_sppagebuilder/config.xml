@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <config>
-	<fieldset name="component" addfieldpath="/administrator/components/com_sppagebuilder/models/fields/">
+	<fieldset name="component">
 
 		<field name="production_mode"
 			type="radio"
@@ -119,7 +119,29 @@
 			<option value="1">JYES</option>
 			<option value="0">JNO</option>
 		</field>	
+
+		<field name="enable_gravatar"
+			type="radio"
+			class="btn-group btn-group-yesno"
+			default="0"
+			label="COM_SPPAGEBUILDER_ENABLE_GRAVATAR"
+			description="COM_SPPAGEBUILDER_ENABLE_GRAVATAR_DESC">
+			<option value="1">JYES</option>
+			<option value="0">JNO</option>
+		</field>
 		<!-- end pro feature -->
+
+		<field name="separato-3" type="spacer" hr="true" />
+
+		<field name="hide_editor_modules"
+			type="radio"
+			class="btn-group btn-group-yesno"
+			default="0"
+			label="COM_SPPAGEBUILDER_HIDE_EDITOR_MODULES"
+			description="COM_SPPAGEBUILDER_HIDE_EDITOR_MODULES_DESC">
+			<option value="1">JYES</option>
+			<option value="0">JNO</option>
+		</field>
 
 	</fieldset>
 

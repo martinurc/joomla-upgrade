@@ -14,8 +14,8 @@ if (!function_exists('gzopen') && function_exists('gzopen64')) {
 }
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\File;
-use Joomla\CMS\Filesystem\Folder;
+use Joomla\Filesystem\File;
+use Joomla\Filesystem\Folder;
 
 class RSFormProRestore
 {
@@ -77,7 +77,8 @@ class RSFormProRestore
 	
 	public function upload($file) {
 		// Upload it to the temp location.
-		if (!File::upload($file['tmp_name'], $this->getPath(), false, true)) {
+		if (!File::upload($file['tmp_name'], $this->getPath()))
+		{
 			throw new Exception(sprintf('Could not copy "%s" to "%s"!', $file['name'], $this->path));
 		}
 	}
@@ -111,7 +112,7 @@ class RSFormProRestore
 				
 				if ($meta['filesize']) {
 					// Make sure our extension is .xml
-					if (($ext = File::getExt($meta['filename'])) != 'xml') {
+					if (($ext = pathinfo($meta['filename'], PATHINFO_EXTENSION)) != 'xml') {
 						throw new Exception(sprintf('Attempted to extract a file with an invalid extension (%s) - archive might be damaged.', preg_replace('#[^a-z0-9]#is', '', $ext)));
 					}
 					

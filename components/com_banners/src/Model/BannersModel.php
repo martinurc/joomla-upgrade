@@ -13,9 +13,9 @@ namespace Joomla\Component\Banners\Site\Model;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
-use Joomla\Database\DatabaseQuery;
 use Joomla\Database\Exception\ExecutionFailureException;
 use Joomla\Database\ParameterType;
+use Joomla\Database\QueryInterface;
 use Joomla\Registry\Registry;
 use Joomla\Utilities\ArrayHelper;
 
@@ -56,9 +56,9 @@ class BannersModel extends ListModel
     }
 
     /**
-     * Method to get a DatabaseQuery object for retrieving the data set from a database.
+     * Method to get a QueryInterface object for retrieving the data set from a database.
      *
-     * @return  DatabaseQuery   A DatabaseQuery object to retrieve the data set.
+     * @return  QueryInterface   An object implementing QueryInterface to retrieve the data set.
      *
      * @since   1.6
      */
@@ -169,7 +169,7 @@ class BannersModel extends ListModel
                 $query->where($db->quoteName('a.catid') . $type . ':categoryId')
                     ->bind(':categoryId', $categoryId, ParameterType::INTEGER);
             }
-        } elseif (is_array($categoryId) && (count($categoryId) > 0)) {
+        } elseif (\is_array($categoryId) && (\count($categoryId) > 0)) {
             $categoryId = ArrayHelper::toInteger($categoryId);
 
             if ($this->getState('filter.category_id.include', true)) {
@@ -186,14 +186,14 @@ class BannersModel extends ListModel
             } else {
                 $temp   = [];
                 $config = ComponentHelper::getParams('com_banners');
-                $prefix = $config->get('metakey_prefix');
+                $prefix = $config->get('metakey_prefix', '');
 
                 if ($categoryId) {
                     $query->join('LEFT', $db->quoteName('#__categories', 'cat'), $db->quoteName('a.catid') . ' = ' . $db->quoteName('cat.id'));
                 }
 
                 foreach ($keywords as $key => $keyword) {
-                    $regexp       = '[[:<:]]' . $keyword . '[[:>:]]';
+                    $regexp       = $db->getServerType() === 'mysql' ? '\\b' . $keyword . '\\b' : '[[:<:]]' . $keyword . '[[:>:]]';
                     $valuesToBind = [$keyword, $keyword, $regexp];
 
                     if ($cid) {
@@ -216,7 +216,7 @@ class BannersModel extends ListModel
                         . ' = SUBSTRING(' . $bounded[1] . ',1,LENGTH(' . $db->quoteName('cl.metakey_prefix') . '))'
                         . ' OR ' . $db->quoteName('a.own_prefix') . ' = 0'
                         . ' AND ' . $db->quoteName('cl.own_prefix') . ' = 0'
-                        . ' AND ' . ($prefix == substr($keyword, 0, strlen($prefix)) ? '0 = 0' : '0 != 0');
+                        . ' AND ' . (str_starts_with($keyword, $prefix) ? '0 = 0' : '0 != 0');
 
                     $condition2 = $db->quoteName('a.metakey') . ' ' . $query->regexp($bounded[2]);
 
@@ -272,8 +272,10 @@ class BannersModel extends ListModel
         if (!isset($this->cache['items'])) {
             $this->cache['items'] = parent::getItems();
 
-            foreach ($this->cache['items'] as &$item) {
-                $item->params = new Registry($item->params);
+            if (\is_array($this->cache['items'])) {
+                foreach ($this->cache['items'] as &$item) {
+                    $item->params = new Registry($item->params);
+                }
             }
         }
 
@@ -296,7 +298,7 @@ class BannersModel extends ListModel
         $db        = $this->getDatabase();
         $bid       = [];
 
-        if (!count($items)) {
+        if (!\count($items)) {
             return;
         }
 

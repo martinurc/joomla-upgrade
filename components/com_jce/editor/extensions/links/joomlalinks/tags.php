@@ -4,11 +4,11 @@
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\RouteHelper;
@@ -75,7 +75,7 @@ class JoomlalinksTags extends CMSObject
                     $language = $tag->language;
                 }
 
-                $id = $router->getRoute($tag->slug, 'com_tags.tag', '', $language);
+                $id = $router->getRoute($tag->slug ?? $tag->id, 'com_tags.tag', '', $language);
                 $id = $this->route($id);
 
                 $items[] = array(
@@ -103,7 +103,14 @@ class JoomlalinksTags extends CMSObject
             $case_when_item_alias = ' CASE WHEN ';
             $case_when_item_alias .= $query->charLength('a.alias', '!=', '0');
             $case_when_item_alias .= ' THEN ';
-            $a_id = $query->castAsChar('a.id');
+
+            // Joomla 3 compatibility
+            if (method_exists($query, 'castAsChar')) {
+                $a_id = $query->castAsChar('a.id');
+            } else {
+                $a_id = $query->castAs('CHAR', 'a.id');
+            }
+
             $case_when_item_alias .= $query->concatenate(array($a_id, 'a.alias'), ':');
             $case_when_item_alias .= ' ELSE ';
             $case_when_item_alias .= $a_id . ' END as slug';
@@ -115,7 +122,7 @@ class JoomlalinksTags extends CMSObject
         $query->where($db->qn('a.published') . ' = 1');
 
         if (!$user->authorise('core.admin')) {
-            $groups = implode(',', $user->getAuthorisedViewLevels());
+            $groups = implode(',', array_map('intval', $user->getAuthorisedViewLevels()));
             $query->where('a.access IN (' . $groups . ')');
         }
 

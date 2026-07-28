@@ -25,7 +25,7 @@ class JsnUsermailFieldHelper
 	public static function getXml($item)
 	{
 		$xml='';
-		if(JFactory::getApplication()->isSite())
+		if(JFactory::getApplication()->isClient('site'))
 		{
 			require_once(JPATH_SITE.'/components/com_jsn/helpers/helper.php');
 			$hideTitle= ($item->params->get('hidetitle',0) && JFactory::getApplication()->input->get('view','profile')=='profile' && JFactory::getApplication()->input->get('option','')=='com_jsn') || ($item->params->get('hidetitleedit',0) && (JFactory::getApplication()->input->get('layout','')=='edit' || JFactory::getApplication()->input->get('view','')=='registration'));
@@ -33,8 +33,8 @@ class JsnUsermailFieldHelper
 			$placeholder=($item->params->get('usermail_placeholder','')!='' ? 'hint="'.JsnHelper::xmlentities($item->params->get('usermail_placeholder','')).'"' : '');
 			$placeholder2=($item->params->get('usermail_placeholder2','')!='' ? 'hint="'.JsnHelper::xmlentities($item->params->get('usermail_placeholder2','')).'"' : '');
 
-			if($item->params->get('field_readonly','')==1 && JFactory::getApplication()->isSite()) $readonly='readonly="true"';
-			elseif($item->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('view')!='registration' && JFactory::getApplication()->isSite()) $readonly='readonly="true"';
+			if($item->params->get('field_readonly','')==1 && JFactory::getApplication()->isClient('site')) $readonly='readonly="true"';
+			elseif($item->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('view')!='registration' && JFactory::getApplication()->isClient('site')) $readonly='readonly="true"';
 			else $readonly='';
 
 			$xml.='

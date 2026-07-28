@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2021-2023 Joomlashack.com. All rights reserved
+ * @copyright 2021-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -23,27 +24,32 @@
 
 namespace Alledia\Framework\Joomla\Form\Field;
 
-use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Field\ListField as JoomlaListField;
 use Joomla\CMS\Form\FormHelper;
 use Joomla\CMS\Version;
 
+// phpcs:disable PSR1.Files.SideEffects.FoundWithSymbols
 defined('_JEXEC') or die();
 
-if (Version::MAJOR_VERSION < 4) {
-    class_alias('JFormFieldList', '\\Joomla\\CMS\\Form\\Field\\ListField');
+if (class_exists(JoomlaListField::class) == false) {
     FormHelper::loadFieldClass('List');
+    class_alias(\JFormFieldList::class, JoomlaListField::class);
 }
 
-class ListField extends \Joomla\CMS\Form\Field\ListField
+// phpcs:enable PSR1.Files.SideEffects.FoundWithSymbols
+
+class ListField extends JoomlaListField
 {
     use TraitLayouts;
 
     /**
-     * Set list field layout based on Joomla version
+     * @inheritDoc
      */
     public function setup(\SimpleXMLElement $element, $value, $group = null)
     {
-        $this->setListLayout();
+        if (Version::MAJOR_VERSION > 3) {
+            $this->layout = (string)$element['layout'] ?: 'joomla.form.field.list-fancy-select';
+        }
 
         return parent::setup($element, $value, $group);
     }

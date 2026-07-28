@@ -58,10 +58,20 @@ class SppagebuilderAddonButton extends SppagebuilderAddons
 
 		$hrefTag = !empty($link) ? 'href="' . $link .'"' : 'tabindex="0"';
 
+		$downloadAttr = '';
+		if (!empty($link) && !empty($settings->link_download)) {
+			$filename = isset($settings->link_download_filename) ? trim((string) $settings->link_download_filename) : '';
+			if ($filename !== '') {
+				$downloadAttr = ' download="' . htmlspecialchars($filename, ENT_QUOTES, 'UTF-8') . '"';
+			} else {
+				$downloadAttr = ' download';
+			}
+		}
+
 		$ariaLabel = !empty($settings->aria_label)  ? ' aria-label="' . $settings->aria_label . '"' : '';
 
 		$output = '<div class="sppb-button-wrapper">';
-		$output .= '<a '. $hrefTag  . ' ' . $new_tab . ' ' . $attribs . ' ' . $ariaLabel .' class="sppb-btn ' . $class . '">' . $text . '</a>';
+		$output .= '<a '. $hrefTag  . ' ' . $new_tab . ' ' . $attribs . $downloadAttr . ' ' . $ariaLabel .' class="sppb-btn ' . $class . '">' . $text . '</a>';
 		$output .= '</div>';
 
 		return $output;
@@ -208,12 +218,15 @@ class SppagebuilderAddonButton extends SppagebuilderAddons
 		];
 		$output .= $lodash->typography('#btn-{{ data.id }}', 'data.typography', $typographyFallbacks);
 
+		$output .= '<# if (data.size == "custom") { #>';
+		$output .= $lodash->spacing('padding', '#btn-{{ data.id }}.sppb-btn-custom', 'data.button_padding');
+		$output .= '<# } #>';
+
 		// custom
 		$output .= '<# if (data.type == "custom") { #>';
 		$output .= $lodash->color('color', '#btn-{{ data.id }}', 'data.color');
 		$output .= $lodash->color('color', '#btn-{{ data.id }}:hover', 'data.color_hover');
 		$output .= $lodash->color('background-color', '#btn-{{ data.id }}:hover', 'data.background_color_hover');
-		$output .= $lodash->spacing('padding', '#btn-{{ data.id }}.sppb-btn-custom', 'data.button_padding');
 		$output .= '<# if (data.appearance == "outline") { #>';
 		$output .= '#btn-{{ data.id }} {background-color: transparent;}';
 		$output .= $lodash->unit('border-color', '#btn-{{ data.id }}', 'data.background_color', '', false);
@@ -278,9 +291,19 @@ class SppagebuilderAddonButton extends SppagebuilderAddons
 				tabindex = href ? "" : "tabindex=0";
 			}
 
+			let downloadAttr = "";
+			if (href && data.link_download) {
+				const fn = String(data.link_download_filename || "").trim();
+				if (fn) {
+					downloadAttr = " download=\"" + fn.replace(/&/g, "&amp;").replace(/\"/g, "&quot;").replace(/</g, "&lt;") + "\"";
+				} else {
+					downloadAttr = " download";
+				}
+			}
+
 			let ariaLabel = data.aria_label || "";
 		#>
-		<a  {{href}} {{tabindex}} {{target}} {{rel}} id="btn-{{ data.id }}" aria-label="{{ariaLabel}}" class="sppb-btn {{ classList }}" data-id={{ data.id }}><# if(data.icon_position == "left" && !_.isEmpty(data.icon)) { #><i class="{{ icon_name }}" aria-hidden="true" ></i> <# } #><span class="sp-editable-content" data-id={{ data.id }} data-fieldName="text" data-placeholder="Add text...">{{{ data.text }}}</span><# if(data.icon_position == "right" && !_.isEmpty(data.icon)) { #> <i class="{{ icon_name }}" aria-hidden="true" ></i><# } #></a>';
+		<a  {{href}} {{tabindex}} {{target}} {{rel}}{{downloadAttr}} id="btn-{{ data.id }}" aria-label="{{ariaLabel}}" class="sppb-btn {{ classList }}" data-id={{ data.id }}><# if(data.icon_position == "left" && !_.isEmpty(data.icon)) { #><i class="{{ icon_name }}" aria-hidden="true" ></i> <# } #><span class="sp-editable-content" data-id={{ data.id }} data-fieldName="text" data-placeholder="Add text...">{{{ data.text }}}</span><# if(data.icon_position == "right" && !_.isEmpty(data.icon)) { #> <i class="{{ icon_name }}" aria-hidden="true" ></i><# } #></a>';
 
 		return $output;
 	}

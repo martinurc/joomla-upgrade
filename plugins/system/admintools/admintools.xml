@@ -1,29 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--~
   ~ @package   admintools
-  ~ @copyright Copyright (c)2010-2023 Nicholas K. Dionysopoulos / Akeeba Ltd
+  ~ @copyright Copyright (c)2010-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
   ~ @license   GNU General Public License version 3, or later
   -->
 
-<extension version="3.9.0" type="plugin" group="system" method="upgrade">
+<extension type="plugin" group="system" method="upgrade">
 	<name>PLG_SYSTEM_ADMINTOOLS</name>
+	<version>7.8.9</version>
+	<creationDate>2026-06-01</creationDate>
 	<author>Nicholas K. Dionysopoulos</author>
 	<authorEmail>nicholas@akeeba.com</authorEmail>
 	<authorUrl>https://www.akeeba.com</authorUrl>
-	<copyright>Copyright (c)2010-2023 Nicholas K. Dionysopoulos</copyright>
+	<copyright>Copyright (c)2010-2026 Nicholas K. Dionysopoulos / Akeeba Ltd</copyright>
 	<license>GNU General Public License version 3, or later</license>
-	<creationDate>2024-09-16</creationDate>
-	<version>6.2.1</version>
 	<description>PLG_SYSTEM_ADMINTOOLS_XML_DESCRIPTION</description>
+	<namespace path="src">Akeeba\Plugin\System\AdminTools</namespace>
+
 	<files>
-		<filename plugin="admintools">admintools.php</filename>
-		<filename>autoloader.php</filename>
+		<folder plugin="admintools">services</folder>
+		<folder plugin="admintools">src</folder>
+
 		<filename>.htaccess</filename>
 		<filename>web.config</filename>
-		<folder>admintools</folder>
-		<folder>feature</folder>
-		<folder>util</folder>
 	</files>
 
-	<scriptfile>script.php</scriptfile>
+	<languages folder="language">
+		<language tag="en-GB">en-GB/plg_system_admintools.ini</language>
+		<language tag="en-GB">en-GB/plg_system_admintools.sys.ini</language>
+	</languages>
 </extension>

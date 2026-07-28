@@ -26,7 +26,7 @@ SpAddonsConfig::addonConfig([
                 'attribute' => [
                     'type'   => 'attribute',
                     'title'  => Text::_('COM_SPPAGEBUILDER_ADDON_COLLECTION_TEXT_FIELD_SOURCE'),
-                    'allowed_types' => ['image','gallery', 'video'],
+                    'allowed_types' => ['image','gallery', 'video', 'location'],
                 ],
 
                 'item_alignment' => [
@@ -82,7 +82,6 @@ SpAddonsConfig::addonConfig([
 					'title'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_WIDTH'),
 					'responsive' => true,
 					'std'        => ['xl' => 200],
-					'max'        => 1000,
 				],
 
 				'gallery_height' => [
@@ -90,7 +89,6 @@ SpAddonsConfig::addonConfig([
 					'title'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_HEIGHT'),
 					'responsive' => true,
 					'std'        => ['xl' => 200],
-					'max'        => 1000,
 				],
 
 				'gallery_item_gap' => [
@@ -286,6 +284,9 @@ SpAddonsConfig::addonConfig([
                     'max' => 2000,
                     'min' => 0,
                     'responsive' => true,
+                    'depends'   => [
+                        ['attribute?.type', '!=', 'location']
+                    ],
                 ],
 
                 'height' => [
@@ -294,13 +295,31 @@ SpAddonsConfig::addonConfig([
                     'max' => 2000,
                     'min' => 0,
                     'responsive' => true,
+                    'depends'   => [
+                        ['attribute?.type', '!=', 'location']
+                    ],
+                ],
+
+                'map_height' => [
+                    'type' => 'slider',
+                    'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_HEIGHT'),
+                    'max' => 2000,
+                    'min' => 0,
+                    'std' => '400',
+                    'depends'   => [
+                        ['attribute?.type', '=', 'location']
+                    ],
+                    'responsive' => true,
                 ],
 
                 'image_fit' => [
                     'type'  => 'select',
                     'title' => Text::_('COM_SPPAGEBUILDER_COLLECTION_THUMBNAIL_IMAGE_FIT'),
                     'std'   => 'cover',
-                    'depends' => [['attribute?.type', '!=', 'video']],
+                    'depends' => [
+                        ['attribute?.type', '!=', 'video'],
+                        ['attribute?.type', '!=', 'location']
+                    ],
                     'values' => [
                         'none'          => Text::_('COM_SPPAGEBUILDER_COLLECTION_THUMBNAIL_IMAGE_FIT_NONE'),
                         'cover'         => Text::_('COM_SPPAGEBUILDER_COLLECTION_THUMBNAIL_IMAGE_FIT_COVER'),
@@ -322,7 +341,10 @@ SpAddonsConfig::addonConfig([
                         '21/9'   => Text::_('COM_SPPAGEBUILDER_COLLECTION_THUMBNAIL_ASPECT_RATIO_ULTRA_WIDE'),
                         'custom' => Text::_('COM_SPPAGEBUILDER_COLLECTION_THUMBNAIL_ASPECT_RATIO_CUSTOM'),
                     ],
-                    'depends' => [['attribute?.type', '!=', 'video']],
+                    'depends' => [
+                        ['attribute?.type', '!=', 'video'],
+                        ['attribute?.type', '!=', 'location']
+                    ],
                 ],
                 'custom_aspect_ratio' => [
                     'type' => 'text',
@@ -330,9 +352,71 @@ SpAddonsConfig::addonConfig([
                     'placeholder' => 'e.g. 16/9',
                     'depends' => [
                         ['aspect_ratio', '=', 'custom'],
-                        'depends' => [['attribute?.type', '!=', 'video']],
+                        'depends' => [
+                            ['attribute?.type', '!=', 'video'],
+                            ['attribute?.type', '!=', 'location']
+                        ],
                     ],
                 ],
+                'map_style' => [
+					'type'   => 'select',
+					'title'  => Text::_('COM_SPPAGEBUILDER_GLOBAL_STYLE'),
+					'desc'   => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_STYLE_DESC'),
+					'values' => [
+						'CartoDB.Positron'               => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_STYLE_LIGHT_ALL'),
+						'CartoDB.DarkMatter'             => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_STYLE_DARK_ALL'),
+						'CartoDB.Voyager'                => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_STYLE_VOYAGER'),
+						'Esri.NatGeoWorldMap'            => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_STYLE_NATGEO'),
+						'OpenStreetMap.Mapnik'           => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_STYLE_MAPNIK'),
+						'OpenStreetMap.HOT'              => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_STYLE_HOT'),
+						'Esri.WorldStreetMap'            => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_STYLE_WORLDSTREET'),
+						'Esri.WorldTopoMap'              => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_STYLE_WORLD_TOPO'),
+						'Esri.WorldGrayCanvas'           => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_STYLE_WORLD_GRAY_CANVAS'),
+					],
+					'std' => 'OpenStreetMap.Mapnik',
+					'inline' => true,
+                    'depends' => [['attribute?.type', '=', 'location']],
+				],
+                'map_zoom' => [
+					'type'        => 'slider',
+					'title'       => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_ZOOM'),
+					'desc'        => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_ZOOM_DESC'),
+					'std'         => 13,
+					'max'         => 50,
+                    'depends' => [['attribute?.type', '=', 'location']],
+				],
+
+				'map_mouse_scroll' => [
+					'type'  => 'checkbox',
+					'title' => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_ENABLE_MOUSE_SCROLL'),
+					'desc'  => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_ENABLE_MOUSE_SCROLL_DESC'),
+					'std'   => 0,
+                    'depends' => [['attribute?.type', '=', 'location']],
+				],
+
+				'map_dragging' => [
+					'type'  => 'checkbox',
+					'title' => Text::_('COM_SPPAGEBUILDER_ADDON_ENABLE_DRAGGING'),
+					'desc'  => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_ENABLE_DRAGGING_DESC'),
+					'std'   => 0,
+                    'depends' => [['attribute?.type', '=', 'location']],
+				],
+
+				'map_zoom_control' => [
+					'type'  => 'checkbox',
+					'title' => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_ENABLE_ZOOMCONTROL'),
+					'desc'  => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_ENABLE_ZOOMCONTROL_DESC'),
+					'std'   => 0,
+                    'depends' => [['attribute?.type', '=', 'location']],
+				],
+
+				'map_attribution' => [
+					'type'  => 'checkbox',
+					'title' => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_ENABLE_ATTRIBUTION'),
+					'desc'  => Text::_('COM_SPPAGEBUILDER_ADDON_OPENSTREETMAP_ENABLE_ATTRIBUTION_DESC'),
+					'std'   => 1,
+                    'depends' => [['attribute?.type', '=', 'location']],
+				],
                 'padding' => [
                     'type'       => 'padding',
                     'title'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_PADDING'),

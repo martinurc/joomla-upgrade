@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2021-2023 Joomlashack.com. All rights reserved
+ * @copyright 2021-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -26,7 +27,7 @@ namespace Alledia\Framework\Joomla;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\MVC\View\HtmlView;
-use Joomla\CMS\Object\CMSObject;
+use Joomla\Registry\Registry;
 
 defined('_JEXEC') or die();
 
@@ -47,7 +48,7 @@ abstract class AbstractView extends HtmlView
     protected $form = null;
 
     /**
-     * @var CMSObject
+     * @var Registry
      */
     protected $state = null;
 

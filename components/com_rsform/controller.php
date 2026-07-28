@@ -12,7 +12,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Utilities\IpHelper;
 use Joomla\CMS\Router\Route;
-use Joomla\CMS\Filesystem\Folder;
+use Joomla\Filesystem\Folder;
 
 class RsformController extends BaseController
 {

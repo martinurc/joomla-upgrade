@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="plugin" group="actionlog" method="upgrade">
+	<name>PLG_ACTIONLOG_RSFORM</name>
+	<author>RSForm! Pro</author>
+	<creationDate>2025-08</creationDate>
+	<copyright>(C) 2025 RSJoomla!</copyright>
+	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+	<authorEmail>support@rsjoomla.com</authorEmail>
+	<authorUrl>www.rsjoomla.com</authorUrl>
+	<version>1.0.0</version>
+	<description>PLG_ACTIONLOG_RSFORM_XML_DESCRIPTION</description>
+	<namespace path="src">Rsjoomla\Plugin\Actionlog\Rsform</namespace>
+	<files>
+		<folder plugin="rsform">services</folder>
+		<folder>sql</folder>
+		<folder>src</folder>
+	</files>
+	<install>
+		<sql>
+			<file driver="mysql" charset="utf8">sql/mysql/install.sql</file>
+		</sql>
+	</install>
+    <uninstall>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/mysql/uninstall.sql</file>
+        </sql>
+    </uninstall>
+	<languages>
+		<language tag="en-GB">language/en-GB/plg_actionlog_rsform.ini</language>
+		<language tag="en-GB">language/en-GB/plg_actionlog_rsform.sys.ini</language>
+	</languages>
+</extension>

@@ -75,6 +75,10 @@
 		<field name="author" type="text" class="sp-pagebuilder-form-control" label="COM_SPPAGEBUILDER_FIELD_AUTHOR" placeholder="COM_SPPAGEBUILDER_FIELD_AUTHOR_PLACEHOLDER" desc="COM_SPPAGEBUILDER_FIELD_AUTHOR_DESC" />
 	</fieldset>
 
+	<fieldset name="schema">
+		<field name="schema" type="hidden" />
+	</fieldset>
+
 	<!-- <fieldset name="addtomenu" addfieldpath="/administrator/components/com_menus/models/fields">
 		<field name="menutitle" type="text" class="sp-pagebuilder-form-control" default="" label="COM_SPPAGEBUILDER_MENU_ITEM_FIELD_TITLE_LABEL" />
 		<field name="menualias" type="text" class="sp-pagebuilder-form-control" default="" label="COM_SPPAGEBUILDER_MENU_ITEM_FIELD_ALIAS_LABEL" />

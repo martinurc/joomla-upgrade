@@ -17,6 +17,7 @@ use JoomShaper\SPPageBuilder\DynamicContent\Models\Collection;
 use JoomShaper\SPPageBuilder\DynamicContent\Models\CollectionItem;
 use JoomShaper\SPPageBuilder\DynamicContent\Models\Page;
 use JoomShaper\SPPageBuilder\DynamicContent\Site\CollectionHelper;
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\CollectionIds;
 
 //no direct access
 defined('_JEXEC') or die('Restricted access');
@@ -30,7 +31,35 @@ class SppagebuilderModelDynamic extends ItemModel
 
 	protected $_context = 'com_sppagebuilder.page';
 
-	private function getPageIdFromCollectionItemId()
+	private function getPageIdFromArticlesCollectionItemId()
+	{
+		$page = Page::where('extension', 'com_sppagebuilder')
+				->where('extension_view', 'dynamic_content:detail')
+				->where('view_id', CollectionIds::ARTICLES_COLLECTION_ID)
+				->first(['id']);
+
+		if ($page->isEmpty()) {
+			return null;
+		}
+
+		return $page->id ?? null;
+	}
+
+	private function getPageIdFromTagsCollectionItemId()
+	{
+		$page = Page::where('extension', 'com_sppagebuilder')
+				->where('extension_view', 'dynamic_content:detail')
+				->where('view_id', CollectionIds::TAGS_COLLECTION_ID)
+				->first(['id']);
+
+		if ($page->isEmpty()) {
+			return null;
+		}
+
+		return $page->id ?? null;
+	}
+
+	public function getPageIdFromCollectionItemId()
 	{
 		$itemId = CollectionHelper::getCollectionItemIdFromUrl();
 		$collectionItem = CollectionItem::where('id', $itemId)->first(['collection_id']);
@@ -54,7 +83,16 @@ class SppagebuilderModelDynamic extends ItemModel
 
 	protected function populateState()
 	{
-		$pageId = $this->getPageIdFromCollectionItemId();
+		$input = Factory::getApplication()->input;
+		$collectionType = $input->get('collection_type') ?? 'normal-source';
+
+		if ($collectionType === 'articles') {
+			$pageId = $this->getPageIdFromArticlesCollectionItemId();
+		} else if ($collectionType === 'tags') {
+			$pageId = $this->getPageIdFromTagsCollectionItemId();
+		} else {
+			$pageId = $this->getPageIdFromCollectionItemId();
+		}
 		$this->setState('page.id', $pageId);
 
 		$user = Factory::getUser();
@@ -80,7 +118,42 @@ class SppagebuilderModelDynamic extends ItemModel
 		{
 			try
 			{
+				$app = Factory::getApplication();
+				$input = $app->input;
+				$itemId = $input->get('collection_item_id');
+				
+				if (is_array($itemId)) {
+					$itemId = (int) $itemId[0];
+				} elseif ($itemId) {
+					$itemId = (int) $itemId;
+				}
+
 				$db = $this->getDbo();
+				
+				if($itemId) {
+					$userAccessLevels = $user->getAuthorisedViewLevels();
+					$collectionType = $input->get('collection_type') ?? 'normal-source';
+				
+					if ($collectionType === 'articles') {
+						$accessTable = '#__content';
+					} elseif ($collectionType === 'tags') {
+						$accessTable = '#__tags';
+					} else {
+						$accessTable = '#__sppagebuilder_collection_items';
+					}
+				
+					$query = $db->getQuery(true)
+						->select($db->quoteName('access'))
+						->from($db->quoteName($accessTable))
+						->where($db->quoteName('id') . ' = ' . (int) $itemId);
+					$itemAccess = $db->setQuery($query)->loadResult();
+				
+					if($itemAccess === null || !in_array((int) $itemAccess, $userAccessLevels)) {
+						$app->enqueueMessage(Text::_('JERROR_ALERTNOAUTHOR'), 'error');
+						return false;
+					}
+				}
+
 				$query = $db->getQuery(true);
 
 				$query->select('a.*')

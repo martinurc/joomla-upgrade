@@ -16,7 +16,9 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Helper\UserGroupsHelper;
 use Joomla\CMS\Version;
+use Joomla\CMS\Uri\Uri;
 
 class SppagebuilderAddonArticles extends SppagebuilderAddons
 {
@@ -81,6 +83,7 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 		}
 
 		$settings = $this->addon->settings;
+		$addon_id = '#sppb-addon-' . $this->addon->id;
 
 
 		$class = (isset($settings->class) && $settings->class) ? $settings->class : '';
@@ -88,17 +91,9 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 		$heading_selector = (isset($settings->heading_selector) && $settings->heading_selector) ? $settings->heading_selector : 'h3';
 
 		// Addon options
-		$resource 		= (isset($settings->resource) && $settings->resource) ? $settings->resource : 'article';
+		$resource 		= 'article';
 		$catid 			= (isset($settings->catid) && $settings->catid) ? $settings->catid : [];
 		$tagids 		= (isset($settings->tagids) && $settings->tagids) ? $settings->tagids : array();
-		$k2catid 		= [];
-		if ((isset($settings->k2catid) && $settings->k2catid)) {
-			if (is_array($settings->k2catid)) {
-				$k2catid = $settings->k2catid;
-			} else {
-				$k2catid = [$settings->k2catid];
-			}
-		}
 		$include_subcat = (isset($settings->include_subcat)) ? (int) $settings->include_subcat : 1;
 		$post_type 		= (isset($settings->post_type) && $settings->post_type) ? $settings->post_type : '';
 		$ordering 		= (isset($settings->ordering) && $settings->ordering) ? $settings->ordering : 'latest';
@@ -125,7 +120,6 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 		$readmore_text 	= (isset($settings->readmore_text) && $settings->readmore_text) ? $settings->readmore_text : Text::_('COM_SPPAGEBUILDER_ADDON_ARTICLES_READ_MORE');
 		$link_articles 	= (isset($settings->link_articles)) ? (int) $settings->link_articles : 0;
 		$link_catid 	= (isset($settings->link_catid)) ? (int) $settings->link_catid : 0;
-		$link_k2catid 	= (isset($settings->link_k2catid)) ? (int) $settings->link_k2catid : 0;
 		$show_custom_field 	= (isset($settings->show_custom_field)) ? $settings->show_custom_field : 0;
 
 		$show_date_text 		 	  = (isset($settings->show_date_text)) ? $settings->show_date_text : '';
@@ -133,6 +127,10 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 		$show_last_modified_date_text = (isset($settings->show_last_modified_date_text)) ? $settings->show_last_modified_date_text : '';
 		$article_modified_date 	 	  = ComponentHelper::getParams('com_content')->get('show_modify_date');
 		$article_created_date 	 	  = ComponentHelper::getParams('com_content')->get('show_publish_date');
+
+		$pagination = (isset($settings->pagination)) ? (int) $settings->pagination : 0;
+		$pagination_load_more_button_text = (isset($settings->pagination_load_more_button_text) && $settings->pagination_load_more_button_text) ? $settings->pagination_load_more_button_text : Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_PAGINATION_TYPE_LOAD_MORE');
+		$pagination_load_more_button_type = (isset($settings->pagination_load_more_button_type) && $settings->pagination_load_more_button_type) ? $settings->pagination_load_more_button_type : 'dark';
 
 		$all_articles_btn_text   = (!empty($settings->all_articles_btn_text) && $settings->all_articles_btn_text) ? $settings->all_articles_btn_text : Text::_('COM_SPPAGEBUILDER_ADDON_ARTICLES_SEE_ALL_POSTS');
 		$all_articles_btn_aria_label_text = $all_articles_btn_text;
@@ -147,33 +145,10 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 		$layout = (isset($settings->layout) && $settings->layout) ? $settings->layout : 'default';
 
 		$output   = '';
-		//include k2 helper
-		$k2helper 		= JPATH_ROOT . '/components/com_sppagebuilder/helpers/k2.php';
 		$article_helper = JPATH_ROOT . '/components/com_sppagebuilder/helpers/articles.php';
-		$isk2installed  = self::isComponentInstalled('com_k2');
 
-		if ($resource === 'k2') {
-			if ($isk2installed == 0) {
-				$output .= '<p class="alert alert-danger">' . Text::_('COM_SPPAGEBUILDER_ADDON_ARTICLE_ERORR_K2_NOTINSTALLED') . '</p>';
-				return $output;
-			} elseif (!file_exists($k2helper)) {
-				$output .= '<p class="alert alert-danger">' . Text::_('COM_SPPAGEBUILDER_ADDON_K2_HELPER_FILE_MISSING') . '</p>';
-				return $output;
-			} else {
-				require_once $k2helper;
-			}
-
-			$items = [];
-			if (is_array($k2catid)) {
-				foreach ($k2catid as $catId) {
-					$itemsById = SppagebuilderHelperK2::getItems($limit, $ordering, $catId, $include_subcat);
-					$items = array_merge($items, $itemsById);
-				}
-			}
-		} else {
-			require_once $article_helper;
-			$items = SppagebuilderHelperArticles::getArticles($limit, $ordering, $catid, $include_subcat, $post_type, $tagids);
-		}
+		require_once $article_helper;
+		$items = SppagebuilderHelperArticles::getArticles($limit, $ordering, $catid, $include_subcat, $post_type, $tagids, 1, 1);
 
 		if (!count($items)) {
 			$output .= '<p class="alert alert-warning">' . Text::_('COM_SPPAGEBUILDER_NO_ITEMS_FOUND') . '</p>';
@@ -194,27 +169,27 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 			if ($layout === 'masonry') {
 				$layoutRowCls .= ' sppb-addon-article-layout-masonry-row ';
 				$output .= '<style>
-				.sppb-addon-articles .sppb-addon-article-layout-masonry-row {
+				'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-masonry-row {
 					display: block;
 					column-count: ' . $columns_lg . ';
 				}
 				@media (max-width: 1200px) {
-					.sppb-addon-articles .sppb-addon-article-layout-masonry-row {
+					'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-masonry-row {
 						column-count: ' . $columns_md . ';
 					}
 				}
 				@media (max-width: 992px) {
-					.sppb-addon-articles .sppb-addon-article-layout-masonry-row {
+					'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-masonry-row {
 						column-count: ' . $columns_sm . '; 
 					}
 				}
 				@media (max-width: 768px) {
-					.sppb-addon-articles .sppb-addon-article-layout-masonry-row {
+					'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-masonry-row {
 						column-count: ' . $columns_xs . '; 
 					}
 				}
 				@media (max-width: 575px) {
-					.sppb-addon-articles .sppb-addon-article-layout-masonry-row {
+					'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-masonry-row {
 						column-count: ' . $columns . '; 
 					}
 				}
@@ -222,27 +197,27 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 			} elseif ($layout === 'editorial' || $layout === 'magazine') {
 				$layoutRowCls .= ' sppb-addon-article-layout-' . $layout . '-row ';
 				$output .= '<style>
-				.sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
+				'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
 					display: grid;
 					grid-template-columns: repeat(' . $columns_lg . ', 1fr);
 				}
 				@media (max-width: 1200px) {
-					.sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
+					'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
 						grid-template-columns: repeat(' . $columns_md . ', 1fr);
 					}
 				}
 				@media (max-width: 992px) {
-					.sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
+					'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
 						grid-template-columns: repeat(' . $columns_sm . ', 1fr);
 					}
 				}
 				@media (max-width: 768px) {
-					.sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
+					'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
 						grid-template-columns: repeat(' . $columns_xs . ', 1fr); 
 					}
 				}
 				@media (max-width: 575px) {
-					.sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
+					'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
 						grid-template-columns: repeat(' . $columns . ', 1fr);
 					}
 				}
@@ -277,16 +252,7 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 				$output .= '<div class="sppb-addon-article ' . $layoutContentCls . '">';
 
 				if (!$hide_thumbnail) {
-					$image = '';
-					if ($resource === 'k2') {
-						if (isset($item->image_medium) && $item->image_medium) {
-							$image = $item->image_medium;
-						} elseif (isset($item->image_large) && $item->image_large) {
-							$image = $item->image_medium;
-						}
-					} else {
-						$image = $item->{$thumb_size} ?? $item->image_thumbnail;
-					}
+					$image = $item->{$thumb_size} ?? $item->image_thumbnail;
 
 					if ($resource !== 'k2' && $item->post_format === 'gallery') {
 						if (count((array) $item->imagegallery->images)) {
@@ -335,7 +301,7 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 								$img_alt_text = $item->title;
 							}
 
-							$output .= '<a href="' . $item->link . '" itemprop="url"><img class="sppb-img-responsive' . ($placeholder && $page_view_name != 'form' ? ' sppb-element-lazy' : '') . '" src="' . ($placeholder && $page_view_name != 'form' ? $placeholder : $item->image_thumbnail) . '" alt="' . $img_alt_text . '" itemprop="thumbnailUrl" ' . ($placeholder && $page_view_name != 'form' ? 'data-large="' . $image . '"' : '') . '  loading="lazy"></a>';
+							$output .= '<a href="' . $item->link . '" itemprop="url"><img class="sppb-img-responsive' . ($placeholder && $page_view_name != 'form' ? ' sppb-element-lazy' : '') . '" src="' . ($placeholder && $page_view_name != 'form' ? $placeholder : $item->image_thumbnail) . '" alt="' . $img_alt_text . '" itemprop="thumbnailUrl" ' . ($placeholder && $page_view_name != 'form' ? 'loading="lazy" data-large="' . $image . '"' : '') . '></a>';
 						}
 					} elseif ($resource != 'k2' &&  $item->post_format == 'video' && isset($item->video_src) && $item->video_src) {
 						$output .= '<div class="entry-video embed-responsive embed-responsive-16by9">';
@@ -376,7 +342,7 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 								$img_alt_text = $item->title;
 							}
 
-							$output .= '<a class="sppb-article-img-wrap" href="' . $item->link . '" itemprop="url"><img class="sppb-img-responsive' . ($default_placeholder && $page_view_name != 'form' ? ' sppb-element-lazy' : '') . '" src="' . ($default_placeholder && $page_view_name != 'form' ? $default_placeholder : $image) . '" alt="' . $img_alt_text . '" itemprop="thumbnailUrl" ' . ($default_placeholder && $page_view_name != 'form' ? 'data-large="' . $image . '"' : '') . ' loading="lazy"></a>';
+							$output .= '<a class="sppb-article-img-wrap" href="' . $item->link . '" itemprop="url"><img class="sppb-img-responsive' . ($default_placeholder && $page_view_name != 'form' ? ' sppb-element-lazy' : '') . '" src="' . ($default_placeholder && $page_view_name != 'form' ? $default_placeholder : $image) . '" alt="' . $img_alt_text . '" itemprop="thumbnailUrl" ' . ($default_placeholder && $page_view_name != 'form' ? 'loading="lazy" data-large="' . $image . '"' : '') . '></a>';
 						}
 					}
 				}
@@ -404,11 +370,7 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 					}
 
 					if ($show_category) {
-						if ($resource == 'k2') {
-							$item->catUrl = urldecode(Route::_(K2HelperRoute::getCategoryRoute($item->catid . ':' . urlencode($item->category_alias))));
-						} else {
-							$item->catUrl = Route::_(version_compare($JoomlaVersion, '4.0.0', '>=') ? Joomla\Component\Content\Site\Helper\RouteHelper::getCategoryRoute($item->catslug) : ContentHelperRoute::getCategoryRoute($item->catslug));
-						}
+						$item->catUrl = Route::_(version_compare($JoomlaVersion, '4.0.0', '>=') ? Joomla\Component\Content\Site\Helper\RouteHelper::getCategoryRoute($item->catslug) : ContentHelperRoute::getCategoryRoute($item->catslug));
 						$output .= '<span class="sppb-meta-category"><a href="' . $item->catUrl . '" itemprop="genre">' . $item->category . '</a></span>';
 					}
 
@@ -436,11 +398,7 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 					// 🚨 Alert: Do not add “FieldsHelper” as a namespace as  Joomla 3 doesn’t support it. 
 					$custom_fields = FieldsHelper::getFields('com_content.article', $item);
 
-					foreach ($custom_fields as $custom_field) {
-						if (!empty($custom_field->type) && $custom_field->type === 'url' && !empty($custom_field->value)) {
-							$custom_field->value = '<a href="' . $custom_field->value . '">' . $custom_field->value . '</a>';
-						}
-					}
+					$this->renderCustomFields($custom_fields);
 
 					$output .= FieldsHelper::render(
 						'com_content.article',
@@ -455,7 +413,17 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 
 
 				if ($show_intro) {
-					$output .= '<div class="sppb-article-introtext">' . $this->truncateHtml($item->introtext, $intro_limit) . '</div>';
+					if (!isset($custom_fields)) {
+						if ((float) $JoomlaVersion >= 4) {
+							JLoader::registerAlias('FieldsHelper', 'Joomla\Component\Fields\Administrator\Helper\FieldsHelper');
+						} else {
+							JLoader::register('FieldsHelper', JPATH_ADMINISTRATOR . '/components/com_fields/helpers/fields.php');
+						}
+						$custom_fields = FieldsHelper::getFields('com_content.article', $item);
+						$this->renderCustomFields($custom_fields);
+					}
+					$introtext = $this->replaceFieldShortcodes($item->introtext, $custom_fields);
+					$output .= '<div class="sppb-article-introtext">' . $this->truncateHtml($introtext, $intro_limit) . '</div>';
 				}
 
 				if ($show_readmore) {
@@ -487,23 +455,173 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 				} else {
 					$all_articles_btn_text = ($all_articles_btn_icon) ? $all_articles_btn_text . ' <i class="' . $all_articles_btn_icon . '" aria-hidden="true"></i>' : $all_articles_btn_text;
 				}
+				
+				list($link, $new_tab) = AddonHelper::parseLink($settings, 'all_articles_btn_url', ['url' => 'link', 'new_tab' => 'target']);
 
-				if ($resource == 'k2') {
-					if (!empty($link_k2catid)) {
-						$output  .= '<a href="' . urldecode(Route::_(K2HelperRoute::getCategoryRoute($link_k2catid))) . '" " id="btn-' . $this->addon->id . '" class="sppb-btn' . $all_articles_btn_class . '"' . ' aria-label="' . $all_articles_btn_aria_label_text . '">' . $all_articles_btn_text . '</a>';
-					}
-				} else {
-					list($link, $new_tab) = AddonHelper::parseLink($settings, 'all_articles_btn_url', ['url' => 'link', 'new_tab' => 'target']);
+				$hrefValue = !empty($link) ? $link : (!empty($link_catid) ? Route::_(version_compare($JoomlaVersion, '4.0.0', '>=') ? Joomla\Component\Content\Site\Helper\RouteHelper::getCategoryRoute($link_catid) : ContentHelperRoute::getCategoryRoute($link_catid)) : '');
 
-					$hrefValue = !empty($link) ? $link : (!empty($link_catid) ? Route::_(version_compare($JoomlaVersion, '4.0.0', '>=') ? Joomla\Component\Content\Site\Helper\RouteHelper::getCategoryRoute($link_catid) : ContentHelperRoute::getCategoryRoute($link_catid)) : '');
-
-					$output  .= '<a href="' . $hrefValue . '" ' . $new_tab . ' id="btn-' . $this->addon->id . '" class="sppb-btn' . $all_articles_btn_class . '"' . ' aria-label="' . $all_articles_btn_aria_label_text . '">' . $all_articles_btn_text . '</a>';
-				}
+				$output  .= '<a href="' . $hrefValue . '" ' . $new_tab . ' id="btn-' . $this->addon->id . '" class="sppb-btn' . $all_articles_btn_class . '"' . ' aria-label="' . $all_articles_btn_aria_label_text . '">' . $all_articles_btn_text . '</a>';
 			}
 
 			$output  .= '</div>';
+
+		if ($pagination) {
+			$output .= $this->renderPagination($settings, $limit, $catid, $include_subcat, $post_type, $tagids, $ordering);
+		}
+
+
 			$output  .= '</div>';
 		}
+
+		return $output;
+	}
+
+	
+	private function replaceFieldShortcodes($text, $custom_fields) {
+		$fieldMap = [];
+		foreach ($custom_fields as $field) {
+			if (isset($field->id)) {
+				$fieldMap[$field->id] = $field->value;
+			}
+		}
+
+		return preg_replace_callback('/\{field\s+(\d+)\}/', function($matches) use ($fieldMap) {
+			$fieldId = $matches[1];
+			return isset($fieldMap[$fieldId]) ? $fieldMap[$fieldId] : '';
+		}, $text);
+	}
+
+
+	private function renderCustomFields(&$custom_fields){
+		foreach ($custom_fields as $custom_field) {
+						if (!empty($custom_field->type) && $custom_field->type === 'url' && !empty($custom_field->value)) {
+							$custom_field->value = '<a href="' . $custom_field->value . '">' . $custom_field->value . '</a>';
+						}
+
+						if (!empty($custom_field->type) && $custom_field->type === 'media' && !empty($custom_field->value)) {
+							$media = json_decode($custom_field->value);		
+							if (isset($media->imagefile) && !empty($media->imagefile)) {
+							$custom_field->value = '<img src="' . $media->imagefile . '" alt="' . htmlspecialchars($media->alt_text, ENT_QUOTES, 'UTF-8') . '" />';
+							} else {
+								$custom_field->value = '';
+							}
+						}
+
+						if(!empty($custom_field->type) && $custom_field->type === 'calendar' && !empty($custom_field->value)) {
+							$date = explode(' ', $custom_field->value)[0];
+							$custom_field->value = '<span>' . $date . '</span>';
+						 }
+
+						 if(!empty($custom_field->type) && $custom_field->type === 'checkboxes' && !empty($custom_field->value)){
+							$values = $custom_field->value;
+							$updated_values = [];
+							$checkbox_values = $custom_field->fieldparams->get('options', []);
+							if(is_array($values)) {
+								foreach($values as $value){
+									foreach($checkbox_values as $option){
+										if($option->value === $value){
+										$updated_values[] = $option->name;
+										}
+									}
+								}
+							} else {
+									foreach($checkbox_values as $option){
+										if($option->value === $values){
+											$updated_values = $option->name;
+											break;
+										}
+									}
+							}
+							if(is_array($updated_values)){
+								$custom_field->value = implode(', ', $updated_values);
+							} else {
+								$custom_field->value = $updated_values;
+	   						}
+						 }
+
+						 if(!empty($custom_field->type) && $custom_field->type === 'radio' && !empty($custom_field->value)){
+							$radio_values = $custom_field->fieldparams->get('options', []);
+							foreach($radio_values as $option){
+								if($option->value === $custom_field->value){
+									$custom_field->value = $option->name;
+									break;
+								}
+							}
+						 }
+
+						 if(!empty($custom_field->type) && $custom_field->type === 'list' && !empty($custom_field->value)){
+							$list_values = $custom_field->fieldparams->get('options', []);
+							foreach($list_values as $option){
+								if($option->value === $custom_field->value){
+									$custom_field->value = $option->name;
+									break;
+								}
+							}
+						 }
+
+						 if(!empty($custom_field->type) && $custom_field->type === 'user' && !empty($custom_field->value)){
+							$user = Factory::getUser((int)$custom_field->value);
+							$custom_field->value = $user->name ?? '';
+						 }
+
+						  if(!empty($custom_field->type) && $custom_field->type === 'usergrouplist' && !empty($custom_field->value)){
+							$db    = Factory::getDbo();
+							$query = $db->getQuery(true)
+								->select($db->quoteName('title'))
+								->from($db->quoteName('#__usergroups'))
+								->where($db->quoteName('id') . ' = ' . (int) $custom_field->value);
+							$db->setQuery($query);
+
+							$groupName = $db->loadResult();
+							$custom_field->value = $groupName ? $groupName : '';
+	  					 }
+					}
+	}
+
+	/**
+	 * Render pagination for articles
+	 *
+	 * @param object $settings The addon settings
+	 * @param int $limit The limit per page
+	 * @param array $catid Category IDs
+	 * @param bool $include_subcat Include subcategories
+	 * @param string $post_type Post format type
+	 * @param array $tagids Tag IDs
+	 * @param string $ordering Ordering type
+	 * @return string The pagination HTML
+	 */
+	private function renderPagination($settings, $limit, $catid, $include_subcat, $post_type, $tagids, $ordering)
+	{
+		/** @var CMSApplication */
+		$app = Factory::getApplication();
+		$totalArticles = SppagebuilderHelperArticles::getArticlesCount($catid, $include_subcat, $post_type, $tagids, 1);
+		$totalPages = ceil($totalArticles / $limit);
+		$currentPage = 1;
+
+		if ($totalPages <= 1) {
+			return '';
+		}
+
+		$loadMoreButtonText = $settings->pagination_load_more_button_text ?? Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_PAGINATION_TYPE_LOAD_MORE');
+		$loadMoreButtonType = $settings->pagination_load_more_button_type ?? 'dark';
+
+		$output = '<div class="sppb-addon-articles__pagination">';
+
+		$output .= '<button type="button" data-text="' . $loadMoreButtonText . '" data-sppb-articles-load-more-button data-total-pages="' . $totalPages . '" class="sppb-btn btn-sm sppb-btn-' . $loadMoreButtonType . '">' . $loadMoreButtonText . '</button>';
+
+		$output .= '<input type="hidden" name="sppb-articles-addon-id" value="' . $this->addon->id . '">';
+		$output .= '<input type="hidden" name="sppb-articles-addon-settings" value="' . (htmlspecialchars(json_encode($settings), ENT_QUOTES, "UTF-8")) . '">';
+		$output .= '<input type="hidden" name="sppb-articles-limit" value="' . $limit . '">';
+		$output .= '<input type="hidden" name="sppb-articles-ordering" value="' . $ordering . '">';
+		$output .= '<input type="hidden" name="sppb-articles-catid" value="' . (htmlspecialchars(json_encode($catid), ENT_QUOTES, 'UTF-8')) . '">';
+		$output .= '<input type="hidden" name="sppb-articles-include-subcat" value="' . $include_subcat . '">';
+		$output .= '<input type="hidden" name="sppb-articles-post-type" value="' . $post_type . '">';
+		$output .= '<input type="hidden" name="sppb-articles-tagids" value="' . (htmlspecialchars(json_encode($tagids), ENT_QUOTES, 'UTF-8')) . '">';
+
+		$app->getDocument()->addScriptOptions("sppb-root", Uri::root());
+		$app->getDocument()->addScript(Uri::root(true) . '/components/com_sppagebuilder/assets/js/articles-pagination.js');
+
+		$output .= '</div>';
 
 		return $output;
 	}
@@ -700,6 +818,19 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 		$transformCss = $cssHelper->generateTransformStyle('.sppb-addon-content', $settings, 'transform');
 
 		$css .= $transformCss;
+
+		$pagination = (isset($settings->pagination)) ? (int) $settings->pagination : 0;
+		if ($pagination) {
+			$css .= $cssHelper->generateStyle('.sppb-addon-articles__pagination', $settings, [
+				'pagination_buttons_position' => 'display: flex; justify-content',
+				'pagination_padding' => 'padding',
+				'pagination_margin' => 'margin',
+			], [
+				'pagination_buttons_position' => false,
+				'pagination_padding' => false,
+				'pagination_margin' => false,
+			]);
+		}
 
 		return $css;
 	}

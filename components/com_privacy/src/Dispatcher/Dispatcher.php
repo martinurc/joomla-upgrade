@@ -20,14 +20,14 @@ use Joomla\CMS\Router\Route;
 /**
  * ComponentDispatcher class for com_privacy
  *
- * @since  4.4.10
+ * @since  5.2.3
  */
 class Dispatcher extends ComponentDispatcher
 {
     /**
      * Method to check component access permission
      *
-     * @since   4.4.10
+     * @since   5.2.3
      *
      * @return  void
      */
@@ -36,6 +36,16 @@ class Dispatcher extends ComponentDispatcher
         parent::checkAccess();
 
         $view = $this->input->get('view');
+        $task = $this->input->get('task', 'display');
+
+        // Ignore any-non-"display" tasks
+        if (str_contains($task, '.')) {
+            $task = explode('.', $task)[1];
+        }
+
+        if ($task !== 'display') {
+            return;
+        }
 
         // Submitting information requests and confirmation through the frontend is restricted to authenticated users at this time
         if (\in_array($view, ['confirm', 'request']) && $this->app->getIdentity()->guest) {

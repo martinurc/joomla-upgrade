@@ -24,6 +24,7 @@ if (file_exists(JPATH_ROOT . '/administrator/components/com_sppagebuilder/dynami
 	require_once JPATH_ROOT . '/administrator/components/com_sppagebuilder/dynamic-content/helper.php';
 }
 
+BuilderAutoload::loadAliases();
 BuilderAutoload::loadClasses();
 BuilderAutoload::loadHelperClasses();
 BuilderAutoload::loadGlobalAssets();

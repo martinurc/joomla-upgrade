@@ -23,6 +23,11 @@ JLoader::register('SppagebuilderHelperRoute', JPATH_ROOT . '/components/com_sppa
  */
 class SppagebuilderModelPage extends ItemModel
 {
+	public function __construct($config = [])
+    {
+        parent::__construct($config);
+        $this->setDispatcher(\Joomla\CMS\Factory::getApplication()->getDispatcher());
+    }
 
 	protected $_context = 'com_sppagebuilder.page';
 

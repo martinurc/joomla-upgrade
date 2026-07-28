@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2016-2023 Joomlashack.com. All rights reserved
+ * @copyright 2016-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -25,6 +26,7 @@ namespace Alledia\Framework;
 
 use Alledia\Framework\Joomla\Extension\Helper as ExtensionHelper;
 use Joomla\CMS\Form\Form;
+use Joomla\CMS\Form\FormFactoryInterface;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Table\Table;
 use Joomla\CMS\Version;
@@ -32,14 +34,17 @@ use Joomla\Database\DatabaseDriver;
 use Joomla\Database\DatabaseQuery;
 use ReflectionMethod;
 
+// phpcs:disable PSR1.Files.SideEffects.FoundWithSymbols
 defined('_JEXEC') or die();
+
+// phpcs:enable PSR1.Files.SideEffects.FoundWithSymbols
 
 abstract class Helper
 {
     /**
-     * @var int[]
+     * @var ?int[]
      */
-    protected static $errorConstants = null;
+    protected static ?array $errorConstants = null;
 
     /**
      * Return an array of Alledia extensions
@@ -48,9 +53,9 @@ abstract class Helper
      *
      * @return object[]
      */
-    public static function getAllediaExtensions(?string $license = ''): array
+    final public static function getAllediaExtensions(?string $license = ''): array
     {
-        $db    = Factory::getDbo();
+        $db    = Factory::getDatabase();
         $query = $db->getQuery(true)
             ->select([
                 $db->quoteName('extension_id'),
@@ -95,7 +100,7 @@ abstract class Helper
     /**
      * @return string
      */
-    public static function getJoomlaVersionCssClass(): string
+    final public static function getJoomlaVersionCssClass(): string
     {
         return sprintf('joomla%sx', Version::MAJOR_VERSION);
     }
@@ -107,7 +112,7 @@ abstract class Helper
      *
      * @return void
      */
-    public static function createClassAliases(array $classes): void
+    final public static function createClassAliases(array $classes): void
     {
         foreach ($classes as $class => $classAlias) {
             if (class_exists($classAlias) == false) {
@@ -121,7 +126,7 @@ abstract class Helper
      *
      * @return void
      */
-    public static function createDatabaseClassAliases(): void
+    final public static function createDatabaseClassAliases(): void
     {
         static::createClassAliases([
             \JDatabaseQuery::class  => DatabaseQuery::class,
@@ -132,11 +137,11 @@ abstract class Helper
     /**
      * @param string $className
      * @param string $methodName
-     * @param array  $params
+     * @param ?array $params
      *
      * @return mixed
      */
-    public static function callMethod(string $className, string $methodName, ?array $params = [])
+    final public static function callMethod(string $className, string $methodName, ?array $params = [])
     {
         $result = true;
 
@@ -167,7 +172,7 @@ abstract class Helper
      *
      * @return Form
      */
-    public static function createForm(string $name): Form
+    final public static function createForm(string $name): Form
     {
         $form = new Form($name);
         $form->load('<?xml version="1.0" encoding="UTF-8"?><form/>');
@@ -181,10 +186,44 @@ abstract class Helper
      * @param ?array  $options
      *
      * @return mixed
+     * @throws \Exception
      */
-    public static function getContentModel(string $name, ?string $appName = null, array $options = [])
+    final public static function getContentModel(string $name, ?string $appName = null, array $options = [])
     {
         return static::getJoomlaModel($name, 'ContentModel', 'com_content', $appName, $options);
+    }
+
+    /**
+     * @param string  $name
+     * @param ?string $source
+     * @param array   $options
+     * @param bool    $clear
+     * @param ?string $xpath
+     *
+     * @return Form
+     * @see: Also Alledia\Installer\TraitFramework
+     */
+    final protected function getJoomlaForm(
+        string $name,
+        ?string $source = null,
+        array $options = [],
+        bool $clear = true,
+        ?string $xpath = null
+    ): Form {
+        /** @var Form $form */
+        if (Version::MAJOR_VERSION < 4) {
+            $form = Form::getInstance($name, $source, $options, $clear, $xpath);
+
+        } else {
+            $form = Factory::getContainer()->get(FormFactoryInterface::class)->createForm($name);
+            if ($source[0] == '<') {
+                $form->load($source, $clear, $xpath);
+            } else {
+                $form->loadFile($source, $clear, $xpath);
+            }
+        }
+
+        return $form;
     }
 
     /**
@@ -193,8 +232,9 @@ abstract class Helper
      * @param ?array  $options
      *
      * @return mixed
+     * @throws \Exception
      */
-    public static function getCategoryModel(string $name, ?string $appName = null, ?array $options = [])
+    final public static function getCategoryModel(string $name, ?string $appName = null, ?array $options = [])
     {
         return static::getJoomlaModel($name, 'CategoriesModel', 'com_categories', $appName, $options);
     }
@@ -208,8 +248,9 @@ abstract class Helper
      *
      * @return mixed
      * @throws \Exception
+     * @see: Also Alledia\Installer\TraitFramework
      */
-    public static function getJoomlaModel(
+    final public static function getJoomlaModel(
         string $name,
         string $prefix,
         string $component,
@@ -245,6 +286,41 @@ abstract class Helper
     }
 
     /**
+     * @param string  $name
+     * @param ?string $prefix
+     * @param array   $config
+     * @param ?string $component
+     *
+     * @return Table
+     * @throws \Exception
+     * @see: Also Alledia\Installer\TraitFramework
+     */
+    final public static function getJoomlaTable(
+        string $name,
+        ?string $prefix = null,
+        array $config = [],
+        ?string $component = null
+    ): Table {
+        if (Version::MAJOR_VERSION < 4) {
+            $table = Table::getInstance($name, $prefix ?: Table::class, $config);
+
+        } elseif ($component) {
+            $table = Factory::getApplication()->bootComponent($component)
+                ->getMVCFactory()->createTable($name, $prefix ?: Table::class, $config);
+
+        } else {
+            $className = ($prefix ? '' : '\\Joomla\\CMS\\Table\\') . $name;
+            $table     = class_exists($className) ? new $className() : null;
+        }
+
+        if ($table) {
+            return $table;
+        }
+
+        throw new \Exception('No Table: ' . ($className ?? ($prefix . $name)));
+    }
+
+    /**
      * For use by custom error handlers created using
      * set_error_handler() intended to catch php errors.
      *
@@ -255,7 +331,7 @@ abstract class Helper
      *
      * @return Exception
      */
-    public static function errorToException(int $number, string $message, string $file, int $line): Exception
+    final public static function errorToException(int $number, string $message, string $file, int $line): Exception
     {
         if (static::$errorConstants === null) {
             static::$errorConstants = [];

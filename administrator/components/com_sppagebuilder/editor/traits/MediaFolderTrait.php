@@ -99,7 +99,7 @@ trait MediaFolderTrait
             $title = File::stripExt($filename);
             $ext = File::getExt($filename);
 
-            $items[$key]['id'] = 0;
+            $items[$key]['id'] = random_int(10000, 999999);
             $items[$key]['title'] = $title;
             $items[$key]['ext'] = $ext;
             $items[$key]['type'] = ($ext == 'pdf') ? 'pdf' : 'image';

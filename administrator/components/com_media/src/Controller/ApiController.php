@@ -62,7 +62,7 @@ class ApiController extends BaseController
             // Record the actual task being fired
             $this->doTask = $doTask;
 
-            if (!in_array($this->doTask, $this->taskMap)) {
+            if (!\in_array($this->doTask, $this->taskMap)) {
                 throw new \Exception(Text::sprintf('JLIB_APPLICATION_ERROR_TASK_NOT_FOUND', $task), 405);
             }
 
@@ -125,7 +125,7 @@ class ApiController extends BaseController
         // Grab options
         $options              = [];
         $options['url']       = $this->input->getBool('url', false);
-        $options['search']    = $this->input->getString('search', '');
+        $options['search']    = $this->input->getCmd('search', '');
         $options['recursive'] = $this->input->getBool('recursive', true);
         $options['content']   = $this->input->getBool('content', false);
 
@@ -198,7 +198,7 @@ class ApiController extends BaseController
         $override     = $content->get('override', false);
 
         if ($mediaContent) {
-            $this->checkFileSize(strlen($mediaContent));
+            $this->checkFileSize(\strlen($mediaContent));
 
             // A file needs to be created
             $name = $this->getModel()->createFile($adapter, $name, $path, $mediaContent, $override);
@@ -270,13 +270,13 @@ class ApiController extends BaseController
         $move         = $content->get('move', true);
 
         if ($mediaContent != null) {
-            $this->checkFileSize(strlen($mediaContent));
+            $this->checkFileSize(\strlen($mediaContent));
 
             $this->getModel()->updateFile($adapter, $name, str_replace($name, '', $path), $mediaContent);
         }
 
         if ($newPath != null && $newPath !== $adapter . ':' . $path) {
-            list($destinationAdapter, $destinationPath) = explode(':', $newPath, 2);
+            [$destinationAdapter, $destinationPath] = explode(':', $newPath, 2);
 
             if ($move) {
                 $destinationPath = $this->getModel()->move($adapter, $path, $destinationPath, false);
@@ -308,7 +308,10 @@ class ApiController extends BaseController
         $this->app->setHeader('Content-Type', 'application/json');
 
         // Set the status code for the response
-        http_response_code($responseCode);
+        $this->app->setHeader('status', $responseCode);
+
+        // Send headers before sending the data
+        $this->app->sendHeaders();
 
         // Send the data
         echo new JsonResponse($data);
@@ -365,7 +368,7 @@ class ApiController extends BaseController
     {
         $parts = explode(':', $this->input->getString('path', ''), 2);
 
-        if (count($parts) < 1) {
+        if (\count($parts) < 1) {
             return null;
         }
 
@@ -383,7 +386,7 @@ class ApiController extends BaseController
     {
         $parts = explode(':', $this->input->getString('path', ''), 2);
 
-        if (count($parts) < 2) {
+        if (\count($parts) < 2) {
             return null;
         }
 

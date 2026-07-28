@@ -111,6 +111,7 @@ $row_settings = [
                         'inherit' => Text::_('COM_SPPAGEBUILDER_GLOBAL_INHERIT'),
                     ],
                     'std' => 'no-repeat',
+                    'responsive' => true,
                     'depends' => [
                         ['background_type', '=', 'image'],
                         ['background_image', '!=', '']
@@ -128,6 +129,7 @@ $row_settings = [
                         'custom' => Text::_('COM_SPPAGEBUILDER_GLOBAL_CUSTOM'),
                     ],
                     'std' => 'cover',
+                    'responsive' => true,
                     'depends' => [
                         ['background_type', '=', 'image'],
                         ['background_image', '!=', '']
@@ -142,7 +144,6 @@ $row_settings = [
                     'max' => 3000,
                     'min' => 0,
                     'depends' => [
-                        ['background_size', '=', 'custom'],
                         ['background_image', '!=', '']
                     ],
                     'responsive' => true,
@@ -159,6 +160,7 @@ $row_settings = [
                         'inherit' => Text::_('COM_SPPAGEBUILDER_GLOBAL_INHERIT'),
                     ],
                     'std' => 'fixed',
+                    'responsive' => true,
                     'depends' => [
                         ['background_type', '=', 'image'],
                         ['background_image', '!=', '']
@@ -181,6 +183,7 @@ $row_settings = [
                         'custom' => Text::_('COM_SPPAGEBUILDER_GLOBAL_CUSTOM'),
                     ],
                     'std' => '0 0',
+                    'responsive' => true,
                     'depends' => [
                         ['background_type', '=', 'image'],
                         ['background_image', '!=', '']
@@ -636,10 +639,22 @@ $row_settings = [
                         'waves3-opacity' => Text::_('COM_SPPAGEBUILDER_ROW_SHAPE_WAVES3_OPACITY'),
                         'turning-slope' => Text::_('COM_SPPAGEBUILDER_ROW_SHAPE_TURNING_SLOPE'),
                         'zigzag-sharp' => Text::_('COM_SPPAGEBUILDER_ROW_SHAPE_ZIGZAG_SHARP'),
+                        'custom' => Text::_('COM_SPPAGEBUILDER_ROW_SHAPE_CUSTOM'),
                     ],
                     'std' => 'clouds-flat',
                     'depends' => [
                         ['show_top_shape', '=', 1]
+                    ]
+                ],
+
+                'shape_custom_svg' => [
+                    'type' => 'textarea',
+                    'title' => Text::_('COM_SPPAGEBUILDER_ROW_SHAPE_CUSTOM_SVG'),
+                    'desc' => Text::_('COM_SPPAGEBUILDER_ROW_SHAPE_CUSTOM_SVG_DESC'),
+                    'std' => '',
+                    'depends' => [
+                        ['show_top_shape', '=', 1],
+                        ['shape_name', '=', 'custom'],
                     ]
                 ],
 
@@ -756,9 +771,21 @@ $row_settings = [
                         'waves3-opacity' => Text::_('COM_SPPAGEBUILDER_ROW_SHAPE_WAVES3_OPACITY'),
                         'turning-slope' => Text::_('COM_SPPAGEBUILDER_ROW_SHAPE_TURNING_SLOPE'),
                         'zigzag-sharp' => Text::_('COM_SPPAGEBUILDER_ROW_SHAPE_ZIGZAG_SHARP'),
+                        'custom' => Text::_('COM_SPPAGEBUILDER_ROW_SHAPE_CUSTOM'),
                     ],
                     'std' => 'clouds-opacity',
                     'depends' => [['show_bottom_shape', '=', 1]]
+                ],
+
+                'bottom_shape_custom_svg' => [
+                    'type' => 'textarea',
+                    'title' => Text::_('COM_SPPAGEBUILDER_ROW_SHAPE_CUSTOM_SVG'),
+                    'desc' => Text::_('COM_SPPAGEBUILDER_ROW_SHAPE_CUSTOM_SVG_DESC'),
+                    'std' => '',
+                    'depends' => [
+                        ['show_bottom_shape', '=', 1],
+                        ['bottom_shape_name', '=', 'custom'],
+                    ]
                 ],
 
                 'bottom_shape_color' => [

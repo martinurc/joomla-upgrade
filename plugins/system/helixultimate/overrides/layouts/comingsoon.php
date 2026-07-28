@@ -22,8 +22,9 @@ extract($displayData);
 // Initialize
 $app = Factory::getApplication();
 $doc = Factory::getDocument();
-$isOffline = $isOffline ?? false;
+$isOffline = $app->get('offline');
 $site_title = $site_title ?? $app->get('sitename');
+$comingsoonEnabled = (int) $params->get('comingsoon', 0) === 1;
 
 $twofactormethods	= [];
 if (version_compare(JVERSION, '4.2.0', '<')) {
@@ -46,6 +47,8 @@ if (file_exists($bootstrap_path)) {
 }
 
 $theme = new HelixUltimate;
+$custom_style = $params->get('custom_style');
+$preset = ($custom_style) ? 'default' : json_decode($params->get('preset', '{"preset":"preset1"}'))->preset;
 ?>
 
 <!doctype html>
@@ -59,7 +62,7 @@ $theme = new HelixUltimate;
 	$theme->add_js('custom.js');
 	$theme->add_css('font-awesome.min.css');
 	$theme->add_css('template.css');
-	$theme->add_css('presets/' . $params->get('preset', 'preset1') . '.css');
+	$theme->add_css('presets/' . $preset . '.css');
 	$theme->add_css('custom.css');
 
 	//Custom CSS
@@ -74,7 +77,7 @@ $theme = new HelixUltimate;
 	?>
 </head>
 
-<body class="<?php echo $isOffline ? 'offline-mode' : 'coming-soon-mode'; ?>">
+<body class="<?php echo $isOffline ? 'offline-mode' : ($comingsoonEnabled ? 'coming-soon-mode' : ''); ?>">
 	<div class="container">
 
 		<jdoc:include type="message" />
@@ -104,8 +107,10 @@ $theme = new HelixUltimate;
 			<?php if (isset($login) && $login) : ?>
 				<?php echo $login_form; ?>
 			<?php endif; ?>
-
-		<?php else : ?>
+			
+		<?php endif; ?>
+		
+		<?php if (!$isOffline && $comingsoonEnabled) : ?>
 			<!-- COMING SOON CONTENT -->
 			<?php if ($params->get('comingsoon_logo')) : ?>
 				<img class="coming-soon-logo" src="<?php echo $params->get('comingsoon_logo'); ?>" alt="<?php echo htmlspecialchars($site_title ?? ''); ?>">
@@ -166,11 +171,12 @@ $theme = new HelixUltimate;
 			$linkedin 	= $params->get('linkedin');
 			$dribbble 	= $params->get('dribbble');
 			$behance 	= $params->get('behance');
-			$skype 		= $params->get('skype');
 			$flickr 	= $params->get('flickr');
 			$vk 		= $params->get('vk');
+			$whatsappInput 	= $params->get('whatsapp');
+			$whatsapp = !empty($whatsappInput) ? 'https://wa.me/' . $whatsappInput . '?text=Hi' : '';
 
-			if ($params->get('comingsoon_social_icons') && ($facebook || $instagram || $twitter || $pinterest || $youtube || $linkedin || $dribbble || $behance || $skype || $flickr || $vk)) {
+			if ($params->get('comingsoon_social_icons') && ($facebook || $instagram || $twitter || $pinterest || $youtube || $linkedin || $dribbble || $behance || $flickr || $vk || $whatsapp)) {
 				$social_output  = '<ul class="social-icons">';
 
 				if ($facebook) {
@@ -200,11 +206,11 @@ $theme = new HelixUltimate;
 				if ($flickr) {
 					$social_output .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $flickr . '"><i class="fab fa-flickr" aria-hidden="true"></i></a></li>';
 				}
+				if ($whatsapp) {
+					$social_output .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $whatsapp . '"><i class="fab fa-whatsapp" aria-hidden="true"></i></a></li>';
+				}
 				if ($vk) {
 					$social_output .= '<li><a target="_blank" rel="noopener noreferrer" href="' . $vk . '"><i class="fab fa-vk" aria-hidden="true"></i></a></li>';
-				}
-				if ($skype) {
-					$social_output .= '<li><a href="skype:' . $skype . '?chat"><i class="fab fa-skype" aria-hidden="true"></i></a></li>';
 				}
 
 				$social_output .= '</ul>';

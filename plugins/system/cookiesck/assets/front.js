@@ -7,7 +7,7 @@
 	var Cookiesck = function (options) {
 		
 		// check if Cookies CK has already been loaded in the html
-		if (document.getElementById('cookiesck_options')) return;
+		if (document.getElementById('cookiesck')) return;
 
 		//set default options  
 		var defaults = {
@@ -46,6 +46,7 @@
 		// create the overlay
 		let options = document.createElement('div');
 		options.id = 'cookiesck_options';
+		options.className = 'cookiesck_options';
 		options.setAttribute('role', 'button');
 		options.setAttribute('tabindex', '0');
 		options.setAttribute('aria-label', COOKIESCK.TEXT.OPTIONS.replace(/"/g, '&quot;'));
@@ -149,7 +150,7 @@
 
 		// add accessibility on the buttons
 		const interfaceButtons = interfac.querySelectorAll('.cookiesck_button, .cookiesck-main-close, .cookiesck_button_switch');
-		const cookieOptions = document.querySelectorAll('#cookiesck_options');
+		const cookieOptions = document.querySelectorAll('.cookiesck_options');
 		const buttons = Array.from(interfaceButtons).concat(...cookieOptions);
 		buttons.forEach(function(btn) {
 			btn.addEventListener('keydown', function(event) {
@@ -248,11 +249,13 @@
 			document.getElementById('cookiesck').style.display = 'none';
 		}
 		// add management button to update the decision
-		document.getElementById('cookiesck_options').onclick = function(){
+		document.querySelectorAll('.cookiesck_options').forEach(function(cookiesck_options) {
+			cookiesck_options.onclick = function(){
 			document.getElementById('cookiesck_interface').style.display = 'block';
 			document.getElementById('cookiesck_overlay').style.display = 'block';
 			document.getElementById('cookiesck_interface').querySelector('.cookiesck-main-buttons .cookiesck-accept.cookiesck_button').focus();
 		}
+		});
 	}
 
 	function initIframes() {

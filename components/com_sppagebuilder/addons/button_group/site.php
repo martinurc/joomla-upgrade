@@ -33,6 +33,9 @@ class SppagebuilderAddonButton_group extends SppagebuilderAddons
 
 		if (isset($this->addon->settings->sp_button_group_item) && count((array) $this->addon->settings->sp_button_group_item)) {
 			foreach ($this->addon->settings->sp_button_group_item as $key => $value) {
+				if(isset($value->item_visibility) && !$value->item_visibility) {
+					continue;
+				}
 				if ($value->title || $value->icon) {
 					list($link, $target) = AddonHelper::parseLink($value, 'url', [
 						'new_tab' => 'target',
@@ -49,6 +52,7 @@ class SppagebuilderAddonButton_group extends SppagebuilderAddons
 					$text = (isset($value->title) && $value->title) ? $value->title : '';
 					$icon = (isset($value->icon) && $value->icon) ? $value->icon : '';
 					$icon_position = (isset($value->icon_position) && $value->icon_position) ? $value->icon_position : 'left';
+					$keyClass = ' sppb-btn-' . $key;
 
 					$icon_arr = array_filter(explode(' ', $icon));
 
@@ -64,7 +68,7 @@ class SppagebuilderAddonButton_group extends SppagebuilderAddons
 
 					$hrefTag = !empty($link) ? 'href="' . $link .'"' : '';
 
-					$output .= '<a '. $hrefTag .' ' . $target . $attribs . ' class="sppb-btn ' . $class . '">' . $text . '</a>';
+					$output .= '<a '. $hrefTag .' ' . $target . $attribs . ' class="sppb-btn ' . $class . ' ' . $keyClass . '">' . $text . '</a>';
 				}
 			}
 		}
@@ -149,6 +153,14 @@ class SppagebuilderAddonButton_group extends SppagebuilderAddons
 		$transformCss = $cssHelper->generateTransformStyle('.sppb-addon-content', $settings, 'transform');
 		$css .= $transformCss;
 
+		if(isset($settings->sp_button_group_item) && count((array) $settings->sp_button_group_item)) {
+			foreach($settings->sp_button_group_item as $key => $value) {
+				$keyClass = '.sppb-btn-' . $key;
+				$settings->icon_margin = (isset($value->icon_margin) && $value->icon_margin) ? $value->icon_margin : '';
+				$css .= $cssHelper->generateStyle($keyClass . ' i', $settings, ['icon_margin' => 'margin'], false);
+			}
+		}
+
 		return $css;
 	}
 
@@ -228,6 +240,7 @@ class SppagebuilderAddonButton_group extends SppagebuilderAddons
 		];
 
 		$output .= $lodash->typography('#btn-{{ addonId }}{{ key }}.sppb-btn-{{ button.type }}', 'button.typography', $buttonTypographyFallbacks);
+		$output .= $lodash->spacing('margin', '#btn-{{ addonId }}{{ key }} i', 'button.icon_margin');
 
 		// Custom
 		$output .= '<# if (button.type == "custom") { #>';
@@ -291,6 +304,9 @@ class SppagebuilderAddonButton_group extends SppagebuilderAddons
 			<div class="sppb-addon-content">
 				<#
 				 _.each(data.sp_button_group_item, function(button, key){
+					if(typeof button.item_visibility !== "undefined" && !button.item_visibility){
+						return;
+					}
 					var classList = button.class;
 					classList += " sppb-btn-"+button.type;
 					classList += " sppb-btn-"+button?.size;

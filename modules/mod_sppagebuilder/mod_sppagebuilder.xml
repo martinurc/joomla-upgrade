@@ -7,7 +7,7 @@
 	<license>GNU/GPL V2 or Later</license>
 	<authorEmail>support@joomshaper.com</authorEmail>
 	<authorUrl>www.joomshaper.com</authorUrl>
-	<version>5.5.7</version>
+	<version>6.7.0</version>
 	<description>Module to display content from SP Page Builder</description>
 	<files>
 		<filename module="mod_sppagebuilder">mod_sppagebuilder.php</filename>

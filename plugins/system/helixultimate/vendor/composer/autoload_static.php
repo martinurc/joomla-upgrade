@@ -4,34 +4,77 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitd9738e739497debdb4b61809bebc5188
+class ComposerStaticInitc22f79d1e33808587d06b3aaf2e312df
 {
+    public static $files = array (
+        '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
+        '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
+    );
+
     public static $prefixLengthsPsr4 = array (
-        'S' => 
+        'S' =>
         array (
+            'Symfony\\Polyfill\\Mbstring\\' => 26,
+            'Symfony\\Polyfill\\Ctype\\' => 23,
+            'Symfony\\Component\\Filesystem\\' => 29,
+            'SourceSpan\\' => 11,
             'ScssPhp\\ScssPhp\\' => 16,
         ),
-        'H' => 
+        'P' =>
+        array (
+            'Psr\\Http\\Message\\' => 17,
+        ),
+        'L' =>
+        array (
+            'League\\Uri\\' => 11,
+        ),
+        'H' =>
         array (
             'HelixUltimate\\Framework\\' => 24,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'ScssPhp\\ScssPhp\\' => 
+        'Symfony\\Polyfill\\Mbstring\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
+        ),
+        'Symfony\\Polyfill\\Ctype\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-ctype',
+        ),
+        'Symfony\\Component\\Filesystem\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/symfony/filesystem',
+        ),
+        'SourceSpan\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/scssphp/source-span/src',
+        ),
+        'ScssPhp\\ScssPhp\\' =>
         array (
             0 => __DIR__ . '/..' . '/scssphp/scssphp/src',
         ),
-        'HelixUltimate\\Framework\\' => 
+        'Psr\\Http\\Message\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/psr/http-factory/src',
+            1 => __DIR__ . '/..' . '/psr/http-message/src',
+        ),
+        'League\\Uri\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/league/uri',
+            1 => __DIR__ . '/..' . '/league/uri-interfaces',
+        ),
+        'HelixUltimate\\Framework\\' =>
         array (
             0 => __DIR__ . '/../..' . '/src',
         ),
     );
 
     public static $prefixesPsr0 = array (
-        'J' => 
+        'J' =>
         array (
-            'JShrink' => 
+            'JShrink' =>
             array (
                 0 => __DIR__ . '/..' . '/tedivm/jshrink/src',
             ),
@@ -45,10 +88,10 @@ class ComposerStaticInitd9738e739497debdb4b61809bebc5188
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitd9738e739497debdb4b61809bebc5188::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitd9738e739497debdb4b61809bebc5188::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInitd9738e739497debdb4b61809bebc5188::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInitd9738e739497debdb4b61809bebc5188::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitc22f79d1e33808587d06b3aaf2e312df::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitc22f79d1e33808587d06b3aaf2e312df::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitc22f79d1e33808587d06b3aaf2e312df::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInitc22f79d1e33808587d06b3aaf2e312df::$classMap;
 
         }, null, ClassLoader::class);
     }

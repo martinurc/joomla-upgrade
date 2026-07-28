@@ -4,6 +4,7 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Version;
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\CollectionIds;
 use JoomShaper\SPPageBuilder\DynamicContent\Supports\Arr;
 
 /**
@@ -47,8 +48,65 @@ trait AppConfig
 		$allowedFileExtensions = array_map('strtolower', $allowedFileExtensions);
 
 		$model = $this->getModel('Appconfig');
-
 		$pages = $model->getPageList();
+
+		$isAppendArticleDetails = true;
+		$articlesIndex = -1;
+
+		if (!empty($pages))
+		{
+			foreach ($pages as $index => $page)
+			{
+				if (isset($page['label']))
+				{
+					if ($page['label'] === Text::_('COM_SPPAGEBUILDER_PAGE_TYPE_ARTICLES'))
+					{
+						$articlesIndex = $index;
+					}
+				}
+
+				if (isset($page['options']) && is_array($page['options']))
+				{
+					foreach ($page['options'] as $option)
+					{
+						if (isset($option->legend) && $option->legend === '/articles/:slug')
+						{
+							$isAppendArticleDetails = false;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		if ($isAppendArticleDetails)
+		{
+			if ($articlesIndex === -1)
+			{
+				$pages[] = [
+					'label' => Text::_('COM_SPPAGEBUILDER_PAGE_TYPE_ARTICLES'),
+					'icon' => 'articles',
+					'options' => [
+						(object) [
+							'label' => 'Article Details',
+							'value' => CollectionIds::ARTICLES_COLLECTION_ID,
+							'legend' => '/articles/:slug',
+						]
+					]
+				];
+			}
+			else
+			{
+				array_unshift($pages[$articlesIndex]['options'], (object) [
+					'label' => 'Article Details',
+					'value' => CollectionIds::ARTICLES_COLLECTION_ID,
+					'legend' => '/articles/:slug',
+				]);
+			}
+			
+		}
+
+
 		$menus = $model->getMenus();
 		$popups = $model->getPopupList();
 		$categories = $model->getCategories();
@@ -104,6 +162,13 @@ trait AppConfig
 		$version = new Version();
 		$JoomlaVersion = $version->getShortVersion();
 
+		$filePath = trim($mediaParams->get('file_path', 'images'), '/');
+		$imagePath = trim($mediaParams->get('image_path', 'images'), '/');
+		$mediaRootPaths = array_values(array_unique(array_filter([
+			'/' . ($filePath !== '' ? $filePath : 'images'),
+			'/' . ($imagePath !== '' ? $imagePath : 'images'),
+		])));
+
 		$response = (object) [
 			'pages' => $pages,
 			'menus' => $this->convertToOptions($menus),
@@ -120,7 +185,8 @@ trait AppConfig
 			'editor' => (object) [
 				'theme' => $JoomlaVersion < 4 ? 'modern' : 'silver',
 			],
-			'media_path' => '/' . $mediaParams->get('file_path', 'images'),
+			'media_path' => '/' . ($filePath !== '' ? $filePath : 'images'),
+			'media_root_paths' => $mediaRootPaths,
 			'media_upload_max_size' => $mediaParams->get('upload_maxsize', 0) * 1024 * 1024,
 			'is_pre_release' => $isPreRelease,
 			'google_font_categories' => $googleFontCategories,

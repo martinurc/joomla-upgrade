@@ -17,7 +17,9 @@ use Joomla\CMS\Http\HttpFactory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\MVC\Controller\BaseController;
+use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
+use JoomShaper\SPPageBuilder\DynamicContent\Controllers\CollectionImportExportController;
 
 /**
  * SP Page Builder Base Controller class
@@ -85,6 +87,62 @@ class SppagebuilderController extends BaseController
 	}
 
 	/**
+	 * Recursively checks if dynamic content exists in the data structure
+	 *
+	 * @param mixed $data The data to check
+	 * @param string $key The key to look for (default: 'type')
+	 * @param string $value The value to match (default: 'dynamic-content')
+	 * @return bool Returns true if dynamic content is found
+	 */
+	private function checkDynamicContent($data, $key = 'type', $value = 'dynamic-content') 
+	{
+		if ($data === null) {
+			return false;
+		}
+
+		if (is_object($data)) {
+			$data = (array) $data;
+		}
+
+		if (is_array($data)) {
+			if (isset($data[$key]) && $data[$key] === $value) {
+				return true;
+			}
+
+			foreach ($data as $item) {
+				if ($this->checkDynamicContent($item, $key, $value)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get dynamic content data if it exists in the page content.
+	 *
+	 * @return string
+	 * @since 5.7.0
+	 */
+	private function getDynamicContentData($content)
+	{
+		$hasDynamicContent = false;
+		$dynamicContentData = '';
+
+		if (isset($content->content) && is_string($content->content)) {
+			$hasDynamicContent = $this->checkDynamicContent(json_decode($content->content));
+		}
+
+		if($hasDynamicContent) {
+			$dynamicContentExportImportController = new CollectionImportExportController();
+			$dynamicContentData = $dynamicContentExportImportController->exportDynamicContent();
+		}
+
+		return $dynamicContentData;
+	}
+
+	/**
 	 * Export template layout.
 	 *
 	 * @return void
@@ -97,6 +155,13 @@ class SppagebuilderController extends BaseController
 		$pageId = $input->get('pageId', '', 'STRING');
 		$isSeoChecked = $input->get('isSeoChecked', '', 'STRING');
 		$isMediaChecked = $input->get('isMediaChecked', '', 'STRING');
+		$csrfToken = $input->get('csrf_token', '', 'STRING') ?: $input->get(Session::getFormToken(), '', 'STRING');
+
+		if (empty($csrfToken) || $csrfToken !== Session::getFormToken()) {
+			$this->sendResponse([
+				'message' => 'Invalid CSRF token. Please try again.',
+			], 403);
+		}
 
 		// check have access
 		$user = Factory::getUser();
@@ -141,6 +206,8 @@ class SppagebuilderController extends BaseController
 
 		$content = ApplicationHelper::preparePageData($content);
 
+		$dynamicContentData = $this->getDynamicContentData($content);
+
 		$seoSettings = [];
 
 		$decodedAttribs = isset($content->attribs) ? json_decode($content->attribs) : null;
@@ -166,6 +233,10 @@ class SppagebuilderController extends BaseController
 			'title' => $content->title,
 			'language' => isset($content->language) ? $content->language : '*',
 		];
+
+		if (!empty($dynamicContentData)) {
+			$pageContent->dynamicContentData = json_encode($dynamicContentData);
+		}
 
 		$filename = 'template' . rand(10000, 99999) . '.json';
 		$filename = strlen($filename) <= PHP_MAXPATHLEN ? $filename : 'template' . SppagebuilderHelperSite::nanoid(6) . '.json';
@@ -256,6 +327,8 @@ class SppagebuilderController extends BaseController
 				'author' => isset($content->attribs) && isset($content->attribs->author) ?  $content->attribs->author : '',
 			];
 		}
+
+		$dynamicContentData = $this->getDynamicContentData($content);
 	
 		$pageContent = (object)
 		[
@@ -266,6 +339,10 @@ class SppagebuilderController extends BaseController
 			'language' => isset($content->language) ? $content->language : '*',
 			'localMediaSources' => $localMediaSources ? $localMediaSources : '[]',
 		];
+
+		if (!empty($dynamicContentData)) {
+			$pageContent->dynamicContentData = json_encode($dynamicContentData);
+		}
 		
 		$zip = new ZipArchive();
 		$zipFileName = 'sp-page-builder-pages-' . $this->generateRandomId() . '.zip';

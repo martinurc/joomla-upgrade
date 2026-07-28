@@ -45,7 +45,7 @@ if (empty($this->calculations))
 					</td>
 					<td>
 
-						<button type="button" class="btn btn-secondary" onclick="openRSModal('<?php echo Route::_('index.php?option=com_rsform&view=calculation&cid='.$row->id.'&tmpl=component&formId='.$this->formId); ?>', 'Mappings', '1000x800')"><?php echo Text::_('RSFP_EDIT'); ?></button>
+						<button type="button" class="btn btn-secondary" onclick="openRSModal('<?php echo Route::_('index.php?option=com_rsform&view=calculation&cid='.$row->id.'&tmpl=component&formId='.$this->formId); ?>', 'Calculations')"><?php echo Text::_('RSFP_EDIT'); ?></button>
 						<button type="button" class="btn btn-danger" onclick="if (confirm(Joomla.JText._('RSFP_DELETE_SURE_CALCULATION'))) { removeCalculation(<?php echo $row->id; ?>); }"><?php echo Text::_('RSFP_DELETE'); ?></button>
 						<input type="hidden" name="calcid[]" value="<?php echo $row->id; ?>" />
 						<input type="hidden" name="calcorder[]" value="<?php echo $row->ordering; ?>" />

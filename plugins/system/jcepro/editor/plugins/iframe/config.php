@@ -3,11 +3,11 @@
  * @package     JCE
  * @subpackage  Editor
  *
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 class WFIframePluginConfig
 {
@@ -32,9 +32,12 @@ class WFIframePluginConfig
             $settings['media_valid_elements'] = array_intersect($settings['media_valid_elements'], $elements);
         }
 
+        $custom_classes = (array) $plugin->getParam('custom_classes', []);
+        $custom_classes = array_filter($custom_classes);
+
         $settings['iframe'] = array(
             'attributes' => $plugin->getDefaultAttributes(),
-            'custom_classes' => $plugin->getParam('custom_classes', []),
+            'custom_classes' => $custom_classes,
         );
     }
 }

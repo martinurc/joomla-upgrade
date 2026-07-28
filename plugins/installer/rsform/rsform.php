@@ -14,6 +14,8 @@ use Joomla\CMS\Language\Text;
 
 class plgInstallerRSForm extends CMSPlugin
 {
+	protected $autoloadLanguage = true;
+
 	public function onInstallerBeforePackageDownload(&$url, &$headers)
 	{
 		$uri 	= Uri::getInstance($url);
@@ -33,9 +35,6 @@ class plgInstallerRSForm extends CMSPlugin
 			
 			// Load our version
 			require_once JPATH_ADMINISTRATOR.'/components/com_rsform/helpers/version.php';
-			
-			// Load language
-			Factory::getLanguage()->load('plg_installer_rsform');
 			
 			// Get the version
 			$version = new RSFormProVersion;

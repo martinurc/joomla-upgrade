@@ -16,7 +16,7 @@ use Joomla\CMS\Feed\FeedParser;
 use Joomla\CMS\Feed\FeedPerson;
 
 // phpcs:disable PSR1.Files.SideEffects
-\defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
 /**
@@ -139,7 +139,7 @@ class RssParser extends FeedParser
     {
         // Create a feed link object for the image.
         $image = new FeedLink(
-            (string) $el->url,
+            (string) filter_var($el->url, FILTER_VALIDATE_URL),
             null,
             'logo',
             null,

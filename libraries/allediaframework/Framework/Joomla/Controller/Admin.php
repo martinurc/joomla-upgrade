@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2016-2023 Joomlashack.com. All rights reserved
+ * @copyright 2016-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -24,13 +25,15 @@
 namespace Alledia\Framework\Joomla\Controller;
 
 use Joomla\CMS\Application\CMSApplication;
-use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Input\Input;
 
 defined('_JEXEC') or die();
 
-class Admin extends AdminController
+/**
+ * @deprecated v3.8.1
+ */
+class Admin extends AbstractAdmin
 {
     use TraitController;
 

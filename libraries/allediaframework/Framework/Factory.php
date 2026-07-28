@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2016-2023 Joomlashack.com. All rights reserved
+ * @copyright 2016-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -25,10 +26,12 @@ namespace Alledia\Framework;
 
 use Alledia\Framework\Joomla\Extension\Licensed;
 use JEventDispatcher;
+use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Version;
 use Joomla\Database\DatabaseDriver;
 use Joomla\Event\DispatcherInterface;
 use Joomla\Event\Event;
+use Joomla\Input\Input;
 
 defined('_JEXEC') or die();
 
@@ -121,5 +124,22 @@ abstract class Factory extends \Joomla\CMS\Factory
         }
 
         return $result;
+    }
+
+    /**
+     * @param ?CMSApplication $app
+     *
+     * @return Input
+     * @throws \Exception
+     */
+    public static function getInput(?CMSApplication $app = null): Input
+    {
+        $app = $app ?: static::getApplication();
+
+        if (is_callable([$app, 'getInput'])) {
+            return $app->getInput();
+        }
+
+        return $app->input;
     }
 }

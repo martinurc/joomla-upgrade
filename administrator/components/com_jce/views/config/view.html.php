@@ -4,11 +4,11 @@
  * @subpackage  Admin
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
@@ -41,6 +41,8 @@ class JceViewConfig extends HtmlView
         parent::display($tpl);
 
         $hash = md5(WF_VERSION);
+
+        $document->addStyleSheet(Uri::root(true) . '/media/com_jce/editor/vendor/jquery/css/jquery-ui.min.css?' . $hash);
 
         $document->addScript(Uri::root(true) . '/media/com_jce/editor/vendor/jquery/js/jquery-ui.min.js?' . $hash);
         $document->addScript(Uri::root(true) . '/media/com_jce/editor/vendor/jquery/js/jquery-ui.touch.min.js?' . $hash);

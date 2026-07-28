@@ -86,16 +86,69 @@ trait ImageShapesTrait
 
     public function processAddImageShape($shape)
     {
+        $decodedShape = base64_decode($shape, true);
+        $maxShapeSize = 64 * 1024; // 64 KB
 
-        $decoded_shape = base64_decode($shape);
-        $pattern = '/<path\b[^>]*>/s';
-        preg_match($pattern, $decoded_shape, $matches);
-        $is_valid_svg = $matches && count($matches) === 1;
-
-        if(!$is_valid_svg) {
+        if ($decodedShape === false || trim($shape) === '') {
             $response['message'] = Text::_('COM_SPPAGEBUILDER_EDITOR_INVALID_SVG_SHAPE');
             return ['response' => $response, 'statusCode' => 400];
         }
+
+        if (strlen($decodedShape) === 0 || strlen($decodedShape) > $maxShapeSize) {
+            $response['message'] = Text::_('COM_SPPAGEBUILDER_EDITOR_INVALID_SVG_SHAPE');
+            return ['response' => $response, 'statusCode' => 400];
+        }
+
+        if (!preg_match('/<svg\b[^>]*>[\s\S]*<\/svg>/i', $decodedShape)) {
+            $response['message'] = Text::_('COM_SPPAGEBUILDER_EDITOR_INVALID_SVG_SHAPE');
+            return ['response' => $response, 'statusCode' => 400];
+        }
+
+        libxml_use_internal_errors(true);
+
+        $dom = new \DOMDocument();
+        $loaded = $dom->loadXML($decodedShape, LIBXML_NONET | LIBXML_NOWARNING | LIBXML_NOERROR);
+        libxml_clear_errors();
+
+        if (!$loaded || !$dom->documentElement) {
+            $response['message'] = Text::_('COM_SPPAGEBUILDER_EDITOR_INVALID_SVG_SHAPE');
+            return ['response' => $response, 'statusCode' => 400];
+        }
+
+        if (strtolower($dom->documentElement->localName) !== 'svg') {
+            $response['message'] = Text::_('COM_SPPAGEBUILDER_EDITOR_INVALID_SVG_SHAPE');
+            return ['response' => $response, 'statusCode' => 400];
+        }
+
+        $xpath = new \DOMXPath($dom);
+        $elements = $xpath->query('//*');
+        $pathCount = 0;
+
+        foreach ($elements as $element) {
+            if ($element->nodeType !== XML_ELEMENT_NODE) {
+                continue;
+            }
+
+            $tag = strtolower($element->localName);
+
+            if ($tag === 'path') {
+                $pathCount++;
+                continue;
+            }
+
+            if ($tag !== 'svg') {
+                $response['message'] = Text::_('COM_SPPAGEBUILDER_EDITOR_INVALID_SVG_SHAPE');
+                return ['response' => $response, 'statusCode' => 400];
+            }
+        }
+
+        if ($pathCount !== 1) {
+            $response['message'] = Text::_('COM_SPPAGEBUILDER_EDITOR_INVALID_SVG_SHAPE');
+            return ['response' => $response, 'statusCode' => 400];
+        }
+
+        $sanitizedSvg = $dom->saveXML($dom->documentElement);
+        $shape = base64_encode($sanitizedSvg);
 
         $random_id = uniqid(mt_rand(), true);
 

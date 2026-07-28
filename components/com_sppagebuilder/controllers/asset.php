@@ -19,6 +19,7 @@ use Joomla\CMS\Helper\MediaHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Response\JsonResponse;
+use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
 
 require_once JPATH_ROOT . '/components/com_sppagebuilder/helpers/assets-css-parser.php';
@@ -29,70 +30,33 @@ require_once JPATH_ROOT . '/components/com_sppagebuilder/helpers/assets-css-pars
  */
 class SppagebuilderControllerAsset extends FormController
 {
-    /**
-	 * Load custom icons.
-	 *
-	 * @return	void
-	 * @since	4.0.0
-	 */
-	public function loadCustomIcons()
+
+	public function __construct($config = [])
 	{
-		$app 		= Factory::getApplication('site');
-		$input 		= $app->input;
+		parent::__construct($config);
 
-        $model = $this->getModel();
-        $response  = [
-            'status' => true,
-            'data' => $model->loadCustomIcons()
-        ];
+		$user = Factory::getUser();
+		$authorised = $user->authorise('core.admin', 'com_sppagebuilder') || $user->authorise('core.manage', 'com_sppagebuilder');
 
-        $this->sendResponse($response, 200);
+		if (!$authorised)
+		{
+			$response['message'] = Text::_('COM_SPPAGEBUILDER_EDITOR_ADMIN_ACCESS_REQUIRED');
+			$this->sendResponse($response, 403, true);
+		}
+
+		if (!$user->id)
+		{
+			$response['message'] = Text::_('COM_SPPAGEBUILDER_EDITOR_LOGIN_SESSION_EXPIRED');
+			$this->sendResponse($response, 401, true);
+		}
+
+		if (!Session::checkToken())
+		{
+			$response['message'] = Text::_('COM_SPPAGEBUILDER_EDITOR_SESSION_MISMATCHED');
+			$this->sendResponse($response, 403, true);
+		}
 	}
 
-    /**
-     * Delete custom icon by id.
-     *
-     * @return  void
-     * @since   4.0.0
-     */
-    public function deleteCustomIcon()
-    {
-        $app = Factory::getApplication();
-        $input = $app->input;
-        $model = $this->getModel();
-
-        $id = $input->getInt('id', 0);
-
-        $response = [
-            'status' => true,
-            'data' => $model->deleteCustomIcon($id)
-        ];
-
-        $this->sendResponse($response, 200);
-    }
-
-    /**
-     * Change custom icon's status.
-     *
-     * @return  void
-     * @since   4.0.0
-     */
-    public function changeCustomIconStatus()
-    {
-        $app = Factory::getApplication();
-        $input = $app->input;
-        $model = $this->getModel();
-
-        $id = $input->getInt('id', 0);
-        $status = $input->getInt('status', null);
-
-        $response = [
-            'status' => true,
-            'data' => $model->changeCustomIconStatus($id, $status)
-        ];
-
-        $this->sendResponse($response, 200);
-    }
 
     /**
      * Upload Custom Icons.
@@ -196,12 +160,15 @@ class SppagebuilderControllerAsset extends FormController
                     if($extract)
                     {
                         $extract_path = $extract['dir'];
-                        
+
                         // check and delete the zip file.
                         if (File::exists($zip_file))
                         {
                             File::delete($zip_file);
                         }
+
+                        // Strip non font/stylesheet files from the archive before copying to media.
+                        self::sanitizeExtractedFiles($extract['extractdir']);
 
                         // IcoFont
                         if (File::exists($extract_path . '/fonts/icofont.woff') && File::exists($extract_path . '/icofont.css') && File::exists($extract_path . '/icofont.min.css'))
@@ -379,6 +346,34 @@ class SppagebuilderControllerAsset extends FormController
     }
 
     /**
+     * Remove any extracted file whose extension is not an allowed font or stylesheet type.
+     *
+     * @param   string  $directory  The extraction directory to clean up.
+     * @return  void
+     *
+     * @since   6.7.0
+     */
+    private static function sanitizeExtractedFiles($directory)
+    {
+        $allowed = array('woff', 'woff2', 'ttf', 'otf', 'eot', 'svg', 'css', 'json');
+
+        if (!Folder::exists($directory))
+        {
+            return;
+        }
+
+        $files = Folder::files($directory, '.', true, true);
+
+        foreach ($files as $file)
+        {
+            if (!in_array(strtolower(File::getExt($file)), $allowed, true))
+            {
+                File::delete($file);
+            }
+        }
+    }
+
+    /**
      * Unpacks a file and verifies it as a icofont package
      * Supports .gz .tar .tar.gz and .zip
      *
@@ -388,7 +383,7 @@ class SppagebuilderControllerAsset extends FormController
      *
      * @since   4.0.0
      */
-    public static function unpack($packageFilename)
+    private static function unpack($packageFilename)
 	{
 		// Path to the archive
 		$archivename = $packageFilename;
@@ -449,21 +444,87 @@ class SppagebuilderControllerAsset extends FormController
         return $retval;
 	}
 
+    /**
+	 * Load custom icons.
+	 *
+	 * @return	void
+	 * @since	4.0.0
+	 */
+	public function loadCustomIcons()
+	{
+		$app 		= Factory::getApplication('site');
+		$input 		= $app->input;
+
+        $model = $this->getModel();
+        $response  = [
+            'status' => true,
+            'data' => $model->loadCustomIcons()
+        ];
+
+        $this->sendResponse($response, 200);
+	}
+
+    /**
+     * Delete custom icon by id.
+     *
+     * @return  void
+     * @since   4.0.0
+     */
+    public function deleteCustomIcon()
+    {
+        $app = Factory::getApplication();
+        $input = $app->input;
+        $model = $this->getModel();
+
+        $id = $input->getInt('id', 0);
+
+        $response = [
+            'status' => true,
+            'data' => $model->deleteCustomIcon($id)
+        ];
+
+        $this->sendResponse($response, 200);
+    }
+
+    /**
+     * Change custom icon's status.
+     *
+     * @return  void
+     * @since   4.0.0
+     */
+    public function changeCustomIconStatus()
+    {
+        $app = Factory::getApplication();
+        $input = $app->input;
+        $model = $this->getModel();
+
+        $id = $input->getInt('id', 0);
+        $status = $input->getInt('status', null);
+
+        $response = [
+            'status' => true,
+            'data' => $model->changeCustomIconStatus($id, $status)
+        ];
+
+        $this->sendResponse($response, 200);
+    }
+
 	/**
 	 * Send JSON Response to the client.
 	 *
 	 * @param	array	$response	The response array or data.
 	 * @param	int		$statusCode	The status code of the HTTP response.
+	 * @param	bool	$error		True to mark the JSON response as an error.
 	 *
 	 * @return	void
 	 * @since	4.0.0
 	 */
-	private function sendResponse($response, int $statusCode = 200) : void
+	private function sendResponse($response, int $statusCode = 200, bool $error = false) : void
 	{
 		$app = Factory::getApplication();
 		$app->setHeader('status', $statusCode, true);
 		$app->sendHeaders();
-		echo new JsonResponse($response);
+		echo new JsonResponse($response, null, $error);
 		$app->close();
 	}
 }

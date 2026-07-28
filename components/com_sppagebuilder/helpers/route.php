@@ -99,8 +99,36 @@ abstract class SppagebuilderHelperRoute
 		return self::buildRoute($link);
 	}
 
+	public static function getArticleRoute($id, $language = 0, $layout = null, $isPopup = false)
+	{
+		// Create the link
+		$link = 'index.php?option=com_content&view=article&id=' . $id;
+
+		if ($isPopup)
+		{
+			$link .= '&popup=1';
+		}
+
+		if ($language && $language !== '*' && Multilanguage::isEnabled())
+		{
+			$link .= '&lang=' . $language;
+		}
+
+		if ($layout)
+		{
+			$link .= '&layout=' . $layout;
+		}
+
+		if ($Itemid = self::getMenuItemId($id))
+		{
+			$link .= '&Itemid=' . $Itemid;
+		}
+
+		return self::buildRoute($link);
+	}
+
 	// get menu ID
-	private static function getMenuItemId($id)
+	public static function getMenuItemId($id)
 	{
 		$db = Factory::getDbo();
 		$query = $db->getQuery(true);

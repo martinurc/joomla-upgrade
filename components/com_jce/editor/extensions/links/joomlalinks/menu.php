@@ -4,11 +4,11 @@
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -242,7 +242,7 @@ class JoomlalinksMenu extends CMSObject
         $query->select('id, name, link, alias')->from('#__menu')->where(array('published = 1', 'id = ' . (int) $params->get('menu_item')));
 
         if (!$user->authorise('core.admin')) {
-            $query->where('access IN (' . implode(',', $user->getAuthorisedViewLevels()) . ')');
+            $query->where('access IN (' . implode(',', array_map('intval', $user->getAuthorisedViewLevels())) . ')');
         }
 
         $query->order('name');
@@ -262,7 +262,7 @@ class JoomlalinksMenu extends CMSObject
         $query->select('COUNT(id)')->from('#__menu')->where(array('published = 1', 'client_id = 0'));
 
         if (!$user->authorise('core.admin')) {
-            $query->where('access IN (' . implode(',', $user->getAuthorisedViewLevels()) . ')');
+            $query->where('access IN (' . implode(',', array_map('intval', $user->getAuthorisedViewLevels())) . ')');
         }
 
         if ($id) {
@@ -295,7 +295,7 @@ class JoomlalinksMenu extends CMSObject
         $query->where(array('m.published = 1', 'm.parent_id = ' . (int) $parent));
 
         if (!$user->authorise('core.admin')) {
-            $query->where('m.access IN (' . implode(',', $user->getAuthorisedViewLevels()) . ')');
+            $query->where('m.access IN (' . implode(',', array_map('intval', $user->getAuthorisedViewLevels())) . ')');
         }
 
         // only site menu items

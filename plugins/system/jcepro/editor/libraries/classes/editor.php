@@ -4,14 +4,14 @@
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
-use Joomla\CMS\Filesystem\File;
-use Joomla\CMS\Filesystem\Path;
+use Joomla\Filesystem\File;
+use Joomla\Filesystem\Path;
 use Joomla\CMS\Object\CMSObject;
 
 require_once __DIR__ . '/image/image.php';
@@ -41,7 +41,8 @@ class WFImageEditor extends CMSObject
 
     public function watermark($src, $settings)
     {
-        $ext = strtolower(File::getExt($src));
+        $ext = pathinfo($src, PATHINFO_EXTENSION);
+        $ext = strtolower($ext);
 
         if (!empty($settings['image'])) {
             $settings['image'] = WFUtility::makePath(JPATH_SITE, $settings['image']);
@@ -70,7 +71,9 @@ class WFImageEditor extends CMSObject
 
     public function resize($src, $dest, $width, $height, $quality, $box = array())
     {
-        $ext = strtolower(File::getExt($src));
+        $ext = pathinfo($src, PATHINFO_EXTENSION);
+        $ext = strtolower($ext);
+        
         $data = @file_get_contents($src);
 
         if ($data) {
@@ -130,7 +133,9 @@ class WFImageEditor extends CMSObject
 
     public function rotate($file, $direction)
     {
-        $ext = strtolower(File::getExt($file));
+        $ext = pathinfo($file, PATHINFO_EXTENSION);
+        $ext = strtolower($ext);
+
         $src = @file_get_contents($file);
 
         if ($src) {
@@ -172,7 +177,9 @@ class WFImageEditor extends CMSObject
 
     public function setQuality($file, $quality)
     {
-        $ext = strtolower(File::getExt($file));
+        $ext = pathinfo($file, PATHINFO_EXTENSION);
+        $ext = strtolower($ext);
+
         $options = $this->getOptions();
 
         $image = new WFImage($file, $options);
@@ -206,7 +213,9 @@ class WFImageEditor extends CMSObject
 
     public function resample($file, $resolution = 96)
     {
-        $ext = strtolower(File::getExt($file));
+        $ext = pathinfo($file, PATHINFO_EXTENSION);
+        $ext = strtolower($ext);
+
         $options = $this->getOptions();
 
         $image = new WFImage($file, $options);

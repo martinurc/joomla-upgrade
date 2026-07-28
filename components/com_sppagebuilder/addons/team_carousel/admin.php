@@ -82,7 +82,7 @@ SpAddonsConfig::addonConfig([
 								],
 								[
 									'title'       => 'twitter',
-									'social_icon' => 'fab fa-twitter',
+									'social_icon' => 'fab fa-x-twitter',
 									'social_url'  => 'https://twitter.com'
 								],
 								[
@@ -107,7 +107,7 @@ SpAddonsConfig::addonConfig([
 								],
 								[
 									'title'       => 'twitter',
-									'social_icon' => 'fab fa-twitter',
+									'social_icon' => 'fab fa-x-twitter',
 									'social_url'  => 'https://twitter.com'
 								],
 								[
@@ -132,7 +132,7 @@ SpAddonsConfig::addonConfig([
 								],
 								[
 									'title'       => 'twitter',
-									'social_icon' => 'fab fa-twitter',
+									'social_icon' => 'fab fa-x-twitter',
 									'social_url'  => 'https://twitter.com'
 								],
 								[
@@ -229,6 +229,11 @@ SpAddonsConfig::addonConfig([
 									'desc'  => Text::_('COM_SPPAGEBUILDER_ADMIN_LABEL_DESC'),
 								],
 
+								'item_visibility' => [
+									'type' => 'visibility',
+									'std'  => true,
+								],
+
 								'person_name' => [
 									'type'  => 'text',
 									'title' => Text::_('COM_SPPAGEBUILDER_ADDON_PERSON_NAME'),
@@ -270,6 +275,11 @@ SpAddonsConfig::addonConfig([
 													'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_LABEL'),
 													'std'   => 'Facebook'
 												],
+
+												'item_visibility' => [
+													'type' => 'visibility',
+													'std'  => true,
+                                                ],
 
 												'social_url' => [
 													'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_LINK'),
@@ -438,6 +448,22 @@ SpAddonsConfig::addonConfig([
 					'desc'    	=> Text::_('COM_SPPAGEBUILDER_ADDON_CAROUSEL_AUTOPLAY_DESC'),
 					'std'  	  	=> 0
 				],
+
+				'carousel_pause_on_hover' => [
+					'type'    	=> 'checkbox',
+					'title'   	=> Text::_('COM_SPPAGEBUILDER_ADDON_CAROUSEL_PAUSE_ON_HOVER'),
+					'desc'    	=> Text::_('COM_SPPAGEBUILDER_ADDON_CAROUSEL_PAUSE_ON_HOVER_DESC'),
+					'std'  	  	=> 0,
+					'depends'	=> [['carousel_autoplay', '=', 1]],
+				],
+
+				'loop' => [
+                        'type'    => 'checkbox',
+                        'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_JS_SLIDER_LOOP'),
+                        'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_JS_SLIDER_LOOP_DESC'),
+                        'std'     => 1,
+                        'depends' => [['carousel_autoplay', '=', 1]]
+                ],
 
 				'carousel_interval' => [
 					'type'    	=> 'slider',

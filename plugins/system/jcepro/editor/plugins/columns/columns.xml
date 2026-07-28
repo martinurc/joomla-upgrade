@@ -1,13 +1,13 @@
 <?xml version="1.0" ?>
-<extension version="2.5" type="plugin" group="jce" method="upgrade">
+<extension type="plugin" group="jce" method="upgrade">
 	<name>JCE - Columns</name>
-	<version>1.0.0</version>
-	<creationDate>May 2019</creationDate>
+	<version>2.9.99.9</version>
+	<creationDate>08-07-2026</creationDate>
 	<author>Ryan Demmer</author>
 	<authorEmail>info@joomlacontenteditor.net</authorEmail>
 	<authorUrl>https://www.joomlacontenteditor.net/</authorUrl>
-	<copyright>Copyright (C) 2006 - 2020 Ryan Demmer. All rights reserved</copyright>
-	<license>GNU/GPL Version 2 - http://www.gnu.org/licenses/gpl-2.0.html</license>
+	<copyright>Copyright (C) 2006 - 2026 Ryan Demmer. All rights reserved</copyright>
+	<license>GNU/GPL Version 2 or later - http://www.gnu.org/licenses/gpl-2.0.html; see LICENSE.txt</license>
 	<description>Flex Columns for JCE</description>
 	<icon>columns</icon>
 	<files></files>

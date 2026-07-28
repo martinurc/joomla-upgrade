@@ -48,8 +48,8 @@ class SppagebuilderAddonText_block extends SppagebuilderAddons
 		$plain_text = strip_tags($text);
 		
 		$text_block_text = $text;
-                
-		if($content_truncation && !empty($settings->content_truncation_max_word) && (int) str_word_count($plain_text) > (int) $settings->content_truncation_max_word) {
+  
+		if($content_truncation && !empty($settings->content_truncation_max_word) && (int) $this->wordCount($plain_text) > (int) $settings->content_truncation_max_word) {
 			$arrayString = explode(' ', $plain_text);
 			$text_block_text = implode(' ', array_slice($arrayString, 0, (int) $settings->content_truncation_max_word));
 			$text_block_text .= '<template class="sppb-addon-content-full-text">' . $text . '</template>';
@@ -62,6 +62,16 @@ class SppagebuilderAddonText_block extends SppagebuilderAddons
 		$output .= '</div>';
 
 		return $output;
+	}
+
+	private function wordCount($unicode_string) {
+		$unicode_string = preg_replace('/[\p{P}\p{N}]/u', '', $unicode_string);
+
+		$unicode_string = preg_replace('/\s+/u', ' ', $unicode_string);
+
+		$words_array = preg_split('/\s+/u', trim($unicode_string), -1, PREG_SPLIT_NO_EMPTY);
+
+		return count($words_array);
 	}
 
 	/**
@@ -94,6 +104,18 @@ class SppagebuilderAddonText_block extends SppagebuilderAddons
 			'weight'      => 'text_fontweight'
 		]);
 
+		$typographyOverride = $cssHelper->typography('.sppb-addon-text-block .sppb-addon-content h1,
+													.sppb-addon-text-block .sppb-addon-content h2,
+													.sppb-addon-text-block .sppb-addon-content h3,
+													.sppb-addon-text-block .sppb-addon-content h4,
+													.sppb-addon-text-block .sppb-addon-content h5,
+													.sppb-addon-text-block .sppb-addon-content h6', $settings, 'text_typography', [
+																'font'        => 'text_font_family',
+																'size'        => 'text_fontsize',
+																'line_height' => 'text_lineheight',
+																'weight'      => 'text_fontweight'
+															]);
+
 		if ($dropCap) {
 			$css .= $dropcapStyle;
 		}
@@ -112,6 +134,7 @@ class SppagebuilderAddonText_block extends SppagebuilderAddons
 		$css .= $transformCss;
 		$css .= $textFontStyle;
 		$css .= $columnStyle;
+		$css .= $typographyOverride;
 		
 
 		return $css;
@@ -180,6 +203,7 @@ class SppagebuilderAddonText_block extends SppagebuilderAddons
 		$output .= $lodash->unit('font-size', '.sppb-dropcap .sppb-addon-content:first-letter', 'data.dropcap_font_size', 'px');
 		$output .= $lodash->unit('line-height', '.sppb-dropcap .sppb-addon-content:first-letter', 'data.dropcap_font_size', 'px');
 		$output .= $lodash->typography('.sppb-addon-text-block .sppb-addon-content', 'data.text_typography', $textFallbacks);
+		$output .= $lodash->typography('.sppb-addon-text-block .sppb-addon-content h1, .sppb-addon-text-block .sppb-addon-content h2, .sppb-addon-text-block .sppb-addon-content h3, .sppb-addon-text-block .sppb-addon-content h4, .sppb-addon-text-block .sppb-addon-content h5, .sppb-addon-text-block .sppb-addon-content h6', 'data.text_typography', $textFallbacks);
 
 		$output .= $lodash->typography('.sppb-addon-text-block .sppb-addon-title', 'data.title_typography', $titleFallbacks);
 		$output .= $lodash->unit('margin-top', '.sppb-addon-title', 'data.title_margin_top', 'px');

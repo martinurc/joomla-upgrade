@@ -67,6 +67,41 @@ class SppagebuilderControllerTypography extends FormController
 		$this->sendResponse($typographies);
 	}
 
+	public function getGlobalTypographiesLocally() {
+		$db = Factory::getDbo();
+		$query = $db->getQuery(true);
+		$query->select(['id', 'name', 'typography'])
+			->from($db->quoteName('#__sppagebuilder_typography'))
+			->where($db->quoteName('published') . ' = 1');
+		$db->setQuery($query);
+
+		$typographies = [];
+
+		try
+		{
+			$typographies = $db->loadObjectList();
+
+			if (empty($typographies)) {
+				return null;
+			}
+		}
+		catch (\Exception $e)
+		{
+			return [];
+		}
+
+		if (!empty($typographies))
+		{
+			foreach ($typographies as &$typography)
+			{
+				$typography->typography = \json_decode($typography->typography);
+			}
+
+			unset($typography);
+		}
+		return $typographies;
+	}
+
 	 /**
      * Sends JSON response to the client with appropriate headers.
      * 

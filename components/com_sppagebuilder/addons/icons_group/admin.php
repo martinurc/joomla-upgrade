@@ -31,6 +31,11 @@ SpAddonsConfig::addonConfig([
                             'title' => Text::_('COM_SPPAGEBUILDER_ADDON_TITLE'),
                         ],
 
+                        'item_visibility' => [
+                            'type' => 'visibility',
+                            'std'  => true,
+                        ],
+
                         'icon_name' => [
                             'type'  => 'icon',
                             'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_ICON_NAME'),

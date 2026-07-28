@@ -25,15 +25,15 @@ class JsnUsernameFieldHelper
 	public static function getXml($item)
 	{
 		$xml='';
-		if(JFactory::getApplication()->isSite())
+		if(JFactory::getApplication()->isClient('site'))
 		{
 			require_once(JPATH_SITE.'/components/com_jsn/helpers/helper.php');
 			$hideTitle= ($item->params->get('hidetitle',0) && JFactory::getApplication()->input->get('view','profile')=='profile' && JFactory::getApplication()->input->get('option','')=='com_jsn') || ($item->params->get('hidetitleedit',0) && (JFactory::getApplication()->input->get('layout','')=='edit' || JFactory::getApplication()->input->get('view','')=='registration'));
 			if(JFactory::getApplication()->input->get('view','profile')=='profile' && JFactory::getApplication()->input->get('option','')=='com_jsn' && $item->params->get('titleprofile','')!='') $item->title=$item->params->get('titleprofile','');
 			$placeholder=($item->params->get('username_placeholder','')!='' ? 'hint="'.JsnHelper::xmlentities($item->params->get('username_placeholder','')).'"' : '');
 			
-			if($item->params->get('field_readonly','')==1 && JFactory::getApplication()->isSite()) $readonly='readonly="true"';
-			elseif($item->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('view')!='registration' && JFactory::getApplication()->isSite()) $readonly='readonly="true"';
+			if($item->params->get('field_readonly','')==1 && JFactory::getApplication()->isClient('site')) $readonly='readonly="true"';
+			elseif($item->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('view')!='registration' && JFactory::getApplication()->isClient('site')) $readonly='readonly="true"';
 			else $readonly='';
 			if($item->params->get('username_regex','')!='custom') $regex=($item->params->get('username_regex','')!='' ? 'class="validate-pattern '.$item->params->get('field_cssclass','').'" pattern="'.$item->params->get('username_regex','').'"' : 'class="validate-username '.$item->params->get('field_cssclass','').'"');
 			else $regex='class="validate-pattern '.$item->params->get('field_cssclass','').'" pattern="'.$item->params->get('username_customregex','').'"';

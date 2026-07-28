@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2021-2023 Joomlashack.com. All rights reserved
+ * @copyright 2021-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -27,10 +28,13 @@ use Alledia\Framework\Extension;
 use Alledia\Framework\Factory;
 use Alledia\Framework\Joomla\Extension\Helper as ExtensionHelper;
 use Joomla\CMS\Application\CMSApplication;
-use Joomla\CMS\Filesystem\Path;
 use Joomla\CMS\Version;
+use Joomla\Filesystem\Path;
 
+// phpcs:disable PSR1.Files.SideEffects
 defined('_JEXEC') or die();
+
+// phpcs:enable PSR1.Files.SideEffects
 
 trait TraitAllediaView
 {
@@ -60,7 +64,7 @@ trait TraitAllediaView
             $this->app      = Factory::getApplication();
             $this->document = Factory::getDocument();
 
-            $this->option = $this->app->input->get('option');
+            $this->option = Factory::getInput($this->app)->get('option');
 
             $info = ExtensionHelper::getExtensionInfoFromElement($this->option);
 

@@ -22,17 +22,27 @@ class SppagebuilderAddonAnimated_number extends SppagebuilderAddons
 	{
 		$settings = $this->addon->settings;
 
-		$number = (isset($settings->number) && $settings->number) ? $settings->number : 0;
+		$number = (isset($settings->number) && $settings->number !== '' && $settings->number !== null) ? $settings->number : 0;
 		$duration = (isset($settings->duration) && $settings->duration) ? $settings->duration : 0;
 		$format = (isset($settings->use_number_format) && $settings->use_number_format) ? $settings->use_number_format : 0;
-		$separator = (isset($settings->separator_string) && $settings->separator_string) ? $settings->separator_string : ',';
+		$separator = (isset($settings->separator_string) && $settings->separator_string !== '') ? $settings->separator_string : ',';
+		$fractionValue = isset($settings->fraction) ? preg_replace('/[^0-9]/', '', (string) $settings->fraction) : '';
+		$fractionSeparator = isset($settings->fraction_separator) && $settings->fraction_separator !== ''
+			? $settings->fraction_separator : '.';
 		$counter_title = (isset($settings->counter_title) && $settings->counter_title) ? $settings->counter_title : '';
 		$class = (isset($settings->class) && $settings->class) ? $settings->class : '';
 		$number_position = (isset($settings->number_position) && $settings->number_position) ? 'animated-number-position-' . $settings->number_position : '';
 
 		$output  = '<div class="sppb-addon sppb-addon-animated-number ' . $class . ' ' . $number_position . '">';
 		$output .= '<div class="sppb-addon-content">';
-		$output .= '<div class="sppb-animated-number" data-separator="' . $separator . '" data-format="'. $format .'" data-digit="' . $number . '" data-duration="' . $duration . '">0</div>';
+		$output .= '<div class="sppb-animated-number" data-start="0"'
+				. ' data-separator="' . htmlspecialchars($separator, ENT_QUOTES, 'UTF-8') . '"'
+				. ' data-format="' . htmlspecialchars((string) $format, ENT_QUOTES, 'UTF-8') . '"'
+				. ' data-digit="' . htmlspecialchars((string) $number, ENT_QUOTES, 'UTF-8') . '"'
+				. ' data-duration="' . htmlspecialchars((string) $duration, ENT_QUOTES, 'UTF-8') . '"'
+				. ' data-fraction="' . htmlspecialchars($fractionValue, ENT_QUOTES, 'UTF-8') . '"'
+				. ' data-fractionsep="' . htmlspecialchars($fractionSeparator, ENT_QUOTES, 'UTF-8') . '"'
+				. '>' . htmlspecialchars((string) $number, ENT_QUOTES, 'UTF-8') . '</div>';
 
 		if ($counter_title)
 		{
@@ -118,6 +128,9 @@ class SppagebuilderAddonAnimated_number extends SppagebuilderAddons
 			}
 		}
 
+		$css .= $addon_id . ' .sppb-animated-number { visibility: hidden; }';
+		$css .= $addon_id . ' .sppb-animated-number.ready { visibility: visible; }';
+
 		return $css;
 	}
 
@@ -180,7 +193,7 @@ class SppagebuilderAddonAnimated_number extends SppagebuilderAddons
 		</style>
 		<div class="sppb-addon sppb-addon-animated-number {{ data.class }} {{number_position}}">
 			<div class="sppb-addon-content">
-				<div class="sppb-animated-number sp-inline-editable-element" data-id={{data.id}} data-fieldName="number" contenteditable="true" data-separator="{{data?.separator_string || ","}}" data-format="{{data.use_number_format}}"  data-digit="{{ data.number }}" data-duration="{{ data.duration }}">0</div>
+				<div class="sppb-animated-number sp-inline-editable-element" data-id={{data.id}} data-fieldName="number" contenteditable="true" data-separator="{{data?.separator_string || ","}}" data-format="{{data.use_number_format}}" data-digit="{{ data.number }}" data-duration="{{ data.duration }}" data-fraction="{{ data.fraction }}" data-fractionsep="{{ data.fraction_separator }}">0</div>
 				<# if(data.counter_title){ #>
 					<div class="sppb-animated-number-title sp-inline-editable-element" data-id={{data.id}} data-fieldName="counter_title" contenteditable="true"> {{{data.counter_title}}} </div>
 				<# } #>

@@ -9,6 +9,7 @@
 //no direct access
 defined('_JEXEC') or die('restricted access');
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\Language\Multilanguage;
@@ -58,7 +59,14 @@ class JFormFieldPagebuilder extends FormField
 
 			$front_link = str_replace('/administrator', '', SppagebuilderHelperRoute::buildRoute($front_link));
 
-			$output = '<div style="display: flex; justify-content: center; gap: 10px; margin-top: 1rem;"><a class="builder-edit-btn btn btn-outline btn-large" style="border: 2px solid var(--template-bg-dark-60)" href="' . $backend_link . '">Edit with Backend Editor</a><a class="builder-edit-btn btn btn-primary btn-large" href="' . $front_link . '">Edit with Frontend Editor</a></div>';
+			$sppbParams = ComponentHelper::getParams('com_sppagebuilder');
+			$enableFrontendEditing = (bool) $sppbParams->get('enable_frontend_editing', 1);
+			$output = '<div style="display: flex; justify-content: center; gap: 10px; margin-top: 1rem;"><a class="builder-edit-btn btn btn-outline btn-large" style="border: 2px solid var(--template-bg-dark-60)" href="' . $backend_link . '">Edit with Backend Editor</a>';
+			if ($enableFrontendEditing)
+			{
+				$output .= '<a class="builder-edit-btn btn btn-primary btn-large" href="' . $front_link . '">Edit with Frontend Editor</a>';
+			}
+			$output .= '</div>';
 
 			$output .= '<input type="hidden" name="' . $this->name . '" id="' . $this->id . '" value="">';
 			$output .= '<input type="hidden" name="jform[content]" id="jform_content" value="">';

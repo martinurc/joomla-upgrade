@@ -11,10 +11,14 @@ namespace JoomShaper\SPPageBuilder\DynamicContent\Site;
 use AddonParser;
 use ApplicationHelper;
 use DateTime;
+use FieldsHelper;
+use JLoader;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
+use Joomla\CMS\Version;
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\CollectionIds;
 use JoomShaper\SPPageBuilder\DynamicContent\Models\CollectionField;
 use JoomShaper\SPPageBuilder\DynamicContent\Models\CollectionItem;
 use JoomShaper\SPPageBuilder\DynamicContent\Models\CollectionItemValue;
@@ -24,9 +28,28 @@ use JoomShaper\SPPageBuilder\DynamicContent\Services\CollectionDataService;
 use JoomShaper\SPPageBuilder\DynamicContent\Services\CollectionItemsService;
 use JoomShaper\SPPageBuilder\DynamicContent\Supports\Arr;
 use JoomShaper\SPPageBuilder\DynamicContent\Supports\Date;
+use SppagebuilderHelperArticles;
 
 class CollectionHelper
 {
+    /**
+     * Cache for detail page IDs indexed by collection ID
+     * 
+     * @var array
+     * 
+     * @since 6.0.0
+     */
+    protected static $detailPageIdCache = [];
+
+    /**
+     * Cache for menu item IDs indexed by collection ID
+     * 
+     * @var array
+     * 
+     * @since 6.0.0
+     */
+    protected static $menuItemIdCache = [];
+
     /**
      * List of fields that are not prefixed with the collection title.
      *
@@ -49,8 +72,8 @@ class CollectionHelper
     protected static function getSelector($css)
     {
         $pattern = "/^(.*?)\{/";
-		preg_match($pattern, $css, $matches);
-		return $matches[1] ?? null;
+        preg_match($pattern, $css, $matches);
+        return $matches[1] ?? null;
     }
 
     /**
@@ -63,43 +86,43 @@ class CollectionHelper
      * @since 5.5.0
      */
     public static function generateDynamicContentCSS($addon, $layouts)
-	{
-		if (empty($addon->name))
-		{
-			return '';
-		}
+    {
+        if (empty($addon->name))
+        {
+            return '';
+        }
 
-		$addonPath = AddonParser::getAddonPath($addon->name);
-		$output = '';
+        $addonPath = AddonParser::getAddonPath($addon->name);
+        $output = '';
 
-		if (file_exists($addonPath . '/site.php'))
-		{
-			require_once $addonPath . '/site.php';
+        if (file_exists($addonPath . '/site.php'))
+        {
+            require_once $addonPath . '/site.php';
 
-			$addonClassName = ApplicationHelper::generateSiteClassName($addon->name);
-			$addonInstance = new $addonClassName($addon);
+            $addonClassName = ApplicationHelper::generateSiteClassName($addon->name);
+            $addonInstance = new $addonClassName($addon);
 
-			$addonCss = $layouts->addon_css->render(array('addon' => $addon));
+            $addonCss = $layouts->addon_css->render(array('addon' => $addon));
 
-			if (method_exists($addonClassName, 'css'))
-			{
-				$css = $addonInstance->css();
-				$addonSelector = static::getSelector($addonCss);
-				$instanceSelector = static::getSelector($css);
+            if (method_exists($addonClassName, 'css'))
+            {
+                $css = $addonInstance->css();
+                $addonSelector = static::getSelector($addonCss);
+                $instanceSelector = static::getSelector($css);
 
                 if (empty($addonSelector) || empty($instanceSelector)) {
                     return [];
                 }
 
-				return [
-					$addonSelector => $addonCss,
-					$instanceSelector => $css
-				];
-			}
-		}
+                return [
+                    $addonSelector => $addonCss,
+                    $instanceSelector => $css
+                ];
+            }
+        }
 
-		return $output;
-	}
+        return $output;
+    }
 
     /**
      * Get the detail page ID for the dynamic content collection.
@@ -115,12 +138,19 @@ class CollectionHelper
             return null;
         }
 
+        if (array_key_exists($collectionId, static::$detailPageIdCache)) {
+            return static::$detailPageIdCache[$collectionId];
+        }
+
         $page = Page::where('extension', 'com_sppagebuilder')
             ->where('extension_view', 'dynamic_content:detail')
             ->where('view_id', $collectionId)
             ->first(['id']);
 
-        return $page->id ?? null;
+        $pageId = $page->id ?? null;
+        static::$detailPageIdCache[$collectionId] = $pageId;
+
+        return $pageId;
     }
 
     /**
@@ -141,8 +171,19 @@ class CollectionHelper
             return null;
         }
 
-        $menuItemId = static::getCurrentMenuItemId($collectionId);
-        $routeUrl = 'index.php?option=com_sppagebuilder&view=dynamic&collection_id=' . $collectionId . '&collection_item_id=' . $itemId;
+        if ($collectionId === CollectionIds::ARTICLES_COLLECTION_ID) {
+            $menuItemId = static::getArticlesMenuItemId();
+            $routeUrl = 'index.php?option=com_sppagebuilder&view=dynamic&collection_item_id=' . $itemId;
+            $routeUrl .= '&collection_type=articles';
+        } else if ($collectionId === CollectionIds::TAGS_COLLECTION_ID) {
+            $menuItemId = static::getTagsMenuItemId();
+            $routeUrl = 'index.php?option=com_sppagebuilder&view=dynamic&collection_item_id=' . $itemId;
+            $routeUrl .= '&collection_type=tags';
+        } else {
+            $menuItemId = static::getCurrentMenuItemId($collectionId);
+            $routeUrl = 'index.php?option=com_sppagebuilder&view=dynamic&collection_item_id=' . $itemId;
+            $routeUrl .= '&collection_type=normal-source';
+        }
 
         if (!empty($menuItemId)) {
             $routeUrl .= '&Itemid=' . $menuItemId;
@@ -251,7 +292,12 @@ class CollectionHelper
             $segments = [];
         }
 
+        // For single segment paths (direct fields), return the item itself
         if (count($segments) === 1) {
+            return $item;
+        }
+
+        if (isset($item['collection_id']) && ($item['collection_id'] === CollectionIds::ARTICLES_COLLECTION_ID || $item['collection_id'] === CollectionIds::TAGS_COLLECTION_ID)) {
             return $item;
         }
 
@@ -301,6 +347,243 @@ class CollectionHelper
         return (int) $itemIds[count($itemIds) - 1];
     }
 
+    public static function getDetailPageDataFromArticles()
+    {
+        $itemId = static::getCollectionItemIdFromUrl();
+        
+        if (empty($itemId)) {
+            return null;
+        }
+
+        try {
+            $db = Factory::getDbo();
+            $authorised = \Joomla\CMS\Access\Access::getAuthorisedViewLevels(Factory::getUser()->get('id'));
+            $baseUrl = rtrim(Uri::root(), '/');
+            
+            $query = $db->getQuery(true);
+            $query->select([
+                'a.id', 'a.title', 'a.alias', 'a.introtext', 'a.fulltext',
+                'a.catid', 'a.created', 'a.created_by', 'a.publish_up',
+                'a.images', 'a.attribs', 'a.language', 'a.featured', 'a.hits',
+                'b.title as category', 'b.alias as category_alias',
+                'u.name as username', 'u.email as created_by_email',
+                'CASE WHEN p.profile_value IS NOT NULL THEN CONCAT(' . $db->quote($baseUrl) . ', JSON_UNQUOTE(p.profile_value)) ELSE NULL END as profile_image'
+            ])
+            ->from($db->quoteName('#__content', 'a'))
+            ->join('LEFT', $db->quoteName('#__categories', 'b') . ' ON a.catid = b.id')
+            ->join('LEFT', $db->quoteName('#__users', 'u') . ' ON u.id = a.created_by')
+            ->join('LEFT', $db->quoteName('#__user_profiles', 'p') . ' ON p.user_id = a.created_by AND p.profile_key = ' . $db->quote('profileimage.profile_image'))
+            ->where('a.id = ' . $db->quote($itemId))
+            ->where('a.access IN (' . implode(',', $authorised) . ')');
+
+            $db->setQuery($query);
+            $article = $db->loadObject();
+
+            if (!$article) {
+                return null;
+            }
+
+            $version = new Version();
+            $JoomlaVersion = $version->getShortVersion();
+            if ((float) $JoomlaVersion >= 4) {
+                JLoader::registerAlias('FieldsHelper', 'Joomla\Component\Fields\Administrator\Helper\FieldsHelper');
+            } else {
+                JLoader::register('FieldsHelper', JPATH_ADMINISTRATOR . '/components/com_fields/helpers/fields.php');
+            }
+
+            $custom_fields = FieldsHelper::getFields('com_content.article', $article);
+
+            $article->introtext = $article->introtext ?? '';
+            $article->fulltext = $article->fulltext ?? '';
+            $article->hits = $article->hits ?? 0;
+
+            if (!\class_exists('SppagebuilderHelperArticles')) {
+                require_once JPATH_ROOT . '/components/com_sppagebuilder/helpers/articles.php';
+            }
+            \SppagebuilderHelperArticles::applyComContentCustomFieldValuesToItem($article, $custom_fields);
+
+            $articleData = (array) $article;
+            $articleData['collection_id'] = CollectionIds::ARTICLES_COLLECTION_ID;
+            $articleData['slug'] = $article->id . ':' . $article->alias;
+            $articleData['catslug'] = $article->catid . ':' . $article->category_alias;
+            
+            if (version_compare($JoomlaVersion, '4.0.0', '>=')) {
+                $articleData['link'] = \Joomla\CMS\Router\Route::_(\Joomla\Component\Content\Site\Helper\RouteHelper::getArticleRoute($articleData['slug'], $article->catid, $article->language));
+            } else {
+                if (!class_exists('ContentHelperRoute')) {
+                    require_once JPATH_SITE . '/components/com_content/helpers/route.php';
+                }
+                $articleData['link'] = \Joomla\CMS\Router\Route::_(\ContentHelperRoute::getArticleRoute($articleData['slug'], $article->catid, $article->language));
+            }
+
+            $articleData['introtext'] = self::replaceFieldShortcodes($article->introtext, $custom_fields);
+            $articleData['fulltext'] = self::replaceFieldShortcodes($article->fulltext, $custom_fields);
+
+            $attribs = json_decode($article->attribs ?? '{}');
+            $feature_img = '';
+            if (isset($attribs->helix_ultimate_image) && $attribs->helix_ultimate_image) {
+                $feature_img = $attribs->helix_ultimate_image;
+            } elseif (isset($attribs->spfeatured_image) && $attribs->spfeatured_image) {
+                $feature_img = $attribs->spfeatured_image;
+            }
+
+            if (!empty($feature_img)) {
+                $articleData['featured_image'] = $feature_img;
+                $img_baseurl = basename($feature_img);
+
+                $small = JPATH_ROOT . '/' . dirname($feature_img) . '/' . \Joomla\CMS\Filesystem\File::stripExt($img_baseurl) . '_small.' . \Joomla\CMS\Filesystem\File::getExt($img_baseurl);
+                if (file_exists($small)) {
+                    $articleData['image_small'] = Uri::root(true) . '/' . dirname($feature_img) . '/' . \Joomla\CMS\Filesystem\File::stripExt($img_baseurl) . '_small.' . \Joomla\CMS\Filesystem\File::getExt($img_baseurl);
+                }
+
+                $thumbnail = JPATH_ROOT . '/' . dirname($feature_img) . '/' . \Joomla\CMS\Filesystem\File::stripExt($img_baseurl) . '_thumbnail.' . \Joomla\CMS\Filesystem\File::getExt($img_baseurl);
+                if (file_exists($thumbnail)) {
+                    $articleData['image_thumbnail'] = Uri::root(true) . '/' . dirname($feature_img) . '/' . \Joomla\CMS\Filesystem\File::stripExt($img_baseurl) . '_thumbnail.' . \Joomla\CMS\Filesystem\File::getExt($img_baseurl);
+                } else {
+                    $articleData['image_thumbnail'] = Uri::root(true) . '/' . $articleData['featured_image'];
+                }
+
+                $medium = JPATH_ROOT . '/' . dirname($feature_img) . '/' . \Joomla\CMS\Filesystem\File::stripExt($img_baseurl) . '_medium.' . \Joomla\CMS\Filesystem\File::getExt($img_baseurl);
+                if (file_exists($medium)) {
+                    $articleData['image_medium'] = Uri::root(true) . '/' . dirname($feature_img) . '/' . \Joomla\CMS\Filesystem\File::stripExt($img_baseurl) . '_medium.' . \Joomla\CMS\Filesystem\File::getExt($img_baseurl);
+                }
+
+                $large = JPATH_ROOT . '/' . dirname($feature_img) . '/' . \Joomla\CMS\Filesystem\File::stripExt($img_baseurl) . '_large.' . \Joomla\CMS\Filesystem\File::getExt($img_baseurl);
+                if (file_exists($large)) {
+                    $articleData['image_large'] = Uri::root(true) . '/' . dirname($feature_img) . '/' . \Joomla\CMS\Filesystem\File::stripExt($img_baseurl) . '_large.' . \Joomla\CMS\Filesystem\File::getExt($img_baseurl);
+                }
+            } else {
+                $articleData['featured_image'] = '';
+                $articleData['image_thumbnail'] = '';
+                $images = json_decode($article->images ?? '{}');
+                if (isset($images->image_intro) && $images->image_intro) {
+                    if (strpos($images->image_intro, 'http://') !== false || strpos($images->image_intro, 'https://') !== false) {
+                        $articleData['image_thumbnail'] = $images->image_intro;
+                    } else {
+                        $articleData['image_thumbnail'] = Uri::root(true) . '/' . $images->image_intro;
+                    }
+                } elseif (isset($images->image_fulltext) && $images->image_fulltext) {
+                    if (strpos($images->image_fulltext, 'http://') !== false || strpos($images->image_fulltext, 'https://') !== false) {
+                        $articleData['image_thumbnail'] = $images->image_fulltext;
+                    } else {
+                        $articleData['image_thumbnail'] = Uri::root(true) . '/' . $images->image_fulltext;
+                    }
+                } else {
+                    $articleData['image_thumbnail'] = false;
+                }
+            }
+
+            $keysToAdd = [
+                'image_small',
+                'image_medium',
+                'image_large',
+                'image_intro',
+                'image_intro_alt',
+                'float_intro',
+                'image_intro_caption',
+                'image_fulltext',
+                'image_fulltext_alt',
+                'float_fulltext',
+                'image_fulltext_caption'
+            ];
+            
+            foreach ($keysToAdd as $key) {
+                if (!isset($articleData[$key])) {
+                    $articleData[$key] = '';
+                }
+            }
+
+            if (isset($article->images)) {
+                $images = json_decode($article->images);
+                if (isset($images)) {
+                    foreach ($images as $key => $value) {
+                        $articleData[$key] = $value;
+                    }
+                }
+            }
+
+            $articleData['profile_image'] = $article->profile_image ?? '';
+            if (empty($articleData['profile_image'])) {
+                $enableGravatar = \Joomla\CMS\Component\ComponentHelper::getParams('com_sppagebuilder')->get('enable_gravatar', 1);
+                if ($enableGravatar && !empty($article->created_by_email)) {
+                    $hash = md5(strtolower(trim($article->created_by_email)));
+                    $gravatarUrl = "https://www.gravatar.com/avatar/{$hash}?s=45&d=404";
+                    $articleData['profile_image'] = $gravatarUrl;
+                }
+            }
+
+            $layoutQuery = $db->getQuery(true);
+            $layoutQuery->select($db->quoteName(['content', 'text', 'css']));
+            $layoutQuery->from($db->quoteName('#__sppagebuilder'));
+            $layoutQuery->where($db->quoteName('extension') . ' = ' . $db->quote('com_content'));
+            $layoutQuery->where($db->quoteName('extension_view') . ' = ' . $db->quote('article'));
+            $layoutQuery->where($db->quoteName('view_id') . ' = ' . (int) $article->id);
+            $layoutQuery->where($db->quoteName('active') . ' = 1');
+            $db->setQuery($layoutQuery);
+            $layoutData = $db->loadObject();
+            
+            $articleData['layout'] = !empty($layoutData) ? $layoutData : null;
+            $articleData['username'] = $article->username ?? '';
+            $articleData['category'] = $article->category ?? '';
+            
+            return $articleData;
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error fetching article detail: ' . $e->getMessage(), 'error');
+            return null;
+        }
+    }
+
+    private static function replaceFieldShortcodes($text, $custom_fields) {
+		$fieldMap = [];
+		foreach ($custom_fields as $field) {
+			if (isset($field->id)) {
+				$fieldMap[$field->id] = (isset($field->value) && $field->value) ? $field->value : '';
+			}
+		}
+        
+		return preg_replace_callback('/\{field\s+(\d+)\}/', function($matches) use ($fieldMap) {
+			$fieldId = $matches[1];
+            $value = $fieldMap[$fieldId] ?? '';
+			return isset($fieldMap[$fieldId]) ? $fieldMap[$fieldId] : '';
+		}, $text);
+	}
+
+    /**
+     * Get the detail page data
+     * 
+     * @return array|null The data or null if not found
+     * @since 6.0.0
+     */
+    public static function getDetailPageDataFromTags()
+    {
+        $itemId = static::getCollectionItemIdFromUrl();
+        
+
+        $db = \Joomla\CMS\Factory::getDbo();
+        $query = $db->getQuery(true)
+            ->select('*')
+            ->from('#__tags')
+            ->where('id = ' . (int) $itemId)
+            ->where('published = 1');
+        $db->setQuery($query);
+        $tag = $db->loadObject();
+        
+        if ($tag) {
+
+            $tagData = (array) $tag;
+            $tagData['collection_id'] = CollectionIds::TAGS_COLLECTION_ID;
+            
+
+            $tagData['title'] = $tagData['title'] ?? '';
+            $tagData['alias'] = $tagData['alias'] ?? '';
+            $tagData['description'] = $tagData['description'] ?? '';
+            
+            return $tagData;
+        }
+        
+        return null;
+    }
+
     /**
      * Get the dynamic content item data from the database.
      *
@@ -320,6 +603,14 @@ class CollectionHelper
         $item = $service->fetchCollectionItemById($itemId);
 
         return $item ?? null;
+    }
+
+    public static function getJoomlaSingleArticleRoute($item)
+    {
+        if (empty($item)) {
+            return null;
+        }
+        return !empty($item['link']) ? $item['link'] : null;
     }
 
     /**
@@ -346,6 +637,9 @@ class CollectionHelper
         switch ($linkType) {
             case 'page':
                 $pageId = $link->page ?? null;
+                if ($pageId === CollectionIds::ARTICLES_COLLECTION_ID) {
+                    return static::getJoomlaSingleArticleRoute($item);
+                }
                 $page = !empty($pageId)
                     ? Page::where('id', $pageId)->first(['extension_view', 'view_id', 'id'])
                     : null;
@@ -354,16 +648,25 @@ class CollectionHelper
                     return null;
                 }
 
-                $itemId = static::getCurrentMenuItemId($page->view_id);
-
                 if ($page->extension_view === 'dynamic_content:detail') {
                     $routeUrl = 'index.php?option=com_sppagebuilder&view=dynamic';
 
-                    if (!empty($itemId)) {
-                        $routeUrl .= '&Itemid=' . $itemId;
+                    if ($page->view_id === CollectionIds::ARTICLES_COLLECTION_ID) {
+                        $routeUrl = static::getJoomlaSingleArticleRoute($item);
+                        return Route::_($routeUrl, false);
+                    } else if ($page->view_id === CollectionIds::TAGS_COLLECTION_ID) {
+                        $menuItemId = static::getTagsMenuItemId();
+                        if (!empty($menuItemId)) {
+                            $routeUrl .= '&Itemid=' . $menuItemId;
+                        }
+                        return Route::_(static::buildRouteWithTagItemId($routeUrl, $item['id']), false);
+                    } else {
+                        $menuItemId = static::getCurrentMenuItemId($page->view_id);
+                        if (!empty($menuItemId)) {
+                            $routeUrl .= '&Itemid=' . $menuItemId;
+                        }
+                        return Route::_(static::buildRouteWithCollectionItemId($routeUrl, $item['id']), false);
                     }
-
-                    return Route::_(static::buildRouteWithCollectionItemId($routeUrl, $item['id']), false);
                 }
 
                 $routeUrl = 'index.php?option=com_sppagebuilder&view=page&id=' . $page->id;
@@ -431,6 +734,21 @@ class CollectionHelper
         return $attributes;
     }
 
+    private static function phpToIcu(string $php): string
+{
+    $map = [
+        'd' => 'dd', 'j' => 'd', 'D' => 'EEE', 'l' => 'EEEE',
+        'm' => 'MM', 'n' => 'M', 'M' => 'MMM', 'F' => 'MMMM',
+        'y' => 'yy', 'Y' => 'yyyy',
+        'H' => 'HH', 'G' => 'H', 'h' => 'hh', 'g' => 'h',
+        'i' => 'mm', 's' => 'ss',
+        'A' => 'a', 'a' => 'a',
+    ];
+    return preg_replace_callback('/[djDlmnMFyYHGhgisAa]/', function($m) use ($map) {
+        return $map[$m[0]] ?? $m[0];
+    }, $php);
+}
+
     /**
      * Format the date.
      *
@@ -450,7 +768,6 @@ class CollectionHelper
         if ($format === 'n-time-ago') {
             $date = Date::create($date);
             $now = Date::create('now');
-
             $interval = $now->diff($date);
             $minutes = $interval->days * 24 * 60 + $interval->h * 60 + $interval->i;
 
@@ -478,9 +795,27 @@ class CollectionHelper
 
         $format = $format === 'custom' ? $attribute->date_format_custom : $format;
         
-
-        $date = new DateTime($date);
-        return $date->format($format);
+        $lang = Factory::getLanguage()->getTag();
+        $lang = str_replace('-', '_', $lang);
+        $lang .= '@numbers=native';
+        
+        $dateObj = new DateTime($date);
+        
+        if(!class_exists('IntlDateFormatter')) {
+            return $dateObj->format($format);
+        }
+        
+        $format = self::phpToIcu($format);
+        $formatter = new \IntlDateFormatter(
+            $lang,         
+            \IntlDateFormatter::NONE,      
+            \IntlDateFormatter::NONE,
+            $dateObj->getTimezone()->getName(),
+            \IntlDateFormatter::GREGORIAN,
+            $format
+        );
+    
+        return $formatter->format($dateObj);
     }
 
     /**
@@ -513,6 +848,47 @@ class CollectionHelper
      */
     public static function getFirstCollectionItemId(int $collectionId)
     {
+
+        if ($collectionId === CollectionIds::ARTICLES_COLLECTION_ID) {
+            if (!\class_exists('SppagebuilderHelperArticles')) {
+                require_once JPATH_ROOT . '/components/com_sppagebuilder/helpers/articles.php';
+            }
+
+            try {
+                $articles = \SppagebuilderHelperArticles::getArticles(1, 'oldest');
+                if (!empty($articles) && isset($articles[0])) {
+                    return $articles[0]->id;
+                }
+            } catch (\Exception $e) {
+                return null;
+            }
+
+            return null;
+        }
+
+
+        if ($collectionId === CollectionIds::TAGS_COLLECTION_ID) {
+            try {
+                $db = \Joomla\CMS\Factory::getDbo();
+                $query = $db->getQuery(true)
+                    ->select('id')
+                    ->from('#__tags')
+                    ->where('published = 1')
+                    ->order('id ASC');
+                $db->setQuery($query, 0, 1);
+                $tagId = $db->loadResult();
+                
+                if ($tagId) {
+                    return (int) $tagId;
+                }
+            } catch (\Exception $e) {
+                return null;
+            }
+
+            return null;
+        }
+
+        // Handle regular collections
         $item = CollectionItem::where('collection_id', $collectionId)
             ->orderBy('id', 'ASC')
             ->first(['id']);
@@ -569,6 +945,43 @@ class CollectionHelper
     }
 
     /**
+     * Build the route with the item ID.
+     *
+     * @param string $url The URL to build the route for.
+     * @param int $itemId The item ID to build the route for.
+     * @return string|null The built route or null if not found.
+     *
+     * @since 6.0.0
+     */
+    protected static function buildRouteWithArticleItemId($url, $articleId)
+    {
+        $currentRoute = Uri::getInstance($url);
+        
+
+        $currentRoute->setVar('collection_item_id', [$articleId]);
+        $currentRoute->setVar('collection_type', 'articles');
+        
+        return $currentRoute->toString();
+    }
+
+    /**
+     * Build the route with the tag item ID.
+     *
+     * @param string $url The URL to build the route for.
+     * @param int $tagId The tag ID to build the route for.
+     * @return string|null The built route or null if not found.
+     *
+     * @since 6.0.0
+     */
+    public static function buildRouteWithTagItemId($url, $tagId)
+    {
+        $currentRoute = Uri::getInstance($url);
+        $currentRoute->setVar('collection_item_id', [$tagId]);
+        $currentRoute->setVar('collection_type', 'tags');
+        return $currentRoute->toString();
+    }
+
+    /**
      * Build the route with the collection item ID.
      *
      * @param string $url The URL to build the route for.
@@ -577,17 +990,22 @@ class CollectionHelper
      *
      * @since 5.5.0
      */
-    protected static function buildRouteWithCollectionItemId($url, $itemId)
+    public static function buildRouteWithCollectionItemId($url, $itemId)
     {
         $currentRoute = Uri::getInstance($url);
         $app = Factory::getApplication();
         $input = $app->input;
         $itemIds = $input->get('collection_item_id', [], 'ARRAY');
         
+
+        $collectionIdOfItemToPush = static::getCollectionIdOfCollectionItem($itemId);
+        $collectionType = 'normal-source';
+        
         if (empty($itemIds)) {
             $itemIds = [];
             $itemIds[] = $itemId;
             $currentRoute->setVar('collection_item_id', $itemIds);
+            $currentRoute->setVar('collection_type', $collectionType);
             return $currentRoute->toString();
         }
 
@@ -595,7 +1013,6 @@ class CollectionHelper
         $itemIdToPush = $itemId;
 
         $collectionIdOfLastItem = static::getCollectionIdOfCollectionItem($lastItemId);
-        $collectionIdOfItemToPush = static::getCollectionIdOfCollectionItem($itemIdToPush);
 
         if ($collectionIdOfLastItem !== $collectionIdOfItemToPush) {
             $itemIds[] = $itemIdToPush;
@@ -604,6 +1021,7 @@ class CollectionHelper
         }
 
         $currentRoute->setVar('collection_item_id', $itemIds);
+        $currentRoute->setVar('collection_type', $collectionType);
         return $currentRoute->toString();
     }
 
@@ -617,24 +1035,70 @@ class CollectionHelper
      */
     protected static function getCollectionIdOfCollectionItem($itemId)
     {
+
         $item = CollectionItem::where('id', $itemId)->first(['collection_id']);
 
-        if ($item->isEmpty()) {
-            return null;
+        if (!$item->isEmpty()) {
+            return $item->collection_id;
         }
 
-        return $item->collection_id;
+        return null;
     }
 
     /**
-     * Get the current item ID from the URL.
+     * Get the menu item ID.
      *
-     * @param int $collectionId The collection ID.
-     * @return int|null The current item ID or null if not found.
+     * @return int|null The menu item ID or null if not found.
      *
-     * @since 5.5.0
+     * @since 6.0.0
      */
-    protected static function getCurrentMenuItemId($collectionId)
+    protected static function getArticlesMenuItemId()
+    {
+        $pageId = Page::where(['extension_view' => 'dynamic_content:index', 'view_id' => CollectionIds::ARTICLES_COLLECTION_ID])->first(['id']);
+
+        $pageId = !empty($pageId->id) ? $pageId->id : null;
+
+        if (empty($pageId)) {
+            return null;
+        }
+
+        $menuItems = Menu::whereLike('link', '%option=com_sppagebuilder&view=page&id=' . $pageId . '%')
+            ->where('client_id', 0)
+            ->where('published', 1)
+            ->get(['link', 'id']);
+
+        if (empty($menuItems)) {
+            return null;
+        }
+
+        $app = Factory::getApplication();
+        $menu = $app->getMenu();
+        $activeMenuItem = $menu->getActive();
+        $activeMenuItemId = $activeMenuItem->id ?? null;
+
+        $menuItems = Arr::make($menuItems);
+        $menuItem = $menuItems->find(function ($item) use ($activeMenuItemId) {
+            $query = Uri::getInstance($item->link);
+            if ($query->getVar('view') !== 'page') {
+                return false;
+            }
+            $pageId = intval($query->getVar('id') ?? 0);
+            $pageCollectionId = static::getCollectionIdFromPageId($pageId);
+
+            return ($pageCollectionId === CollectionIds::ARTICLES_COLLECTION_ID) && ($item->id === $activeMenuItemId) ? $item->id : null;
+        });
+
+        return !empty($menuItem->id) ? $menuItem->id : null;
+    }
+
+    /**
+     * Get the menu item ID.
+     *
+     * @return int|null The menu item ID or null if not found.
+     *
+     * @since 6.0.0
+     */
+    public static function getTagsMenuItemId()
     {
         $menuItems = Menu::whereLike('link', '%option=com_sppagebuilder%')
             ->where('client_id', 0)
@@ -642,6 +1106,55 @@ class CollectionHelper
             ->get(['link', 'id']);
 
         if (empty($menuItems)) {
+            return null;
+        }
+
+        $menuItems = Arr::make($menuItems);
+        $menuItem = $menuItems->find(function ($item) {
+            $query = Uri::getInstance($item->link);
+            if ($query->getVar('view') !== 'page') {
+                return false;
+            }
+            $pageId = intval($query->getVar('id') ?? 0);
+            $pageCollectionId = static::getCollectionIdFromPageId($pageId);
+
+
+            return $pageCollectionId === CollectionIds::TAGS_COLLECTION_ID;
+        });
+
+        if (empty($menuItem)) {
+            /** @var CMSApplication */
+            $app = Factory::getApplication();
+            $input = $app->input;
+            $itemId = $input->getInt('Itemid', 0);
+
+            return $itemId ?: null;
+        }
+
+        return $menuItem->id;
+    }
+
+   /**
+     * Get the current item ID from the URL.
+     *
+     * @param int $collectionId The collection ID.
+     * @return int|null The current item ID or null if not found.
+     *
+     * @since 5.5.0
+     */
+    public static function getCurrentMenuItemId($collectionId)
+    {
+        if (array_key_exists($collectionId, static::$menuItemIdCache)) {
+            return static::$menuItemIdCache[$collectionId];
+        }
+
+        $menuItems = Menu::whereLike('link', '%option=com_sppagebuilder%')
+            ->where('client_id', 0)
+            ->where('published', 1)
+            ->get(['link', 'id']);
+
+        if (empty($menuItems)) {
+            static::$menuItemIdCache[$collectionId] = null;
             return null;
         }
 
@@ -667,9 +1180,12 @@ class CollectionHelper
             $input = $app->input;
             $itemId = $input->getInt('Itemid', 0);
 
-            return $itemId ?: null;
+            $result = $itemId ?: null;
+            static::$menuItemIdCache[$collectionId] = $result;
+            return $result;
         }
 
+        static::$menuItemIdCache[$collectionId] = $menuItem->id;
         return $menuItem->id;
     }
 

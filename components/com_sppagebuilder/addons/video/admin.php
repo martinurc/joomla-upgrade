@@ -68,6 +68,32 @@ SpAddonsConfig::addonConfig([
                     'depends'      => [['mp4_enable', '=', 1]],
                 ],
 
+                'video_subtitle' => [
+                    'type'          => 'media',
+                    'hide_alt_text' => true,
+                    'format'        => 'attachment',
+                    'title'         => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_SUBTITLE_FILE'),
+                    'desc'          => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_SUBTITLE_FILE_DESC'),
+                    'hide_preview'  => true,
+                    'depends'       => [['mp4_enable', '=', 1]],
+                ],
+
+                'video_subtitle_srclang' => [
+                    'type'    => 'text',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_SUBTITLE_LANG'),
+                    'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_SUBTITLE_LANG_DESC'),
+                    'std'     => 'en',
+                    'depends' => [['mp4_enable', '=', 1]],
+                ],
+
+                'video_subtitle_label' => [
+                    'type'    => 'text',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_SUBTITLE_LABEL'),
+                    'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_SUBTITLE_LABEL_DESC'),
+                    'std'     => 'English',
+                    'depends' => [['mp4_enable', '=', 1]],
+                ],
+
                 'video_aria_label' => [
                     'type'    => 'text',
                     'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_ARIA_LABEL'),
@@ -79,6 +105,24 @@ SpAddonsConfig::addonConfig([
                     'type'    => 'text',
                     'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_ARIA_DESCRIBED_BY'),
                     'depends' => [['mp4_enable', '=', 1]],
+                ],
+
+                'start_time' => [
+                    'type' => 'slider',
+                    'title' => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_START_TIME'),
+                    'desc'  => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_START_TIME_DESC'),
+                    'std'   => 0,
+                    'max'   => 600,
+                    'depends' => [['mp4_enable', '=', 0]],
+                ],
+
+                'end_time' => [
+                    'type' => 'slider',
+                    'title' => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_END_TIME'),
+                    'desc'  => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_END_TIME_DESC'),
+                    'std'   => 0,
+                    'max'   => 600,
+                    'depends' => [['mp4_enable', '=', 0]],
                 ],
 
                 'show_rel_video' => [
@@ -149,6 +193,18 @@ SpAddonsConfig::addonConfig([
                     'depends' => [['mp4_enable', '=', 0]],
                 ],
 
+                'video_preload' => [
+                    'type' => 'select',
+                    'title' => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_PRELOAD'),
+                    'desc' => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_PRELOAD_DESC'),
+                    'values' => [
+                        'auto' => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_PRELOAD_AUTO'),
+                        'metadata' => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_PRELOAD_METADATA'),
+                        'none' => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_PRELOAD_NONE'),
+                    ],
+                    'depends' => [['mp4_enable', '=', 1]],
+                ],
+
                 'show_control' => [
                     'type'    => 'checkbox',
                     'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_CONTROL'),
@@ -183,6 +239,14 @@ SpAddonsConfig::addonConfig([
                     'std'     => 1,
                     'depends' => [['mp4_enable', '=', 1]],
                 ],
+
+                'enable_vertical_video' => [
+                    'type'    => 'checkbox',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_ENABLE_VERTICAL'),
+                    'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_VIDEO_ENABLE_VERTICAL_DESC'),
+                    'std'     => 0,
+                    'depends' => [['mp4_enable', '=', 1]],
+                ]
             ],
         ],
 

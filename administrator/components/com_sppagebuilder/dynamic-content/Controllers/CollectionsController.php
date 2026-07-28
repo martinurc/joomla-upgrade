@@ -11,8 +11,10 @@ namespace JoomShaper\SPPageBuilder\DynamicContent\Controllers;
 defined('_JEXEC') or die;
 
 use Exception;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use JoomShaper\SPPageBuilder\DynamicContent\Concerns\Validator;
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\CollectionIds;
 use JoomShaper\SPPageBuilder\DynamicContent\Constants\FieldTypes;
 use JoomShaper\SPPageBuilder\DynamicContent\Controller;
 use JoomShaper\SPPageBuilder\DynamicContent\Http\Request;
@@ -22,6 +24,7 @@ use JoomShaper\SPPageBuilder\DynamicContent\Models\CollectionField;
 use JoomShaper\SPPageBuilder\DynamicContent\Models\Page;
 use JoomShaper\SPPageBuilder\DynamicContent\Services\CollectionsService;
 use JoomShaper\SPPageBuilder\DynamicContent\Supports\Arr;
+use JoomShaper\SPPageBuilder\DynamicContent\Supports\Str;
 
 class CollectionsController extends Controller
 {
@@ -62,10 +65,11 @@ class CollectionsController extends Controller
      * @return void
      * @since 5.5.0
      */
-    public function list()
+    public function list(Request $request)
     {
         try {
-            return response()->json($this->service->fetchAll()); 
+            $includeArticleSources = $request->getInt('include_article_sources', 0);
+            return response()->json($this->service->fetchAll($includeArticleSources)); 
         } catch (Exception $error) {
             return response()->json(['message' => $error->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -143,6 +147,12 @@ class CollectionsController extends Controller
             'collection_id' => $request->getInt('id'),
         ];
 
+        $canEditCollection = Factory::getUser()->authorise('core.edit', 'com_sppagebuilder.collection.' . $data['collection_id']);
+
+        if(!$canEditCollection) {
+            return response()->json(['message' => Text::_('JERROR_ALERTNOAUTHOR')], Response::HTTP_UNAUTHORIZED);
+        }
+
         $this->validate($data, [
             'title'         => 'required|string|min:3|max:255',
             'collection_id' => 'required|integer',
@@ -178,6 +188,12 @@ class CollectionsController extends Controller
     {
         $collectionId = $request->getInt('id');
         $force = $request->getInt('force', 0);
+
+        $canDeleteCollection = Factory::getUser()->authorise('core.delete', 'com_sppagebuilder.collection.' . $collectionId);
+
+        if(!$canDeleteCollection) {
+            return response()->json(['message' => Text::_('JERROR_ALERTNOAUTHOR')], Response::HTTP_UNAUTHORIZED);
+        }
 
         if (!$collectionId) {
             return response()->json(['message' => Text::_('COM_SPPAGEBUILDER_COLLECTION_ITEMS_COLLECTION_ID_REQUIRED')], Response::HTTP_BAD_REQUEST);
@@ -295,6 +311,14 @@ class CollectionsController extends Controller
             return response()->json(['message' => Text::_('COM_SPPAGEBUILDER_COLLECTION_ITEMS_COLLECTION_ID_REQUIRED')], Response::HTTP_BAD_REQUEST);
         }
 
+        if ($id === CollectionIds::ARTICLES_COLLECTION_ID) {
+            return response()->json($this->service->fetchArticleAttributes($allowedTypes));
+        }
+
+        if ($id === CollectionIds::TAGS_COLLECTION_ID) {
+            return response()->json($this->service->fetchTagsAttributes($allowedTypes));
+        }
+
         return response()->json($this->service->fetchCollectionAttributes($id, $allowedTypes));
     }
 
@@ -312,6 +336,14 @@ class CollectionsController extends Controller
 
         if (!$id) {
             return response()->json(['message' => Text::_('COM_SPPAGEBUILDER_COLLECTION_ITEMS_COLLECTION_ID_REQUIRED')], Response::HTTP_BAD_REQUEST);
+        }
+
+        if ($id === CollectionIds::ARTICLES_COLLECTION_ID) {
+            return response()->json($this->service->fetchArticleFields());
+        }
+
+        if ($id === CollectionIds::TAGS_COLLECTION_ID) {
+            return response()->json($this->service->fetchTagsFields());
         }
 
         $fields = $this->service->fetchCollectionFields($id);
@@ -340,6 +372,20 @@ class CollectionsController extends Controller
         return response()->json($fields);
     }
 
+    public function totalFieldsByCollection(Request $request)
+    {
+        $collectionId = $request->getInt('collection_id');
+
+        if (!$collectionId) {
+            return response()->json(['message' => Text::_('COM_SPPAGEBUILDER_COLLECTION_ITEMS_COLLECTION_ID_REQUIRED')], Response::HTTP_BAD_REQUEST);
+        }
+
+        return response()->json(
+            $this->service->fetchTotalFieldsByCollection($collectionId),
+            Response::HTTP_OK
+        );
+    }
+
     /**
      * Get the created dynamic content pages.
      * 
@@ -362,6 +408,125 @@ class CollectionsController extends Controller
     }
 
     /**
+     * Create collection object for dynamic content pages
+     * 
+     * @param array $pages Existing pages array for checking page availability
+     * @return object The collection object
+     * @since 6.0.0
+     */
+    protected function createArticlesCollection(array $pages)
+    {
+
+        if (!\class_exists('SppagebuilderHelperArticles')) {
+            require_once JPATH_ROOT . '/components/com_sppagebuilder/helpers/articles.php';
+        }
+
+        try {
+            $articles = \SppagebuilderHelperArticles::getArticles(1);
+            $articlesCount = \SppagebuilderHelperArticles::getArticlesCount();
+            $hasArticles = !empty($articles);
+        } catch (\Exception $e) {
+            $hasArticles = false;
+        }
+
+
+        $articlePages = $pages[CollectionIds::ARTICLES_COLLECTION_ID] ?? [];
+        $articlePages = Arr::make($articlePages);
+        
+        $indexPage = $articlePages->find(function($item) {
+            return $item['extension_view'] === Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX;
+        });
+        
+        $detailPage = $articlePages->find(function($item) {
+            return $item['extension_view'] === Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL;
+        });
+
+        $articlesCollection = (object)[
+            'id' => CollectionIds::ARTICLES_COLLECTION_ID,
+            'title' => Text::_('COM_SPPAGEBUILDER_ARTICLES_SOURCE'),
+            'alias' => 'articles',
+            'disabled' => ($articlePages->count() === 2),
+            'total_items' => $hasArticles ? $articlesCount : 0,
+            'pages' => [
+                [
+                    'id' => (string)CollectionIds::ARTICLES_COLLECTION_ID,
+                    'title' => Text::_('COM_SPPAGEBUILDER_DYNAMIC_CONTENT_INDEX_PAGE'),
+                    'disabled' => !empty($indexPage),
+                    'page_type' => Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX,
+                    'collection_id' => CollectionIds::ARTICLES_COLLECTION_ID,
+                ],
+                [
+                    'id' => (string)CollectionIds::ARTICLES_COLLECTION_ID,
+                    'title' => Text::_('COM_SPPAGEBUILDER_DYNAMIC_CONTENT_DETAIL_PAGE'),
+                    'disabled' => !empty($detailPage),
+                    'page_type' => Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL,
+                    'collection_id' => CollectionIds::ARTICLES_COLLECTION_ID,
+                ],
+            ]
+        ];
+
+        return $articlesCollection;
+    }
+
+    /**
+     * Create collection object for dynamic content pages
+     * 
+     * @param array $pages Existing pages array for checking page availability
+     * @return object The collection object
+     * @since 6.0.0
+     */
+    protected function createTagsCollection(array $pages)
+    {
+
+        $db = \Joomla\CMS\Factory::getDbo();
+        $query = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from('#__tags')
+            ->where('published = 1');
+        $db->setQuery($query);
+        $tagCount = $db->loadResult();
+        $hasTags = $tagCount > 0;
+
+
+        $tagPages = $pages[CollectionIds::TAGS_COLLECTION_ID] ?? [];
+        $tagPages = Arr::make($tagPages);
+        
+        $indexPage = $tagPages->find(function($item) {
+            return $item['extension_view'] === Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX;
+        });
+        
+        $detailPage = $tagPages->find(function($item) {
+            return $item['extension_view'] === Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL;
+        });
+
+        $tagsCollection = (object)[
+            'id' => CollectionIds::TAGS_COLLECTION_ID,
+            'title' => 'Tags',
+            'alias' => 'tags',
+            'disabled' => !$hasTags || ($tagPages->count() === 2),
+            'total_items' => $hasTags ? $tagCount : 0,
+            'pages' => [
+                [
+                    'id' => (string)CollectionIds::TAGS_COLLECTION_ID,
+                    'title' => Text::_('COM_SPPAGEBUILDER_DYNAMIC_CONTENT_INDEX_PAGE'),
+                    'disabled' => !$hasTags || !empty($indexPage),
+                    'page_type' => Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX,
+                    'collection_id' => CollectionIds::TAGS_COLLECTION_ID,
+                ],
+                [
+                    'id' => (string)CollectionIds::TAGS_COLLECTION_ID,
+                    'title' => Text::_('COM_SPPAGEBUILDER_DYNAMIC_CONTENT_DETAIL_PAGE'),
+                    'disabled' => !$hasTags || !empty($detailPage),
+                    'page_type' => Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL,
+                    'collection_id' => CollectionIds::TAGS_COLLECTION_ID,
+                ],
+            ]
+        ];
+
+        return $tagsCollection;
+    }
+
+    /**
      * Get the dynamic content pages.
      * 
      * @return JsonResponse
@@ -371,6 +536,13 @@ class CollectionsController extends Controller
     {
         $collections = Collection::where('published', 1)->get(['id', 'title', 'alias']);
         $pages = static::getCreatedDynamicContentPages();
+
+
+        $articlesCollection = $this->createArticlesCollection($pages);
+
+
+        $tagsCollection = $this->createTagsCollection($pages);
+
         $collections = Arr::make($collections)->map(function ($item) use($pages) {
             $collectionPage = $pages[$item->id] ?? [];
             $collectionPage = Arr::make($collectionPage);
@@ -401,6 +573,16 @@ class CollectionsController extends Controller
             ];
             return $item;
         });
+
+
+        if (!$tagsCollection->disabled || $tagsCollection->total_items > 0) {
+            $collections->prepend($tagsCollection);
+        }
+
+
+        if (!$articlesCollection->disabled || $articlesCollection->total_items > 0) {
+            $collections->prepend($articlesCollection);
+        }
 
         return response()->json($collections->toArray());
     }

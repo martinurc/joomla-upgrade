@@ -37,6 +37,11 @@ SpAddonsConfig::addonConfig([
                                     'std'   => 'Button'
                                 ],
 
+                                'item_visibility' => [
+                                    'type' => 'visibility',
+                                    'std'  => true,
+                                ],
+
                                 'url' => [
                                     'type'         => 'link',
                                     'link_popup'   => true,
@@ -163,6 +168,13 @@ SpAddonsConfig::addonConfig([
                                         'right' => Text::_('COM_SPPAGEBUILDER_GLOBAL_RIGHT'),
                                     ],
                                     'std'     => 'left'
+                                ],
+
+                                'icon_margin' => [
+                                    'type' => 'margin',
+                                    'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_MARGIN'),
+                                    'std' => '',
+                                    'responsive' => true
                                 ],
                             ],
                         ],

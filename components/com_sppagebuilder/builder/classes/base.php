@@ -7,15 +7,16 @@
  * @license http://www.gnu.org/licenses/gpl-2.0.html GNU/GPLv2 or later
  */
 
+
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Filesystem\File;
 use Joomla\CMS\HTML\HTMLHelper;
-use Joomla\CMS\Filesystem\Folder;
-use Joomla\CMS\Filesystem\Path;
 use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\Filesystem\Folder;
 use Joomla\String\StringHelper;
+use Joomla\CMS\Filesystem\Path;
 
 //no direct access
 defined('_JEXEC') or die('Restricted access');
@@ -34,6 +35,14 @@ class SpPgaeBuilderBase
 	 * @since 4.0.0
 	 */
 	public static $defaultDevice = 'xl';
+
+	/**
+	 * In-memory cache for article tags within the current request.
+	 *
+	 * @var array|null
+	 * @since 6.6.1
+	 */
+	private static $articleTagsCache = null;
 
 	/**
 	 * Remove sp_ form addon name
@@ -235,7 +244,7 @@ class SpPgaeBuilderBase
 	private static function loadPluginsAddons()
 	{
 		$path = JPATH_PLUGINS . '/sppagebuilder';
-		if (!Folder::exists($path)) return;
+		if (!is_dir($path)) return;
 
 		$plugins = Folder::folders($path);
 		if (!count((array) $plugins)) return;
@@ -245,7 +254,7 @@ class SpPgaeBuilderBase
 			if (PluginHelper::isEnabled('sppagebuilder', $plugin))
 			{
 				$addons_path = $path . '/' . $plugin . '/addons';
-				if (Folder::exists($addons_path))
+				if (is_dir($addons_path))
 				{
 					$addons = Folder::folders($addons_path);
 					foreach ($addons as $addon)
@@ -270,7 +279,7 @@ class SpPgaeBuilderBase
 	private static function getPluginsAddons()
 	{
 		$path = JPATH_PLUGINS . '/sppagebuilder';
-		if (!Folder::exists($path)) return;
+		if (!is_dir($path)) return;
 
 		$plugins = Folder::folders($path);
 		if (!count((array) $plugins)) return;
@@ -281,7 +290,7 @@ class SpPgaeBuilderBase
 			if (PluginHelper::isEnabled('sppagebuilder', $plugin))
 			{
 				$addons_path = $path . '/' . $plugin . '/addons';
-				if (Folder::exists($addons_path))
+				if (is_dir($addons_path))
 				{
 					$addons = Folder::folders($addons_path);
 					foreach ($addons as $addon)
@@ -355,38 +364,50 @@ class SpPgaeBuilderBase
 	 */
 	public static function getArticleTags()
 	{
-		$db = Factory::getDbo();
-		$query = $db->getQuery(true)
-			->select('DISTINCT a.id, a.title, a.level, a.published, a.lft, a.parent_id');
-		$subQuery = $db->getQuery(true)
-			->select('id,title,level,published,parent_id,lft,rgt')
-			->from('#__tags')
-			->where(
-				$db->quoteName('published') . ' = ' . $db->quote(1)
-			);
+		$loader = function () {
+			$db = Factory::getDbo();
+			$query = $db->getQuery(true)
+				->select('DISTINCT a.id, a.title, a.level, a.published, a.lft, a.parent_id, parent.title AS parent_title');
+			$subQuery = $db->getQuery(true)
+				->select('id,title,level,published,parent_id,lft,rgt')
+				->from('#__tags')
+				->where(
+					$db->quoteName('published') . ' = ' . $db->quote(1)
+				);
 
-		$query->from('(' . $subQuery->__toString() . ') AS a')
-			->join('LEFT', $db->quoteName('#__tags') . ' AS b ON a.lft > b.lft AND a.rgt < b.rgt');
-		$query->where($db->quoteName('a.level') . ' != ' . $db->quote(0));
-		$query->order('a.lft ASC');
-		$db->setQuery($query);
-		$tags = $db->loadObjectList();
+			$query->from('(' . $subQuery->__toString() . ') AS a')
+				->join('LEFT', $db->quoteName('#__tags') . ' AS b ON a.lft > b.lft AND a.rgt < b.rgt')
+				->join('LEFT', $db->quoteName('#__tags') . ' AS parent ON a.parent_id = parent.id AND parent.published = 1');
+			$query->where($db->quoteName('a.level') . ' != ' . $db->quote(0));
+			$query->order('a.lft ASC');
+			$db->setQuery($query);
+			$tags = $db->loadObjectList();
 
-		$article_tags = array();
-		if (count((array) $tags))
-		{
-			foreach ($tags as $tag)
+			$article_tags = array();
+			if (count((array) $tags))
 			{
-				$parent_tag = '';
-				if ($tag->level > 1)
+				foreach ($tags as $tag)
 				{
-					$parent_tag = self::getParentTag($tag->parent_id)->title . '/';
+					$parent_tag = '';
+					if (!empty($tag->parent_title) && $tag->level > 1)
+					{
+						$parent_tag = $tag->parent_title . '/';
+					}
+					$article_tags[$tag->id] = $parent_tag . $tag->title;
 				}
-				$article_tags[$tag->id] = $parent_tag . $tag->title;
 			}
+
+			return $article_tags;
+		};
+
+		if (self::$articleTagsCache !== null)
+		{
+			return self::$articleTagsCache;
 		}
 
-		return $article_tags;
+		$result = $loader();
+		self::$articleTagsCache = $result;
+		return $result;
 	}
 	/**
 	 *  get parent tag info by tag id

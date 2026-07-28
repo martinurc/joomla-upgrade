@@ -29,6 +29,8 @@ class SppagebuilderAddonAccordion extends SppagebuilderAddons
 		$title = (isset($settings->title) && $settings->title) ? $settings->title : '';
 		$heading_selector = (isset($settings->heading_selector) && $settings->heading_selector) ? $settings->heading_selector : 'h3';
 		$icon_position = (isset($settings->icon_position) && $settings->icon_position) ? $settings->icon_position : '';
+		$keep_item_open = (isset($settings->keep_item_open) && $settings->keep_item_open) ? $settings->keep_item_open : 0;
+		$openItem = (isset($settings->openitem) && $settings->openitem) ? $settings->openitem : '';
 
 		$output   = '';
 		$output  = '<div class="sppb-addon sppb-addon-accordion ' . $class . '">';
@@ -42,14 +44,42 @@ class SppagebuilderAddonAccordion extends SppagebuilderAddons
 
 		if (isset($settings->sp_accordion_item) && is_array($settings->sp_accordion_item) && count($settings->sp_accordion_item)) {
 			foreach ($settings->sp_accordion_item as $key => $item) {
+				if (isset($item->item_visibility) && !$item->item_visibility) {
+					continue;
+				}
 				$item_title = (isset($item->title) && $item->title) ? ' ' . $item->title . ' ' : '';
 				$visual_item_type = (isset($item->visual_item_type) && $item->visual_item_type) ? $item->visual_item_type : 'icon';
 				$image = (isset($item->image) && $item->image) ? $item->image : '';
+				$use_image_as_background = !empty($item->image_as_background);
+				$heading_bg_attr = '';
+				$heading_bg_class = '';
+
+				if ($visual_item_type == 'image' && $image && $use_image_as_background) {
+					$image_src = $image->src;
+
+					if (strpos($image_src, "http://") === false && strpos($image_src, "https://") === false) {
+						$original_src = Uri::base(true) . '/' . $image_src;
+						$image_src = SppagebuilderHelperSite::cleanPath($original_src);
+					} else {
+						$image_src = $image_src;
+					}
+
+					$bg_size = (isset($item->image_background_size) && $item->image_background_size !== '') ? $item->image_background_size : 'cover';
+					$bg_position = (isset($item->image_background_position) && $item->image_background_position !== '') ? $item->image_background_position : '50% 50%';
+					$bg_repeat = (isset($item->image_background_repeat) && $item->image_background_repeat !== '') ? $item->image_background_repeat : 'no-repeat';
+					$safe_url = htmlspecialchars($image_src, ENT_QUOTES, 'UTF-8');
+					$safe_size = htmlspecialchars($bg_size, ENT_QUOTES, 'UTF-8');
+					$safe_position = htmlspecialchars($bg_position, ENT_QUOTES, 'UTF-8');
+					$safe_repeat = htmlspecialchars($bg_repeat, ENT_QUOTES, 'UTF-8');
+
+					$heading_bg_class = ' sppb-accordion-heading-bg-image';
+					$heading_bg_attr = ' style="background-image: url(' . $safe_url . '); background-size: ' . $safe_size . '; background-position: ' . $safe_position . '; background-repeat: ' . $safe_repeat . ';"';
+				}
 
 				$output  .= '<div class="sppb-panel sppb-' . $style . '">';
-				$output  .= '<button type="button" class="sppb-reset-button-styles sppb-w-full sppb-panel-heading' . (($key == 0) ? ' active' : '') . ' ' . ($icon_position == 'right' ? 'sppb-accordion-icon-position-right' : '') . '" id="sppb-ac-heading-' . $this->addon->id . '-key-' . $key . '" aria-expanded="' . (($key == 0) ? 'true' : 'false') . '" aria-controls="sppb-ac-content-' . $this->addon->id . '-key-' . $key . '">';
+				$output  .= '<button type="button" data-keep-open="' . $keep_item_open . '" class="sppb-reset-button-styles sppb-w-full sppb-panel-heading' . (($key == 0) ? ' active' : '') . ' ' . ($icon_position == 'right' ? 'sppb-accordion-icon-position-right' : '') . $heading_bg_class . '" id="sppb-ac-heading-' . $this->addon->id . '-key-' . $key . '" aria-expanded="' . (($key == 0 && $openItem !== 'hide') ? 'true' : 'false') . '" aria-controls="sppb-ac-content-' . $this->addon->id . '-key-' . $key . '"' . $heading_bg_attr . '>';
 
-				if($visual_item_type == 'image' && $image) {
+				if ($visual_item_type == 'image' && $image && !$use_image_as_background) {
 					$image_src = $image->src;
 					$imageAlt = (isset($image->alt) && $image->alt) ? $image->alt : '';
 
@@ -62,9 +92,9 @@ class SppagebuilderAddonAccordion extends SppagebuilderAddons
 
 					$output  .= '<span class="sppb-accordion-icon-wrap" aria-label="' . trim(strip_tags($item_title)) . '">';
 
-					$output  .= '<img class="sppb-accordion-image" src="' . $image_src . '" alt="' . $imageAlt .  '>';
+					$output  .= '<img class="sppb-accordion-image" src="' . $image_src . '" alt="' . $imageAlt .  '">';
 
-					$output  .= '</span>'; 
+					$output  .= '</span>';
 				}
 
 				if (isset($item->icon) && $item->icon != '' && $style == 'panel-custom' && $visual_item_type == 'icon') {
@@ -100,7 +130,7 @@ class SppagebuilderAddonAccordion extends SppagebuilderAddons
 				}
 
 				$output  .= '</button>'; //.sppb-panel-heading
-				$output  .= '<div id="sppb-ac-content-' . $this->addon->id . '-key-' . $key . '" class="sppb-panel-collapse"' . (($key != 0) ? ' style="display: none;"' : '') . ' aria-labelledby="sppb-ac-heading-' . $this->addon->id . '-key-' . $key . '">';
+				$output  .= '<div id="sppb-ac-content-' . $this->addon->id . '-key-' . $key . '" class="sppb-panel-collapse"' . (($key != 0) ? ' style="display: none;"' : '') . 'role="region" aria-labelledby="sppb-ac-heading-' . $this->addon->id . '-key-' . $key . '">';
 				$output  .= '<div class="sppb-panel-body">';
 				$output  .= isset($item->content) ? $item->content : '';
 				$output  .= '</div>'; //.sppb-panel-body
@@ -167,6 +197,8 @@ class SppagebuilderAddonAccordion extends SppagebuilderAddons
 		$css .= $itemHeaderFontStyle;
 		$css .= $transformCss;
 		$css .= $activeImageStyle;
+
+		$css .= $addon_id . ' .sppb-accordion-heading-bg-image .sppb-panel-title { position: relative; z-index: 1; }';
 
 		return $css;
 	}

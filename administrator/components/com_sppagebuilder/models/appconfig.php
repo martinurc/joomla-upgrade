@@ -19,6 +19,7 @@ use JoomShaper\SPPageBuilder\DynamicContent\Models\Collection;
 use JoomShaper\SPPageBuilder\DynamicContent\Models\Page;
 use JoomShaper\SPPageBuilder\DynamicContent\Supports\Arr;
 use JoomShaper\SPPageBuilder\DynamicContent\Supports\Str;
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\CollectionIds;
 
 /**
  * AppConfig Model Class for managing app configs.
@@ -71,7 +72,14 @@ class SppagebuilderModelAppconfig extends ListModel
 
 			$pages = Arr::make($pages);
 			$pages = $pages->reduce(function($carry, $current) {
-				if (in_array($current->extension_view, [Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX, Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL])) {
+				if (in_array($current->extension_view, [Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX, Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL]) && $current->view_id === CollectionIds::ARTICLES_COLLECTION_ID) {
+					$carry['articles'] ??= [
+						'label' => Text::_('COM_SPPAGEBUILDER_PAGE_TYPE_ARTICLES'),
+						'icon' => 'articles',
+						'options' => []
+					];
+					$carry['articles']['options'][] = $current;
+				} elseif (in_array($current->extension_view, [Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX, Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL])) {
 					$carry['cms'] ??= [
 						'label' => Text::_('COM_SPPAGEBUILDER_PAGE_TYPE_DYNAMIC_CONTENT'),
 						'icon' => 'dynamicContent',
@@ -99,11 +107,11 @@ class SppagebuilderModelAppconfig extends ListModel
 				$items = Arr::make($page['options']);
 				$page['options'] = $items->map(function ($item) {
 					if ($item->extension_view === Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX) {
-						$collection = Collection::find($item->view_id);
-						$item->legend = '/' . $collection->alias;
+						$collection = ($item->view_id === CollectionIds::ARTICLES_COLLECTION_ID || $item->view_id === CollectionIds::TAGS_COLLECTION_ID) ? null : Collection::find($item->view_id);
+						$item->legend = '/' . ($collection ? $collection->alias : ($item->view_id === CollectionIds::TAGS_COLLECTION_ID ? 'tags' : 'articles'));
 					} elseif ($item->extension_view === Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL) {
-						$collection = Collection::find($item->view_id);
-						$item->legend = '/' . $collection->alias . '/:slug';
+						$collection = ($item->view_id === CollectionIds::ARTICLES_COLLECTION_ID || $item->view_id === CollectionIds::TAGS_COLLECTION_ID) ? null : Collection::find($item->view_id);
+						$item->legend = '/' . ($collection ? $collection->alias : ($item->view_id === CollectionIds::TAGS_COLLECTION_ID ? 'tags' : 'articles')) . '/:slug';
 					}
 					return (object) [
 						'label' => $item->title,
@@ -347,7 +355,11 @@ class SppagebuilderModelAppconfig extends ListModel
 				'page' => [
 					'edit' => false,
 					'delete' => false,
-					'edit_state' => false
+					'edit_state' => false,
+					'menu_access' => false
+				],
+				'collection' => [
+					'create' => false,
 				]
 			];
 		}
@@ -359,10 +371,12 @@ class SppagebuilderModelAppconfig extends ListModel
 		$canEditState = $user->authorise('core.edit.state', 'com_sppagebuilder');
 		$canEditOwn = $user->authorise('core.edit.own', 'com_sppagebuilder');
 		$canDelete = $user->authorise('core.delete', 'com_sppagebuilder');
+		$hasMenuAccess = $user->authorise('core.create', 'com_menus') || $user->authorise('core.edit', 'com_menus');
 
 		$canEditPage = $user->authorise('core.edit', 'com_sppagebuilder.page.' . $pageId);
 		$canDeletePage = $user->authorise('core.delete', 'com_sppagebuilder.page.' . $pageId);
 		$canEditStatePage = $user->authorise('core.edit.state', 'com_sppagebuilder.page.' . $pageId);
+		$canCreateCollection = $user->authorise('core.create.collection', 'com_sppagebuilder');
 
 		return [
 			'admin' => $isAdmin,
@@ -375,7 +389,11 @@ class SppagebuilderModelAppconfig extends ListModel
 			'page' => [
 				'edit' => $canEditPage,
 				'delete' => $canDeletePage,
-				'edit_state' => $canEditStatePage
+				'edit_state' => $canEditStatePage,
+				'menu_access' => $hasMenuAccess
+			],
+			'collection' => [
+				'create' => $canCreateCollection,
 			]
 		];
 	}

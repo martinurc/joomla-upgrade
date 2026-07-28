@@ -17,6 +17,7 @@ use Joomla\CMS\Filesystem\Path;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Filesystem\Folder;
 use Joomla\CMS\Layout\FileLayout;
+use Joomla\CMS\Session\Session;
 
 //no direct access
 defined('_JEXEC') or die('Restricted access');
@@ -33,6 +34,21 @@ class SppagebuilderControllerAi_content extends FormController
     public function __construct($config = [])
     {
         parent::__construct($config);
+
+        if (!Session::checkToken('post'))
+		{
+			$app = Factory::getApplication();
+
+			$app->setHeader('status', 403, true);
+			$app->sendHeaders();
+
+			echo new JsonResponse([
+				'status'  => false,
+				'message' => Text::_('JINVALID_TOKEN'),
+			]);
+
+			$app->close();
+		}
 
         // check have access
         $user = Factory::getUser();
@@ -101,6 +117,36 @@ class SppagebuilderControllerAi_content extends FormController
                 'status' => false,
                 'message' => Text::_('COM_SPPAGEBUILDER_AI_API_KEY_MISSING_MESSAGE')
             ], 400);
+        }
+
+        $modelStr = (string) $model;
+        $isGeminiImageModel = (bool) preg_match('/^gemini-.+-flash-image(-preview)?$/i', $modelStr);
+        $isGeminiTextModel = !$isGeminiImageModel && (bool) preg_match('/^gemini-/i', $modelStr);
+
+        if ($isGeminiImageModel && $type !== 'image') {
+            $this->sendResponse([
+                'status' => false,
+                'message' => Text::_('COM_SPPAGEBUILDER_AI_GEMINI_IMAGE_ONLY_MODEL'),
+            ], 400);
+        }
+
+        if ($isGeminiImageModel && $type === 'image') {
+            $this->getGeminiImageContent($apiKey, $model, $prompt);
+
+            return;
+        }
+
+        if ($isGeminiTextModel && $type !== 'text') {
+            $this->sendResponse([
+                'status' => false,
+                'message' => Text::_('COM_SPPAGEBUILDER_AI_GEMINI_TEXT_ONLY_MODEL'),
+            ], 400);
+        }
+
+        if ($type === 'text' && $isGeminiTextModel) {
+            $this->getGeminiTextContent($apiKey, $model, $prompt, $maxTokens);
+
+            return;
         }
 
         $endpoint = 'https://api.openai.com/v1/chat/completions';
@@ -245,6 +291,221 @@ class SppagebuilderControllerAi_content extends FormController
         ], 500);
     }
 
+    /**
+     * Text generation via Google Generative Language API (Gemini).
+     *
+     * @param   string  $apiKey     Google AI API key
+     * @param   string  $model      Model id, e.g. gemini-2.5-flash
+     * @param   string  $prompt     User prompt
+     * @param   int     $maxTokens  Max output tokens
+     *
+     * @return  void
+     */
+    private function getGeminiTextContent($apiKey, $model, $prompt, $maxTokens)
+    {
+        $endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/'
+            . rawurlencode($model)
+            . ':generateContent?key=' . rawurlencode($apiKey);
+
+        $maxOut = $maxTokens > 0 ? $maxTokens : 8192;
+
+        $data = [
+            'contents' => [
+                [
+                    'parts' => [
+                        ['text' => $prompt],
+                    ],
+                ],
+            ],
+            'generationConfig' => [
+                'maxOutputTokens' => $maxOut,
+            ],
+        ];
+
+        $payload = json_encode($data);
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $endpoint);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+        ]);
+
+        $response = curl_exec($ch);
+        $error = null;
+
+        if ($response === false) {
+            $error = curl_error($ch);
+        }
+
+        curl_close($ch);
+
+        if ($error !== null) {
+            $this->sendResponse([
+                'status' => false,
+                'message' => $error,
+            ], 500);
+
+            return;
+        }
+
+        $responseArray = json_decode($response, true);
+
+        if ($responseArray && isset($responseArray['error']['message'])) {
+            $this->sendResponse([
+                'status' => false,
+                'message' => $responseArray['error']['message'],
+            ], 400);
+
+            return;
+        }
+
+        $text = '';
+
+        if (!empty($responseArray['candidates'][0]['content']['parts']) && is_array($responseArray['candidates'][0]['content']['parts'])) {
+            foreach ($responseArray['candidates'][0]['content']['parts'] as $part) {
+                if (isset($part['text'])) {
+                    $text .= $part['text'];
+                }
+            }
+        }
+
+        if ($text === '') {
+            $this->sendResponse([
+                'status' => false,
+                'message' => Text::_('COM_SPPAGEBUILDER_GLOBAL_SOMETHING_WENT_WRONG'),
+            ], 500);
+
+            return;
+        }
+
+        $this->sendResponse([
+            'choices' => [
+                [
+                    'message' => [
+                        'content' => $text,
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Image generation via Google Generative Language API (Gemini native image models, e.g. Nano Banana).
+     *
+     * @param   string  $apiKey   Google AI API key
+     * @param   string  $model    Model id (e.g. gemini-2.5-flash-image)
+     * @param   string  $prompt   Text prompt
+     *
+     * @return  void
+     */
+    private function getGeminiImageContent($apiKey, $model, $prompt)
+    {
+        if ($prompt === '') {
+            $this->sendResponse([
+                'status' => false,
+                'message' => Text::_('COM_SPPAGEBUILDER_GLOBAL_SOMETHING_WENT_WRONG'),
+            ], 400);
+
+            return;
+        }
+
+        $endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/'
+            . rawurlencode($model)
+            . ':generateContent?key=' . rawurlencode($apiKey);
+
+        $data = [
+            'contents' => [
+                [
+                    'parts' => [
+                        ['text' => $prompt],
+                    ],
+                ],
+            ],
+            'generationConfig' => [
+                'responseModalities' => ['TEXT', 'IMAGE'],
+            ],
+        ];
+
+        $payload = json_encode($data);
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $endpoint);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+        ]);
+
+        $response = curl_exec($ch);
+        $error = null;
+
+        if ($response === false) {
+            $error = curl_error($ch);
+        }
+
+        curl_close($ch);
+
+        if ($error !== null) {
+            $this->sendResponse([
+                'status' => false,
+                'message' => $error,
+            ], 500);
+
+            return;
+        }
+
+        $responseArray = json_decode($response, true);
+
+        if ($responseArray && isset($responseArray['error']['message'])) {
+            $this->sendResponse([
+                'status' => false,
+                'message' => $responseArray['error']['message'],
+            ], 400);
+
+            return;
+        }
+
+        $openAiStyleData = [];
+
+        foreach ($responseArray['candidates'] ?? [] as $candidate) {
+            foreach ($candidate['content']['parts'] ?? [] as $part) {
+                if (!is_array($part)) {
+                    continue;
+                }
+
+                $inline = $part['inlineData'] ?? $part['inline_data'] ?? null;
+
+                if (!is_array($inline) || empty($inline['data'])) {
+                    continue;
+                }
+
+                $mime = $inline['mimeType'] ?? $inline['mime_type'] ?? 'image/png';
+
+                $openAiStyleData[] = [
+                    'url' => 'data:' . $mime . ';base64,' . $inline['data'],
+                ];
+            }
+        }
+
+        if ($openAiStyleData === []) {
+            $this->sendResponse([
+                'status' => false,
+                'message' => Text::_('COM_SPPAGEBUILDER_GLOBAL_SOMETHING_WENT_WRONG'),
+            ], 500);
+
+            return;
+        }
+
+        $this->sendResponse([
+            'created' => time(),
+            'data' => $openAiStyleData,
+        ]);
+    }
+
     private function processImageForOpenAi($image_uri)
     {
         $imagePath = Path::clean(JPATH_ROOT . '/' . $image_uri);
@@ -387,40 +648,59 @@ class SppagebuilderControllerAi_content extends FormController
             $this->sendResponse($report, 403);
         }
 
-        // Validate the URL
-        if (!filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+        $imageUrlTrim = trim($imageUrl);
+        $temporaryDecodedFile = null;
+
+        if (strpos($imageUrlTrim, 'data:image/') === 0) {
+            $temporaryDecodedFile = $this->aiWriteDataUriImageToTemp($imageUrlTrim);
+
+            if ($temporaryDecodedFile === null) {
+                $report['status'] = false;
+                $report['message'] = Text::_('COM_SPPAGEBUILDER_MEDIA_MANAGER_UPLOAD_FAILED');
+                $this->sendResponse($report, 400);
+            }
+
+            $conversionSource = $temporaryDecodedFile;
+        } elseif (!filter_var($imageUrlTrim, FILTER_VALIDATE_URL)) {
             $report['status'] = false;
             $report['message'] = Text::_('Invalid url');
             $this->sendResponse($report, 400);
+        } else {
+            $conversionSource = $imageUrlTrim;
         }
 
-        // Generate a unique filename
-        $extension = 'webp';
-        $base_name = uniqid('ai_img_', true);
-        $filename = $base_name . '.' . $extension;
+        try {
+            $extension = 'webp';
+            $base_name = uniqid('ai_img_', true);
+            $filename = $base_name . '.' . $extension;
 
-        // Save the image to the server
-        $mediaParams = ComponentHelper::getParams('com_media');
-        $folder_root = $mediaParams->get('file_path', 'images') . '/';
-        $date = Factory::getDate();
-        $folder = $folder_root . HTMLHelper::_('date', $date, 'Y') . '/' . HTMLHelper::_('date', $date, 'm') . '/' . HTMLHelper::_('date', $date, 'd');
+            $mediaParams = ComponentHelper::getParams('com_media');
+            $folder_root = $mediaParams->get('file_path', 'images') . '/';
+            $date = Factory::getDate();
+            $folder = $folder_root . HTMLHelper::_('date', $date, 'Y') . '/' . HTMLHelper::_('date', $date, 'm') . '/' . HTMLHelper::_('date', $date, 'd');
 
-        if (!Folder::exists(JPATH_ROOT . '/' . $folder)) {
-            Folder::create(JPATH_ROOT . '/' . $folder, 0755);
-        }
+            if (!Folder::exists(JPATH_ROOT . '/' . $folder)) {
+                Folder::create(JPATH_ROOT . '/' . $folder, 0755);
+            }
 
-        if (!Folder::exists(JPATH_ROOT . '/' . $folder . '/_spmedia_thumbs')) {
-            Folder::create(JPATH_ROOT . '/' . $folder . '/_spmedia_thumbs', 0755);
-        }
+            if (!Folder::exists(JPATH_ROOT . '/' . $folder . '/_spmedia_thumbs')) {
+                Folder::create(JPATH_ROOT . '/' . $folder . '/_spmedia_thumbs', 0755);
+            }
 
-        $src = Path::clean($folder . '/' . $filename);
-        $dest = Path::clean(JPATH_ROOT . '/' . $src);
+            $src = Path::clean($folder . '/' . $filename);
+            $dest = Path::clean(JPATH_ROOT . '/' . $src);
 
-        $isImageSaved = !empty($aspectRatio) ? $this->changeAspectRatio($aspectRatio, $imageUrl, $dest) : $this->convertImageToWebp($imageUrl, $dest);
-        if (!$isImageSaved) {
-            $report['status'] = false;
-            $report['message'] = Text::_('COM_SPPAGEBUILDER_MEDIA_MANAGER_UPLOAD_FAILED');
-            $this->sendResponse($report, 400);
+            $isImageSaved = !empty($aspectRatio) ? $this->changeAspectRatio($aspectRatio, $conversionSource, $dest) : $this->convertImageToWebp($conversionSource, $dest);
+
+            if (!$isImageSaved) {
+                $report['status'] = false;
+                $report['message'] = Text::_('COM_SPPAGEBUILDER_MEDIA_MANAGER_UPLOAD_FAILED');
+                $this->sendResponse($report, 400);
+            }
+        } finally {
+            if ($temporaryDecodedFile !== null && is_file($temporaryDecodedFile)) {
+                @unlink($temporaryDecodedFile);
+            }
         }
 
         $media_attr = [];
@@ -464,6 +744,35 @@ class SppagebuilderControllerAi_content extends FormController
         $report['message'] = $format_layout->render(array('media' => $model->getMediaByID($insert_id), 'innerHTML' => true));
 
         $this->sendResponse($report, 200);
+    }
+
+    /**
+     * Decode data:image MIME;base64 payload into a temp file for GD pipelines.
+     *
+     * @param   string       $dataUri  Full data URI
+     *
+     * @return  string|null  Temp path or null on failure
+     */
+    private function aiWriteDataUriImageToTemp(string $dataUri): ?string
+    {
+        if (!preg_match('/^data:image\/([\w+.+-]+);base64,([\s\S]+)$/i', $dataUri, $matches)) {
+            return null;
+        }
+
+        $data = preg_replace('/\s+/', '', $matches[2]);
+        $binary = base64_decode($data, true);
+
+        if ($binary === false || $binary === '') {
+            return null;
+        }
+
+        $tmp = tempnam(sys_get_temp_dir(), 'ai_b64_');
+
+        if (@file_put_contents($tmp, $binary) === false) {
+            return null;
+        }
+
+        return $tmp;
     }
 
     /**

@@ -8,6 +8,7 @@
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\HTML\HTMLHelper;
 
 require_once JPATH_ADMINISTRATOR.'/components/com_rsform/helpers/fields/fileupload.php';
 
@@ -26,6 +27,7 @@ class RSFormProFieldUikit3Fileupload extends RSFormProFieldFileUpload
 
     	if ($multipleplus)
 		{
+			$this->addScript(HTMLHelper::_('script', 'com_rsform/multipleplus.js', array('pathOnly' => true, 'relative' => true)));
 			$minFiles = (int) $this->getProperty('MINFILES', 1);
 
 			if ($minFiles > 1)

@@ -43,8 +43,8 @@ class JsnTextareaFieldHelper
 		if($type=='textarea') $filter='filter="raw"'; 
 		else $filter='filter="raw"';
 
-		if($item->params->get('field_readonly','')==1 && JFactory::getApplication()->isSite()) $readonly='readonly="true"';
-		elseif($item->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('view')!='registration' && JFactory::getApplication()->isSite()) $readonly='readonly="true"';
+		if($item->params->get('field_readonly','')==1 && JFactory::getApplication()->isClient('site')) $readonly='readonly="true"';
+		elseif($item->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('view')!='registration' && JFactory::getApplication()->isClient('site')) $readonly='readonly="true"';
 		else $readonly='';
 		
 		if(JFactory::getApplication()->input->get('option')=='com_jsn') $type='textarea';
@@ -80,8 +80,8 @@ class JsnTextareaFieldHelper
 	
 	public static function storeData($field, $data, &$storeData)
 	{
-		//if($field->params->get('field_readonly','')==1 && JFactory::getApplication()->isSite()) return;
-		//if($field->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('task')=='profile.save' && JFactory::getApplication()->isSite()) return;	
+		//if($field->params->get('field_readonly','')==1 && JFactory::getApplication()->isClient('site')) return;
+		//if($field->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('task')=='profile.save' && JFactory::getApplication()->isClient('site')) return;	
 		$alias=$field->alias;
 		if(isset($data[$alias])) $storeData[$alias]=$data[$alias];
 	}

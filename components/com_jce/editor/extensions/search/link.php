@@ -4,11 +4,11 @@
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
@@ -59,7 +59,7 @@ class WFLinkSearchExtension extends WFSearchExtension
             ),
         );
 
-        // Joomla 4
+        // Joomla 4+
         if (method_exists($app, 'getDispatcher')) {
             $dispatcher = $app->getDispatcher();
             $instance = new $className($dispatcher, (array) $config);
@@ -115,6 +115,8 @@ class WFLinkSearchExtension extends WFSearchExtension
                 $this->enabled[] = $plugin;
             }
         }
+
+        PluginHelper::importPlugin('jce');
     }
 
     public function display()

@@ -274,3 +274,7 @@ input[id^="cookiesck-switch"]:checked + .cookiesck_button_switch {
 .cookiesck-iframe-wrap-allowed .cookiesck-iframe-wrap-text {
 	display: none;
 }
+
+div#cookiesck_options {
+	display: block;
+}

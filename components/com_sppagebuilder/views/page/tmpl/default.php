@@ -15,6 +15,7 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\CMS\Uri\Uri;
 
 /** @var CMSApplication */
 $app = Factory::getApplication();
@@ -36,7 +37,10 @@ if (!$params->get('disableanimatecss', 0))
 if (!$params->get('disablecss', 0))
 {
 	SppagebuilderHelperSite::addStylesheet('sppagebuilder.css');
-	SppagebuilderHelperSite::addStylesheet('animate.min.css');
+	if (!$params->get('disableanimatecss', 0))
+	{
+		SppagebuilderHelperSite::addStylesheet('animate.min.css');
+	}
 	SppagebuilderHelperSite::addContainerMaxWidth();
 }
 
@@ -96,12 +100,21 @@ if (isset($page->css) && $page->css)
 
 ?>
 
-<?php 
+<?php
+	$popupAttribs = json_decode($this->item->attribs, true);
+	$responsive_class = '';
+
+	$responsive_class .= (isset($popupAttribs['hidden_xl']) && filter_var($popupAttribs['hidden_xl'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-xl ' : '';
+	$responsive_class .= (isset($popupAttribs['hidden_lg']) && filter_var($popupAttribs['hidden_lg'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-lg ' : '';
+	$responsive_class .= (isset($popupAttribs['hidden_md']) && filter_var($popupAttribs['hidden_md'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-md ' : '';
+	$responsive_class .= (isset($popupAttribs['hidden_sm']) && filter_var($popupAttribs['hidden_sm'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-sm ' : '';
+	$responsive_class .= (isset($popupAttribs['hidden_xs']) && filter_var($popupAttribs['hidden_xs'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-xs ' : '';
+
 	if ($this->item->extension_view === 'popup') : ?>
-		<div id="sp-pagebuilder-overlay" data-isoverlay=<?php echo !empty(json_decode($this->item->attribs, true)['overlay']) ? 'true' : 'false' ?> style="position: fixed; inset: 0; z-index: 9999;"></div>
+		<div class="<?php echo $responsive_class; ?>" id="sp-pagebuilder-overlay" data-isoverlay=<?php echo !empty(json_decode($this->item->attribs, true)['overlay']) ? 'true' : 'false' ?> style="position: fixed; inset: 0; z-index: 9999;"></div>
 	<?php endif; ?>
 
-<div id="sp-page-builder" class="sp-page-builder <?php echo $menuClassPrefix; ?> page-<?php echo $page->id; ?> <?php echo $page->extension_view === 'popup' ? " sp-pagebuilder-popup" : ""; ?>" x-data="easystoreProductList">
+<div id="sp-page-builder" class="sp-page-builder <?php echo $menuClassPrefix; ?> page-<?php echo $page->id; ?> <?php echo $page->extension_view === 'popup' ? " sp-pagebuilder-popup " . $responsive_class : ""; ?>" x-data="easystoreProductList">
 
 	<?php if ($showPageHeading && $this->item->extension_view !== 'popup') : ?>
 		<div class="page-header">
@@ -122,7 +135,6 @@ if (isset($page->css) && $page->css)
 		?>
 
 	<?php 
-		$popupAttribs = json_decode($this->item->attribs, true);
 
 		$width_xl = !empty($popupAttribs['width']['xl']) ? $popupAttribs['width']['xl'] . $popupAttribs['width']['unit'] : '';
 		$width_lg = !empty($popupAttribs['width']['lg']) ? $popupAttribs['width']['lg'] . $popupAttribs['width']['unit'] : $width_xl;
@@ -231,8 +243,13 @@ if (isset($page->css) && $page->css)
 
 		if (!empty($popupAttribs['background_type']) && !empty($popupAttribs['bg_media']) && $popupAttribs['background_type'] === 'image')
 		{
+			$bgImageSrc = $popupAttribs['bg_media']['src'];
+			if (!preg_match('#^(https?://|//)#', $bgImageSrc) && substr($bgImageSrc, 0, 1) !== '/') {
+				$bgImageSrc = Uri::root(true) . '/' . ltrim($bgImageSrc, '/');
+			}
+			
 			echo ' .sp-pagebuilder-popup .builder-container {
-				background-image: url("' . $popupAttribs['bg_media']['src'] . '");
+				background-image: url("' . $bgImageSrc . '");
 				background-repeat: ' . (!empty($popupAttribs['bg_media_repeat']) ? $popupAttribs['bg_media_repeat'] : 'no-repeat') . ';
 				background-attachment: ' . (!empty($popupAttribs['bg_media_attachment']) ? $popupAttribs['bg_media_attachment'] : 'initial') . ';
 				background-position: ' . (!empty($popupAttribs['bg_media_position']) ? $popupAttribs['bg_media_position'] : 'initial') . ';
@@ -297,8 +314,13 @@ if (isset($page->css) && $page->css)
 
 			if (!empty($popupAttribs['overlay']) && !empty($popupAttribs['overlay_bg_media']) && !empty($popupAttribs['overlay_background_type']) && $popupAttribs['overlay_background_type'] === 'image')
 			{
+				$overlayBgImageSrc = $popupAttribs['overlay_bg_media']['src'];
+				if (!preg_match('#^(https?://|//)#', $overlayBgImageSrc) && substr($overlayBgImageSrc, 0, 1) !== '/') {
+					$overlayBgImageSrc = Uri::root(true) . '/' . ltrim($overlayBgImageSrc, '/');
+				}
+				
 				echo ' #sp-pagebuilder-overlay {
-					background-image: url("' . $popupAttribs['overlay_bg_media']['src'] . '");
+					background-image: url("' . $overlayBgImageSrc . '");
 					background-repeat: ' . (!empty($popupAttribs['overlay_bg_media_repeat']) ? $popupAttribs['overlay_bg_media_repeat'] : 'no-repeat') . ';
 					background-attachment: ' . (!empty($popupAttribs['overlay_bg_media_attachment']) ? $popupAttribs['overlay_bg_media_attachment'] : 'initial') . ';
 					background-position: ' . (!empty($popupAttribs['overlay_bg_media_position']) ? $popupAttribs['overlay_bg_media_position'] : 'initial') . ';

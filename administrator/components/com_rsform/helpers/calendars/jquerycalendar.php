@@ -51,7 +51,15 @@ class RSFormProJQueryCalendar
 
 		// load the jQuery framework 
 		RSFormProAssets::addJquery();
-		
+
+
+		$messages = array();
+		foreach (array('COM_RSFORM_NEXT_MONTH', 'COM_RSFORM_PREVIOUS_MONTH', 'COM_RSFORM_TODAY_BUTTON', 'COM_RSFORM_SCROLL_UP', 'COM_RSFORM_SCROLL_DOWN') as $key)
+		{
+			$messages[] = array($key, Text::_($key));
+		}
+
+		RSFormProAssets::addScriptDeclaration('RSFormPro.Translations.addCommonTranslations(' . json_encode($messages) . ');');
 		RSFormProAssets::addScript(HTMLHelper::_('script', 'com_rsform/jquerycalendar/jquery.datetimepicker.js', array('pathOnly' => true, 'relative' => true)));
 		RSFormProAssets::addScript(HTMLHelper::_('script', 'com_rsform/jquerycalendar/moment.js', array('pathOnly' => true, 'relative' => true)));
 		RSFormProAssets::addScript(HTMLHelper::_('script', 'com_rsform/jquerycalendar/script.js', array('pathOnly' => true, 'relative' => true)));

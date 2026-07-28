@@ -1,14 +1,15 @@
 <?php
+
 /**
  * @package     JCE
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -62,7 +63,7 @@ class PlgWfSearchWeblinks extends CMSPlugin
     public function onContentSearch($text, $phrase = '', $ordering = '', $areas = null)
     {
         $db = Factory::getDbo();
-        $groups = implode(',', Factory::getUser()->getAuthorisedViewLevels());
+        $groups = implode(',', array_map('intval', Factory::getUser()->getAuthorisedViewLevels()));
 
         $searchText = $text;
 
@@ -138,7 +139,14 @@ class PlgWfSearchWeblinks extends CMSPlugin
         $case_when = ' CASE WHEN ';
         $case_when .= $query->charLength('a.alias', '!=', '0');
         $case_when .= ' THEN ';
-        $a_id = $query->castAsChar('a.id');
+
+        // Joomla 3 compatibility
+        if (method_exists($query, 'castAsChar')) {
+            $a_id = $query->castAsChar('a.id');
+        } else {
+            $a_id = $query->castAs('CHAR', 'a.id');
+        }
+
         $case_when .= $query->concatenate(array($a_id, 'a.alias'), ':');
         $case_when .= ' ELSE ';
         $case_when .= $a_id . ' END as slug';
@@ -146,7 +154,14 @@ class PlgWfSearchWeblinks extends CMSPlugin
         $case_when1 = ' CASE WHEN ';
         $case_when1 .= $query->charLength('c.alias', '!=', '0');
         $case_when1 .= ' THEN ';
-        $c_id = $query->castAsChar('c.id');
+
+        // Joomla 3 compatibility
+        if (method_exists($query, 'castAsChar')) {
+            $c_id = $query->castAsChar('c.id');
+        } else {
+            $c_id = $query->castAs('CHAR', 'c.id');
+        }
+
         $case_when1 .= $query->concatenate(array($c_id, 'c.alias'), ':');
         $case_when1 .= ' ELSE ';
         $case_when1 .= $c_id . ' END as catslug';

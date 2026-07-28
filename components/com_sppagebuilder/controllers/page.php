@@ -15,6 +15,7 @@ use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Http\Http;
 use Joomla\CMS\Table\Table;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Filesystem\File;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Filter\OutputFilter;
@@ -22,14 +23,19 @@ use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\MVC\Controller\FormController;
+use Joomla\Registry\Registry;
 use Joomla\Filesystem\File as FilesystemFile;
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\CollectionIds;
 use JoomShaper\SPPageBuilder\DynamicContent\Models\Collection;
 use JoomShaper\SPPageBuilder\DynamicContent\Models\Page;
 use JoomShaper\SPPageBuilder\DynamicContent\Supports\Arr;
 use JoomShaper\SPPageBuilder\DynamicContent\Supports\Str;
 
+require_once __DIR__ . '/traits/PageVersionsTrait.php';
+
 class SppagebuilderControllerPage extends FormController
 {
+	use PageVersionsTrait;
 
 	public function __construct($config = array())
 	{
@@ -150,7 +156,6 @@ class SppagebuilderControllerPage extends FormController
 	}
 
 	public function checkOutPage(){
-		$app = Factory::getApplication('site');
 		$input = Factory::getApplication()->input;
 		$id = $input->get('id', 0, 'INT');
 		$model = $this->getModel('Page');
@@ -455,9 +460,15 @@ class SppagebuilderControllerPage extends FormController
 	public function cancel($key = 'id')
 	{
 		parent::cancel($key);
-		$return_url = Factory::getApplication()->input->get('return_page', null, 'base64');
 
-		$this->setRedirect(base64_decode($return_url));
+		$returnUrl = base64_decode(
+			Factory::getApplication()->input->get('return_page', '', 'base64')
+		);
+
+		if ($returnUrl && Uri::isInternal($returnUrl))
+		{
+			$this->setRedirect($returnUrl);
+		}
 	}
 
 	public function addToMenu()
@@ -640,6 +651,133 @@ class SppagebuilderControllerPage extends FormController
 	}
 
 	/**
+	 * Export com_content.article Schema.org tab as JSON for the frontend (reactjs) editor.
+	 *
+	 * @return  void
+	 *
+	 * @since   5.5.0
+	 */
+	public function getContentArticleSchemaForm()
+	{
+		$app = Factory::getApplication();
+
+		if (strtoupper($app->input->getMethod()) !== 'GET')
+		{
+			echo json_encode(['available' => false, 'message' => 'Method not allowed']);
+			die();
+		}
+
+		if (!\interface_exists(\Joomla\CMS\Schemaorg\SchemaorgServiceInterface::class))
+		{
+			echo json_encode([
+				'available' => false,
+				'message'   => Text::_('COM_SPPAGEBUILDER_EDITOR_SCHEMA_FORM_JOOMLA_VERSION'),
+			]);
+			die();
+		}
+
+		$helper = JPATH_ADMINISTRATOR . '/components/com_sppagebuilder/editor/helpers/ContentArticleSchemaFormExporter.php';
+
+		if (!\is_file($helper))
+		{
+			echo json_encode(['available' => false, 'message' => 'Exporter missing']);
+			die();
+		}
+
+		require_once $helper;
+
+		$preparerPath = JPATH_ADMINISTRATOR . '/components/com_sppagebuilder/editor/helpers/ContentArticleSchemaFormPreparer.php';
+
+		if (\is_file($preparerPath))
+		{
+			require_once $preparerPath;
+		}
+
+		try
+		{
+			$component = $app->bootComponent('com_content');
+
+			if (!$component instanceof \Joomla\CMS\Schemaorg\SchemaorgServiceInterface)
+			{
+				echo json_encode([
+					'available' => false,
+					'message'   => Text::_('COM_SPPAGEBUILDER_EDITOR_SCHEMA_FORM_COM_CONTENT'),
+				]);
+				die();
+			}
+
+			$model = $component->getMVCFactory()->createModel('Article', 'Administrator', ['ignore_request' => true]);
+			$base  = JPATH_ADMINISTRATOR . '/components/com_content';
+
+			if (!\is_dir($base))
+			{
+				throw new \RuntimeException('com_content administrator files not found');
+			}
+
+			$formFactory = Factory::getContainer()->get(\Joomla\CMS\Form\FormFactoryInterface::class);
+			$form        = $formFactory->createForm(
+				'com_content.article',
+				['control' => 'jform', 'load_data' => false]
+			);
+
+			if ($form instanceof \Joomla\CMS\User\CurrentUserInterface)
+			{
+				$form->setCurrentUser($app->getIdentity());
+			}
+
+			\Joomla\CMS\Form\Form::addFormPath($base . '/forms');
+			\Joomla\CMS\Form\Form::addFormPath($base . '/models/forms');
+			\Joomla\CMS\Form\Form::addFieldPath($base . '/models/fields');
+			\Joomla\CMS\Form\Form::addFormPath($base . '/model/form');
+			\Joomla\CMS\Form\Form::addFieldPath($base . '/model/field');
+
+			if (!$form->loadFile('article', false))
+			{
+				throw new \RuntimeException(Text::_('COM_SPPAGEBUILDER_EDITOR_SCHEMA_FORM_LOAD_FAILED'));
+			}
+
+			$data = [];
+			$prep = new \ReflectionMethod($model, 'preprocessForm');
+			$prep->setAccessible(true);
+			$prep->invoke($model, $form, $data, 'content');
+			$form->bind($data);
+
+			if (\class_exists('ContentArticleSchemaFormPreparer'))
+			{
+				ContentArticleSchemaFormPreparer::ensureSchemaorgTab($form);
+			}
+
+			$exporter = new ContentArticleSchemaFormExporter();
+			$payload  = $exporter->export($form);
+			$plugin = PluginHelper::getPlugin('system', 'schemaorg');
+			$link = null;
+
+			if ($plugin)
+			{
+				$params = new Registry($plugin->params);
+				if (!$params->get('baseType'))
+				{
+					$link = Uri::root() . 'administrator/index.php?option=com_plugins&task=plugin.edit&extension_id=' . (int) $plugin->id;
+				}
+			}
+
+			$payload['link'] = $link;
+			$payload['form_empty'] = !empty($link) || empty($payload['fields']);
+
+			echo json_encode($payload);
+		}
+		catch (\Throwable $e)
+		{
+			echo json_encode([
+				'available' => false,
+				'message'   => $e->getMessage(),
+			]);
+		}
+
+		die();
+	}
+
+	/**
 	 * Read the page.xml form and extract information from it for rendering
 	 * into reactJS.
 	 *
@@ -763,6 +901,21 @@ class SppagebuilderControllerPage extends FormController
 		die();
 	}
 
+	public function getVersioningState(){
+		$params = ComponentHelper::getParams('com_sppagebuilder');
+		$versioningEnabled = $params->get('enable_page_versioning', '1');
+
+		$response = [
+			'status' => true,
+			'data' => [
+				'versioning_enabled' => $versioningEnabled
+			]
+		];
+		
+		echo json_encode($response);
+		die();
+	}
+
 	/**
 	 * Get the page data.
 	 *
@@ -829,7 +982,7 @@ class SppagebuilderControllerPage extends FormController
 			die();
 		}
 
-		$apiURL = 'https://www.joomshaper.com/index.php?option=com_layouts&task=' . $type . '.download&support=4beyond&id=' . $id . '&email=' . $email . '&api_key=' . $apiKey;
+		$apiURL = 'https://www.joomshaper.com/index.php?option=com_layouts&task=' . $type . '.download&support=4beyond&id=' . $id . '&email=' . urlencode($email) . '&api_key=' . $apiKey;
 		$pageResponse = $http->get($apiURL);
 		$pageData = $pageResponse->body;
 
@@ -904,6 +1057,10 @@ class SppagebuilderControllerPage extends FormController
 		$input = Factory::getApplication()->input;
 		$id = $input->getInt('id', 0);
 		$data = $input->json->get('data', [], 'ARRAY');
+
+		// Get version_name and version_note from request if provided
+		$versionName = $input->json->getString('version_name', '');
+		$versionNote = $input->json->getString('version_note', '');
 
 		$response = [
 			'status' => false,
@@ -1006,6 +1163,20 @@ class SppagebuilderControllerPage extends FormController
 				die();
 			}
 
+			$params = ComponentHelper::getParams('com_sppagebuilder');
+            $pageVersioningEnabled = $params->get('enable_page_versioning', 1);
+            $versioningOnSaveDisabled = !$params->get('enable_versioning_on_save', 1);
+			$is_triggered_from_save = !$input->json->getBool('is_triggered_from_versioning', false);
+			$is_pro_version = !$input->json->getBool('is_free_version', false);
+
+			// Create version snapshot after successful save
+			// Use custom name and note if provided
+			if ($is_pro_version && $pageVersioningEnabled) {
+				if(!($is_triggered_from_save && $versioningOnSaveDisabled)) {
+					$this->createVersionSnapshot($id, !empty($versionName) ? $versionName : null, !empty($versionNote) ? $versionNote : null);
+				}
+			}
+
 			$pageModel->checkin($id);
 
 			$response = [
@@ -1059,7 +1230,14 @@ class SppagebuilderControllerPage extends FormController
 
 			$pages = Arr::make($pages);
 			$pages = $pages->reduce(function($carry, $current) {
-				if (in_array($current->extension_view, [Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX, Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL])) {
+				if (in_array($current->extension_view, [Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX, Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL]) && $current->view_id === CollectionIds::ARTICLES_COLLECTION_ID) {
+					$carry['articles'] ??= [
+						'label' => Text::_('COM_SPPAGEBUILDER_PAGE_TYPE_ARTICLES'),
+						'icon' => 'articles',
+						'options' => []
+					];
+					$carry['articles']['options'][] = $current;
+				} elseif (in_array($current->extension_view, [Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX, Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL])) {
 					$carry['cms'] ??= [
 						'label' => Text::_('COM_SPPAGEBUILDER_PAGE_TYPE_DYNAMIC_CONTENT'),
 						'icon' => 'dynamicContent',
@@ -1087,11 +1265,11 @@ class SppagebuilderControllerPage extends FormController
 				$items = Arr::make($page['options']);
 				$page['options'] = $items->map(function ($item) {
 					if ($item->extension_view === Page::PAGE_TYPE_DYNAMIC_CONTENT_INDEX) {
-						$collection = Collection::find($item->view_id);
-						$item->legend = '/' . $collection->alias;
+						$collection = ($item->view_id === CollectionIds::ARTICLES_COLLECTION_ID || $item->view_id === CollectionIds::TAGS_COLLECTION_ID) ? null : Collection::find($item->view_id);
+						$item->legend = '/' . ($collection ? $collection->alias : ($item->view_id === CollectionIds::TAGS_COLLECTION_ID ? 'tags' : 'articles'));
 					} elseif ($item->extension_view === Page::PAGE_TYPE_DYNAMIC_CONTENT_DETAIL) {
-						$collection = Collection::find($item->view_id);
-						$item->legend = '/' . $collection->alias . '/:slug';
+						$collection = ($item->view_id === CollectionIds::ARTICLES_COLLECTION_ID || $item->view_id === CollectionIds::TAGS_COLLECTION_ID) ? null : Collection::find($item->view_id);
+						$item->legend = '/' . ($collection ? $collection->alias : ($item->view_id === CollectionIds::TAGS_COLLECTION_ID ? 'tags' : 'articles')) . '/:slug';
 					}
 					return (object) [
 						'label' => $item->title,
@@ -1102,7 +1280,65 @@ class SppagebuilderControllerPage extends FormController
 				return $page;
 			});
 
-			echo json_encode($pages->toArray());
+			$pages = $pages->toArray();
+
+			$isAppendArticleDetails = true;
+			$articlesIndex = -1;
+
+			if (!empty($pages))
+			{
+				foreach ($pages as $index => $page)
+				{
+					if (isset($page['label']))
+					{
+						if ($page['label'] === Text::_('COM_SPPAGEBUILDER_PAGE_TYPE_ARTICLES'))
+						{
+							$articlesIndex = $index;
+						}
+					}
+
+					if (isset($page['options']) && is_array($page['options']))
+					{
+						foreach ($page['options'] as $option)
+						{
+							if (isset($option->legend) && $option->legend === '/articles/:slug')
+							{
+								$isAppendArticleDetails = false;
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			if ($isAppendArticleDetails)
+			{
+				if ($articlesIndex === -1)
+				{
+					$pages[] = [
+						'label' => Text::_('COM_SPPAGEBUILDER_PAGE_TYPE_ARTICLES'),
+						'icon' => 'articles',
+						'options' => [
+							(object) [
+								'label' => 'Article Details',
+								'value' => CollectionIds::ARTICLES_COLLECTION_ID,
+								'legend' => '/articles/:slug',
+							]
+						]
+					];
+				}
+				else
+				{	
+					array_unshift($pages[$articlesIndex]['options'], (object) [
+						'label' => 'Article Details',
+						'value' => CollectionIds::ARTICLES_COLLECTION_ID,
+						'legend' => '/articles/:slug',
+					]);
+				}
+				
+			}
+
+			echo json_encode($pages);
 			exit();
 		}
 		catch (\Exception $e)
@@ -1177,4 +1413,208 @@ class SppagebuilderControllerPage extends FormController
 		echo \json_encode($result);
 		die;
 	}
+
+	/**
+	 * Create a version snapshot of the current page
+	 *
+	 * @param   int     $pageId      The page ID
+	 * @param   string  $customName  Optional custom name for the version
+	 * @param   string  $customNote  Optional custom note for the version
+	 *
+	 * @return  void
+	 * @since   6.2.4
+	 */
+	private function createVersionSnapshot($pageId, $customName = null, $customNote = null)
+	{
+		try
+		{
+			// Get current page data after saving
+			$db = Factory::getDbo();
+			$query = $db->getQuery(true);
+			$query->select([
+				$db->quoteName('content'),
+				$db->quoteName('css'),
+				$db->quoteName('attribs'),
+				$db->quoteName('og_title'),
+				$db->quoteName('og_image'),
+				$db->quoteName('og_description')
+			])
+			->from($db->quoteName('#__sppagebuilder'))
+			->where($db->quoteName('id') . ' = ' . (int) $pageId);
+
+			$db->setQuery($query);
+			$pageData = $db->loadObject();
+
+			if (!$pageData)
+			{
+				return; // Page doesn't exist, skip version creation
+			}
+
+			// If a custom note is provided, always create a snapshot (manual note addition)
+			// Otherwise, compare with the last active version to see if settings changed
+			if (empty($customNote))
+			{
+				// Get the last active version to compare
+				$versionQuery = $db->getQuery(true);
+				$versionQuery->select([
+					$db->quoteName('content'),
+					$db->quoteName('css'),
+					$db->quoteName('attribs'),
+					$db->quoteName('og_title'),
+					$db->quoteName('og_image'),
+					$db->quoteName('og_description')
+				])
+				->from($db->quoteName('#__sppagebuilder_versions'))
+				->where($db->quoteName('page_id') . ' = ' . (int) $pageId)
+				->where($db->quoteName('active') . ' = 1')
+				->order($db->quoteName('created_on') . ' DESC')
+				->setLimit(1);
+
+				$db->setQuery($versionQuery);
+				$activeVersion = $db->loadObject();
+
+				// If there's an active version, compare settings
+				if ($activeVersion)
+				{
+					$hasChanges = false;
+
+					// Normalize and compare content
+					$currentContent = $pageData->content ?? '';
+					$activeContent = $activeVersion->content ?? '';
+					if ($currentContent !== $activeContent)
+					{
+						$hasChanges = true;
+					}
+
+					// Compare CSS
+					if (!$hasChanges)
+					{
+						$currentCss = $pageData->css ?? '';
+						$activeCss = $activeVersion->css ?? '';
+						if ($currentCss !== $activeCss)
+						{
+							$hasChanges = true;
+						}
+					}
+
+					// Compare attribs
+					if (!$hasChanges)
+					{
+						$currentAttribs = $pageData->attribs ?? '[]';
+						$activeAttribs = $activeVersion->attribs ?? '[]';
+						if ($currentAttribs !== $activeAttribs)
+						{
+							$hasChanges = true;
+						}
+					}
+
+					// Compare OG fields
+					if (!$hasChanges)
+					{
+						$currentOgTitle = $pageData->og_title ?? '';
+						$activeOgTitle = $activeVersion->og_title ?? '';
+						$currentOgImage = $pageData->og_image ?? '';
+						$activeOgImage = $activeVersion->og_image ?? '';
+						$currentOgDescription = $pageData->og_description ?? '';
+						$activeOgDescription = $activeVersion->og_description ?? '';
+
+						if ($currentOgTitle !== $activeOgTitle || 
+							$currentOgImage !== $activeOgImage || 
+							$currentOgDescription !== $activeOgDescription)
+						{
+							$hasChanges = true;
+						}
+					}
+
+					// If no changes detected, skip version creation
+					if (!$hasChanges)
+					{
+						return;
+					}
+				}
+			}
+
+			// Use custom name if provided, otherwise format date/time for version name: "Feb 13, 2026, 7:06:30 AM"
+			if (!empty($customName))
+			{
+				$versionName = $customName;
+			}
+			else
+			{
+				$date = Factory::getDate();
+				$versionName = $date->format('M j, Y, g:i:s A', true);
+			}
+
+			$maxVersionsForPage = (int) ComponentHelper::getParams('com_sppagebuilder')->get('max_versions_for_page', 10);
+			$maxVersionsForPage = max(3, $maxVersionsForPage);
+
+			$countQuery = $db->getQuery(true);
+			$countQuery->select('COUNT(*)')
+				->from($db->quoteName('#__sppagebuilder_versions'))
+				->where($db->quoteName('page_id') . ' = ' . (int) $pageId);
+			$db->setQuery($countQuery);
+			$currentVersionCount = (int) $db->loadResult();
+
+			if ($currentVersionCount >= $maxVersionsForPage)
+			{
+				$oldestVersionQuery = $db->getQuery(true);
+				$oldestVersionQuery->select($db->quoteName('id'))
+					->from($db->quoteName('#__sppagebuilder_versions'))
+					->where($db->quoteName('page_id') . ' = ' . (int) $pageId)
+					->order($db->quoteName('created_on') . ' ASC')
+					->setLimit(1);
+				$db->setQuery($oldestVersionQuery);
+				$oldestVersionId = (int) $db->loadResult();
+
+				if ($oldestVersionId > 0)
+				{
+					$deleteQuery = $db->getQuery(true);
+					$deleteQuery->delete($db->quoteName('#__sppagebuilder_versions'))
+						->where($db->quoteName('id') . ' = ' . $oldestVersionId);
+					$db->setQuery($deleteQuery);
+					$db->execute();
+				}
+			}
+
+			// Set all other versions of this page to inactive
+			$updateQuery = $db->getQuery(true);
+			$updateQuery->update($db->quoteName('#__sppagebuilder_versions'))
+				->set($db->quoteName('active') . ' = 0')
+				->where($db->quoteName('page_id') . ' = ' . (int) $pageId);
+			$db->setQuery($updateQuery);
+			$db->execute();
+
+			Table::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_sppagebuilder/tables');
+			$versionTable = Table::getInstance('Version', 'SppagebuilderTable');
+
+			$versionData = [
+				'page_id' => $pageId,
+				'name' => $versionName,
+				'content' => $pageData->content ?? '',
+				'css' => $pageData->css ?? '',
+				'attribs' => $pageData->attribs ?? '[]',
+				'og_title' => $pageData->og_title ?? '',
+				'og_image' => $pageData->og_image ?? '',
+				'og_description' => $pageData->og_description ?? '',
+				'active' => 1,
+				'created_on' => Factory::getDate()->toSql(),
+				'created_by' => Factory::getUser()->get('id'),
+			];
+
+			// Add custom note if provided
+			if (!empty($customNote))
+			{
+				$versionData['note'] = $customNote;
+			}
+
+			$versionTable->bind($versionData);
+			$versionTable->store();
+		}
+		catch (Exception $e)
+		{
+			// Silently fail - versioning is not critical for saving
+			// Log error if needed
+		}
+	}
+
 }

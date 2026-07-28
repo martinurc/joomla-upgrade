@@ -23,13 +23,14 @@
  * along with OSMap.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-defined('_JEXEC') or die();
+use Joomla\CMS\Table\Table;
 
-/**
- * @package         OSMap
- * @subpackage      com_osmap
- */
-class OSMapTableSitemapItems extends JTable
+// phpcs:disable PSR1.Files.SideEffects.FoundWithSymbols
+defined('_JEXEC') or die();
+// phpcs:enable PSR1.Files.SideEffects.FoundWithSymbols
+// phpcs:disable PSR1.Classes.ClassDeclaration.MissingNamespace
+
+class OSMapTableSitemapItems extends Table
 {
     /**
      * @var int Primary key
@@ -57,7 +58,7 @@ class OSMapTableSitemapItems extends JTable
     public $priority = 5;
 
     /**
-     * @param JDatabaseDriver
+     * @inheritDoc
      */
     public function __construct($db)
     {

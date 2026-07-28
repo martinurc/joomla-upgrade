@@ -9,11 +9,8 @@
 //no direct access
 defined('_JEXEC') or die('Restricted access');
 
-use BcMath\Number;
 use Joomla\CMS\HTML\HTMLHelper;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\Uri\Uri;
-use JoomShaper\SPPageBuilder\DynamicContent\Services\CollectionDataService;
 use JoomShaper\SPPageBuilder\DynamicContent\Services\CollectionsService;
 use JoomShaper\SPPageBuilder\DynamicContent\Services\FilterService;
 
@@ -73,7 +70,7 @@ class SppagebuilderAddonDynamic_content_filter extends SppagebuilderAddons
             foreach ($settings->filter_items as $key => $item) {
                 $filterMode = isset($item->filter_model) && !empty($item->filter_model) ? $item->filter_model : 'search_filter';
                 $fieldId = isset($item->field_name) && $item->field_name ? $item->field_name : '';
-
+               
                 if (empty($fieldId) && $filterMode !== 'search_filter') {
                     continue;
                 }
@@ -206,6 +203,8 @@ class SppagebuilderAddonDynamic_content_filter extends SppagebuilderAddons
         }
 
         $output = '';
+        $filterService = new FilterService();
+        
         if ($filterMode === 'search_filter') {
             $value = '';
             $query = Uri::getInstance()->getQuery();
@@ -245,7 +244,7 @@ class SppagebuilderAddonDynamic_content_filter extends SppagebuilderAddons
                             $retrievedValue = $query['dc_filter_' . $fieldId];
                         }
 
-                        $optionItems = (new FilterService)->getCollectionOptionFieldsData($fieldId);
+                        $optionItems = $filterService->getCollectionOptionFieldsData($fieldId);
 
                         if(!empty($optionItems)){
                             foreach($optionItems as $value => $label){
@@ -261,6 +260,12 @@ class SppagebuilderAddonDynamic_content_filter extends SppagebuilderAddons
                                 $output .= '</div>';
                             }
                         } else {
+                            $isFieldIdReference = $filterService->isReferenceField($fieldId, $collectionId);
+                            $referenceCounts = [];
+                            if($isFieldIdReference){
+                                $referenceCounts = $filterService->getCollectionItemsFromReferenceField($fieldId, $collectionId);
+                            }
+                            
                             foreach(array_unique(array_filter($fieldValues, fn($value) => !empty($value))) as $value){
                                 $output .= '<div class="sppb-addon-dynamic-content-filter-item-radio-option">';
                                 $output .= '<input type="radio" hidden name="filter_option_'. $fieldId . '" value="' . $value . '" data-filter-field-id="' . $fieldId . '" ' . ($retrievedValue === $value ? 'checked' : '') . '>';
@@ -268,7 +273,11 @@ class SppagebuilderAddonDynamic_content_filter extends SppagebuilderAddons
                                 $output .= '<label>' . $value . '</label>';
                                 
                                 if($showCount){
-                                    $count = $this->getFieldCount($value, $fieldValues);
+                                    if($isFieldIdReference){
+                                        $count = isset($referenceCounts[$value]) ? $referenceCounts[$value] : 0;
+                                    } else {
+                                        $count = $this->getFieldCount($value, $fieldValues);
+                                    }
                                     $output .= '<label class="sppb-addon-dynamic-content-filter-item-count">(' . $count . ')</label>';
                                 }
                                 $output .= '</div>';
@@ -286,7 +295,7 @@ class SppagebuilderAddonDynamic_content_filter extends SppagebuilderAddons
                         $retrievedValue = $query['dc_filter_' . $fieldId];
                         $retrievedValues = explode(',', $retrievedValue);
                     }
-                    $optionItems = (new FilterService)->getCollectionOptionFieldsData($fieldId);
+                    $optionItems = $filterService->getCollectionOptionFieldsData($fieldId);
 
                     if(!empty($optionItems)){
                         foreach($optionItems as $value => $label){
@@ -302,6 +311,12 @@ class SppagebuilderAddonDynamic_content_filter extends SppagebuilderAddons
                         $output .= '</div>';
                         }
                     } else {
+                        $isFieldIdReference = $filterService->isReferenceField($fieldId, $collectionId);
+                        $referenceCounts = [];
+                        if($isFieldIdReference){
+                            $referenceCounts = $filterService->getCollectionItemsFromReferenceField($fieldId, $collectionId);
+                        }
+                        
                         foreach(array_unique(array_filter($fieldValues, fn($value) => !empty($value))) as $value){
                             $output .= '<div class="sppb-addon-dynamic-content-filter-item-checkbox-option">';
                             $output .= '<input type="checkbox" hidden name="filter_option" value="' . $value . '" data-filter-field-id="' . $fieldId . '" ' . (in_array($value, $retrievedValues) ? 'checked' : '') . '>';
@@ -309,7 +324,12 @@ class SppagebuilderAddonDynamic_content_filter extends SppagebuilderAddons
                             $output .= '<label>' . $value . '</label>';
                             
                             if($showCount){
-                                $count = $this->getFieldCount($value, $fieldValues);
+                                if($isFieldIdReference){
+                                    $count = isset($referenceCounts[$value]) ? $referenceCounts[$value] : 0;
+                                } else {
+                                    $count = $this->getFieldCount($value, $fieldValues);
+                                }
+                                
                                 $output .= '<label class="sppb-addon-dynamic-content-filter-item-count">(' . $count . ')</label>';
                             }
                             $output .= '</div>';
@@ -395,7 +415,13 @@ class SppagebuilderAddonDynamic_content_filter extends SppagebuilderAddons
                     $class .= (isset($settings->button_block) && $settings->button_block) ? ' ' . $settings->button_block : '';
                     $class .= (isset($settings->button_shape) && $settings->button_shape) ? ' dc-filter-btn-' . $settings->button_shape : ' dc-filter-btn-rounded';
                     $class .= (isset($settings->button_appearance) && $settings->button_appearance) ? ' dc-filter-btn-' . $settings->button_appearance : '';
-                
+
+                    $isFieldIdReference = $filterService->isReferenceField($fieldId, $collectionId);
+                    $referenceCounts = [];
+                    if($isFieldIdReference){
+                        $referenceCounts = $filterService->getCollectionItemsFromReferenceField($fieldId, $collectionId);
+                    }
+                    
                     foreach(array_unique(array_filter($fieldValues, fn($value) => !empty($value))) as $value){
                         if ($retrievedValue === $value) {
                             $selectedClass = ' dc-filter-btn-selected';
@@ -406,7 +432,11 @@ class SppagebuilderAddonDynamic_content_filter extends SppagebuilderAddons
                         $output .= '<button class=" dc-filter-btn '. $class . $selectedClass . '"  type="button" name="filter_option" data-value="' . $value . '" data-field-id="' . $fieldId . '">' . $value . '</button>';
 
                         if($showCount){
-                            $count = $this->getFieldCount($value, $fieldValues);
+                            if($isFieldIdReference){
+                                $count = isset($referenceCounts[$value]) ? $referenceCounts[$value] : 0;
+                            } else {
+                                $count = $this->getFieldCount($value, $fieldValues);
+                            }
                             $output .= '<label class="sppb-addon-dynamic-content-filter-item-count">(' . $count . ')</label>';
                         }
 
@@ -438,7 +468,6 @@ class SppagebuilderAddonDynamic_content_filter extends SppagebuilderAddons
     }
     return $output;
     }
-
 
     public function js(){
         $addonId = '#sppb-addon-' . $this->addon->id;

@@ -1,9 +1,11 @@
 <?php
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Response\JsonResponse;
+use Joomla\CMS\Session\Session;
 use Joomla\Utilities\ArrayHelper;
 
 /**
@@ -18,6 +20,32 @@ defined('_JEXEC') or die('Restricted access');
 
 class SppagebuilderControllerSaved_items_order extends FormController
 {
+    
+    public function __construct($config = [])
+	{
+		parent::__construct($config);
+
+		$user = Factory::getUser();
+		$authorised = $user->authorise('core.admin', 'com_sppagebuilder') || $user->authorise('core.manage', 'com_sppagebuilder');
+
+		if (!$authorised)
+		{
+			$response['message'] = Text::_('COM_SPPAGEBUILDER_EDITOR_ADMIN_ACCESS_REQUIRED');
+			$this->sendResponse($response, 403, true);
+		}
+
+		if (!$user->id)
+		{
+			$response['message'] = Text::_('COM_SPPAGEBUILDER_EDITOR_LOGIN_SESSION_EXPIRED');
+			$this->sendResponse($response, 401, true);
+		}
+
+		if (!Session::checkToken())
+		{
+			$response['message'] = Text::_('COM_SPPAGEBUILDER_EDITOR_SESSION_MISMATCHED');
+			$this->sendResponse($response, 403, true);
+		}
+	}
 
     /**
      * Update Saved Items Order

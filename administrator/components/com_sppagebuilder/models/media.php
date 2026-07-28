@@ -324,10 +324,19 @@ class SppagebuilderModelMedia extends ListModel
 		$output = array();
 		$mediaParams = ComponentHelper::getParams('com_media');
 		$file_path = rtrim(ltrim($mediaParams->get('file_path', 'images'), '/'), '/');
+		$image_path = rtrim(ltrim($mediaParams->get('image_path', 'images'), '/'), '/');
 		$input = Factory::getApplication()->input;
 		$path = $input->get('path', '/' . $file_path, 'RAW');
 		$rawPath = Path::clean($path);
-		$path = Path::clean(JPATH_ROOT . '/' . $path);
+		$relativePath = ltrim($rawPath, DIRECTORY_SEPARATOR);
+		$pathParts = array_values(array_filter(explode(DIRECTORY_SEPARATOR, $relativePath)));
+		$rootPath = $pathParts[0] ?? $file_path;
+		$allowedRoots = array_values(array_unique(array_filter([$file_path, $image_path])));
+		if (!in_array($rootPath, $allowedRoots, true))
+		{
+			$rootPath = $file_path;
+		}
+		$path = Path::clean(JPATH_ROOT . '/' . ltrim($rawPath, DIRECTORY_SEPARATOR));
 
 		if (!SecurityHelper::isGetablePath($rawPath))
 		{
@@ -356,7 +365,7 @@ class SppagebuilderModelMedia extends ListModel
 
 		$items = Folder::files($directory, '.png|.jpg|.jpeg|.gif|.svg|.pdf|.webp', false, true);
 		$folders_list = Folder::folders($directory, '.', false, false, array('.svn', 'CVS', '.DS_Store', '__MACOSX', '_spmedia_thumbs'));
-		$folders = self::listFolderTree(JPATH_ROOT . '/' . $file_path, '.');
+		$folders = self::listFolderTree(JPATH_ROOT . '/' . $rootPath, '.');
 
 		$crumbs = explode(DIRECTORY_SEPARATOR, rtrim(ltrim($rawPath, DIRECTORY_SEPARATOR), DIRECTORY_SEPARATOR));
 		$count = count($crumbs);
@@ -366,7 +375,7 @@ class SppagebuilderModelMedia extends ListModel
 		foreach ($crumbs as $key => $crumb)
 		{
 			$breadcrumbs[$key]['label'] = $crumb;
-			$breadcrumbs[$key]['path'] = $key > 0 ? dirname($rawPath, $count - $key) . '/' . $crumb : '/' . $file_path;
+			$breadcrumbs[$key]['path'] = $key > 0 ? dirname($rawPath, $count - $key) . '/' . $crumb : '/' . $rootPath;
 		}
 
 		$output['status'] = true;

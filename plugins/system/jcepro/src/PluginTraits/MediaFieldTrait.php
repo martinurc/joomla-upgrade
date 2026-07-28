@@ -1,17 +1,17 @@
 <?php
+
 /**
  * @package     JCE
  * @subpackage  Editors.Jce
  *
  * @copyright   Copyright (C) 2005 - 2023 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 namespace Joomla\Plugin\System\JcePro\PluginTraits;
 
 use Joomla\CMS\Component\ComponentHelper;
-use Joomla\CMS\Editor\Editor;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Form\FormHelper;
@@ -39,7 +39,26 @@ trait MediaFieldTrait
      */
     private $mediaLoaded = false;
 
+    /**
+     * Flag to set / check if media assets should be loaded
+     *
+     * @var boolean
+     */
+    private $hasMedia = false;
+
+    /**
+     * Supported field types for media fields
+     *
+     * @var array
+     */
     private $supportedFieldTypes = array('media', 'fcmedia', 'mediajce', 'extendedmedia');
+
+    /**
+     * Map of field names to field objects
+     *
+     * @var array
+     */
+    private $fieldMap = array();
 
     private function getMediaRedirectOptions()
     {
@@ -51,6 +70,9 @@ trait MediaFieldTrait
         $mediatype = $app->input->getVar('mediatype', $app->input->getVar('view', 'images'));
         $context = $app->input->getVar('context', '');
         $plugin = $app->input->getCmd('plugin', '');
+        $converted = $app->input->getInt('converted', 0);
+
+        // get the media folder from the input if any
         $mediafolder = $app->input->getVar('mediafolder', '');
 
         $config = array(
@@ -58,16 +80,34 @@ trait MediaFieldTrait
             'mediatype' => $mediatype,
             'context' => $context,
             'plugin' => $plugin,
+            'converted' => $converted,
         );
 
         if ($mediafolder) {
+            // normalize the path to remove leading and trailing slashes
+            $mediafolder = trim($mediafolder, '/');
+            // set the media folder in the config
             $config['mediafolder'] = $mediafolder;
+        }
+
+        if ($converted) {
+            $path = $app->input->getVar('path', $app->input->getVar('folder', '')); // use folder for Joomla 3
+
+            if ($path) {
+                // a converted media field "path" only refers to the folder of an existing value
+                // (a configured "Directory" is passed separately as a ":"-prefixed "mediafolder")
+                $path = trim($path, '/');
+                // set the path in the config
+                $config['path'] = $path;
+            }
         }
 
         $signature = md5(serialize($config));
 
         if (!isset($options[$signature])) {
-            $options[$signature] = WFBrowserHelper::getMediaFieldOptions($config);
+            $options[$signature] = array(
+                'url' => WFBrowserHelper::getMediaFieldUrl($config)
+            );
         }
 
         if (empty($options[$signature]['url'])) {
@@ -108,8 +148,13 @@ trait MediaFieldTrait
         $params = ComponentHelper::getParams('com_jce');
 
         if ((int) $params->get('replace_media_manager', 1)) {
-            // flexi-content mediafield
-            if ($app->input->getCmd('option') == 'com_media' && $app->input->getCmd('asset') == 'com_flexicontent') {
+            $option = $app->input->getCmd('option', '');
+            $asset = $app->input->getCmd('asset', '');
+
+            // joomla media field
+            if ($option == 'com_media' && ($asset == 'com_content' || $asset == 'com_flexicontent')) {
+                // set converted flag
+                $app->input->set('converted', 1);
                 return true;
             }
         }
@@ -131,31 +176,6 @@ trait MediaFieldTrait
             // redirect to file browser
             $this->redirectMedia();
         }
-    }
-
-    private function loadMediaFiles($options = array())
-    {
-        if ($this->mediaLoaded) {
-            return;
-        }
-
-        $document = Factory::getDocument();
-
-        $document->addScriptOptions('plg_system_jce', array(
-            'convert' => isset($options['converted']) ? (int) $options['converted'] : 0,
-            'context' => isset($options['context']) ? (int) $options['context'] : 0,
-            'upload' => isset($options['upload']) ? (int) $options['upload'] : 0,
-        ), true);
-
-        // Include jQuery
-        HTMLHelper::_('jquery.framework');
-
-        $document = Factory::getDocument();
-        $document->addScript(Uri::root(true) . '/media/plg_system_jcepro/site/js/media.min.js', array('version' => 'auto'));
-        // load core css files
-        $document->addStyleSheet(Uri::root(true) . '/media/com_jce/site/css/media.min.css', array('version' => 'auto'));
-
-        $this->mediaLoaded = true;
     }
 
     /**
@@ -200,14 +220,13 @@ trait MediaFieldTrait
         }
 
         // Get File Browser options
-        $options = $this->getMediaRedirectOptions();
+        $options = WFBrowserHelper::getMediaFieldOptions();
 
         // not enabled
-        if (false == $options) {
+        if (empty($options)) {
             return true;
         }
 
-        $hasMedia = false;
         $fields = $form->getFieldset();
 
         $form->addFieldPath(JPATH_PLUGINS . '/fields/mediajce/fields');
@@ -233,7 +252,12 @@ trait MediaFieldTrait
 
             if ($type == 'media' || $type == 'fcmedia') {
                 // media replacement disabled, skip...
-                if ($options['converted'] == false) {
+                if ((bool) $options['convert'] === false) {
+                    continue;
+                }
+
+                // don't convert directory only fields (Joomla 6+)
+                if ((string) $field->types == 'directories') {
                     continue;
                 }
 
@@ -245,12 +269,7 @@ trait MediaFieldTrait
                 $form->setFieldAttribute($name, 'data-wf-converted', '1', $group);
             }
 
-            $hasMedia = true;
-        }
-
-        // form has a media field
-        if ($hasMedia) {
-            $this->loadMediaFiles($options);
+            $this->hasMedia = true;
         }
 
         return true;
@@ -259,41 +278,90 @@ trait MediaFieldTrait
     /**
      * Process custom media fields
      *
-     * @param   stdClass    $field   The field.
-     * @param   DOMElement  $parent  The field node parent.
-     * @param   Form        $form    The form.
+     * @param   \stdClass    $field    The field.
+     * @param   \DOMElement  $fieldset The fieldset parent node.
+     * @param   Form        $form     The form.
      *
      * @return void
      */
-    public function onCustomFieldsPrepareDom($field, \DOMElement $parent, Form $form)
+    public function onCustomFieldsPrepareDom($field, \DOMElement $fieldset, Form $form)
     {
         // check if field type is supported
         if (!in_array(strtolower($field->type), $this->supportedFieldTypes)) {
             return;
         }
 
+        // is the editor enabled?
         if (!$this->isEditorEnabled()) {
             return;
         }
 
-        // Get File Browser options
-        $options = $this->getMediaRedirectOptions();
+        $this->hasMedia = true;
 
-        // not enabled
-        if (false == $options) {
+        // mediafields enabled?
+        if (!WfBrowserHelper::isMediaFieldEnabled()) {
             $field->disabled = true;
+            return;
         }
-        
-        // media files must still be loaded
-        $this->loadMediaFiles($options);
+
+        $this->fieldMap[$field->name] = $field;
+    }
+
+    /**
+     * Add data-path attribute to Media Field input elements storing the directory parameter
+     *
+     * @return void
+     */
+    public function onBeforeRender()
+    {
+        if ($this->hasMedia) {
+
+            $options = WfBrowserHelper::getMediaFieldOptions();
+
+            $document = Factory::getDocument();
+
+            // Include jQuery
+            HTMLHelper::_('jquery.framework');
+
+            $document = Factory::getDocument();
+            $document->addScript(Uri::root(true) . '/media/plg_system_jcepro/site/js/media.min.js', array('version' => 'auto'));
+            // load core css files
+            $document->addStyleSheet(Uri::root(true) . '/media/com_jce/site/css/media.min.css', array('version' => 'auto'));
+
+            // no options set, return
+            if (empty($options)) {
+                return;
+            }
+
+            foreach ($this->fieldMap as $name => $field) {
+                if ($field->type == 'mediajce' || $field->type == 'extendedmedia') {
+                    continue;
+                }
+
+                $directory = trim((string) $field->fieldparams->get('directory', ''), '/');
+
+                // normalize a local-* adapter scheme to a JCE path, preserving the adapter root, eg: local-images:/foo => images/foo
+                if (strpos($directory, 'local-') === 0 && ($pos = strpos($directory, ':')) !== false) {
+                    $adapter = substr($directory, strlen('local-'), $pos - strlen('local-'));
+                    $sub = trim(substr($directory, $pos + 1), '/');
+                    $directory = $sub !== '' ? $adapter . '/' . $sub : $adapter;
+                }
+
+                $options['mediafields'][$name] = array(
+                    'directory' => $directory
+                );
+            }
+
+            $document->addScriptOptions('plg_system_jce', $options, true);
+        }
     }
 
     /**
      * Proxy function for PlgFieldsMediaJce::onCustomFieldsPrepareDom
      * Allows the JCE Pro System Plugin to edit the field before it is rendered
      *
-     * @param FormField $field
-     * @param DOMElement $fieldNode
+     * @param  $field
+     * @param  $fieldNode
      * @param Form $form
      * @return void
      */
@@ -303,7 +371,7 @@ trait MediaFieldTrait
         if (isset($field->disabled)) {
             return;
         }
-        
+
         $form->addFieldPath(JPATH_PLUGINS . '/system/jcepro/fields');
 
         // Joomla 3 requires the fieldtype to be loaded

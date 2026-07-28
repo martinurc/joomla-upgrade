@@ -4,11 +4,11 @@
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -50,7 +50,9 @@ class JoomlalinksWeblinks extends CMSObject
         $wf = WFEditorPlugin::getInstance();
         $items = array();
 
-        if (!defined('JPATH_PLATFORM')) {
+        $version = new Joomla\CMS\Version();
+
+        if (!$version->isCompatible('4.0')) {
             require_once JPATH_SITE . '/includes/application.php';
         }
 
@@ -136,13 +138,15 @@ class JoomlalinksWeblinks extends CMSObject
 
                 foreach ($weblinks as $weblink) {
                     // language
+
                     if (isset($weblink->language)) {
                         $language = $weblink->language;
                     }
 
                     $id = WeblinksHelperRoute::getWeblinkRoute($weblink->slug, $weblink->catslug, $language);
 
-                    if (defined('JPATH_PLATFORM')) {
+                    // Joomla 4/5/6
+                    if ($version->isCompatible('4.0')) {
                         $id .= '&task=weblink.go';
                     }
 
@@ -165,7 +169,7 @@ class JoomlalinksWeblinks extends CMSObject
         $db = Factory::getDBO();
         $user = Factory::getUser();
 
-        $dbquery = $db->getQuery(true);
+        $query = $db->getQuery(true);
 
         $section = Text::_('Web Links');
 
@@ -176,18 +180,32 @@ class JoomlalinksWeblinks extends CMSObject
         if ((int) $wf->getParam('links.joomlalinks.weblinks_alias', 0)) {
             //sqlsrv changes
             $case_when1 = ' CASE WHEN ';
-            $case_when1 .= $dbquery->charLength('a.alias', '!=', '0');
+            $case_when1 .= $query->charLength('a.alias', '!=', '0');
             $case_when1 .= ' THEN ';
-            $a_id = $dbquery->castAsChar('a.id');
-            $case_when1 .= $dbquery->concatenate(array($a_id, 'a.alias'), ':');
+
+            // Joomla 3 compatibility
+            if (method_exists($query, 'castAsChar')) {
+                $a_id = $query->castAsChar('a.id');
+            } else {
+                $a_id = $query->castAs('CHAR', 'a.id');
+            }
+
+            $case_when1 .= $query->concatenate(array($a_id, 'a.alias'), ':');
             $case_when1 .= ' ELSE ';
             $case_when1 .= $a_id . ' END as slug';
 
             $case_when2 = ' CASE WHEN ';
-            $case_when2 .= $dbquery->charLength('b.alias', '!=', '0');
+            $case_when2 .= $query->charLength('b.alias', '!=', '0');
             $case_when2 .= ' THEN ';
-            $c_id = $dbquery->castAsChar('b.id');
-            $case_when2 .= $dbquery->concatenate(array($c_id, 'b.alias'), ':');
+
+            // Joomla 3 compatibility
+            if (method_exists($query, 'castAsChar')) {
+                $c_id = $query->castAsChar('b.id');
+            } else {
+                $c_id = $query->castAs('CHAR', 'b.id');
+            }
+
+            $case_when2 .= $query->concatenate(array($c_id, 'b.alias'), ':');
             $case_when2 .= ' ELSE ';
             $case_when2 .= $c_id . ' END as catslug';
 
@@ -203,7 +221,7 @@ class JoomlalinksWeblinks extends CMSObject
         $query->where('a.state = 1');
 
         if (!$user->authorise('core.admin')) {
-            $query->where('b.access IN (' . implode(',', $user->getAuthorisedViewLevels()) . ')');
+            $query->where('b.access IN (' . implode(',', array_map('intval', $user->getAuthorisedViewLevels())) . ')');
         }
 
         $query->where('b.published = 1');

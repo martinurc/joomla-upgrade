@@ -58,6 +58,7 @@ class CollectionField extends Model
         'collection_id'   => 'integer',
         'created'         => 'datetime:M d, Y',
         'modified'        => 'datetime:M d, Y',
+        'is_single_location' => 'integer',
     ];
 
     /**
@@ -80,6 +81,7 @@ class CollectionField extends Model
         'required',
         'reference_collection_id',
         'is_textarea',
+        'is_single_location',
         'show_time',
         'file_extensions',
         'number_format',

@@ -3,11 +3,11 @@
  * @package     JCE
  * @subpackage  Editor
  *
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
- defined('JPATH_PLATFORM') or die;
+ \defined('_JEXEC') or die;
 
 class WFFilemanagerPluginConfig
 {
@@ -23,7 +23,7 @@ class WFFilemanagerPluginConfig
 
         if ($plugin->getParam('inline_upload', 1) && $plugin->getParam('upload', 1)) {
             $config['upload'] = array(
-                'max_size'  => $plugin->getParam('max_size', 1024),
+                'max_size'  => $plugin->getParam('max_size', 10240),
                 'filetypes' => $plugin->getFileTypes(),
                 'inline' => true
             );
@@ -64,7 +64,9 @@ class WFFilemanagerPluginConfig
         }
 
         $config['attributes'] = $plugin->getDefaultAttributes();
-        $config['custom_classes'] = $plugin->getParam('custom_classes', []);
+        
+        $custom_classes = (array) $plugin->getParam('custom_classes', []);
+        $config['custom_classes'] = array_filter($custom_classes);
 
         $settings['filemanager'] = $config;
     }

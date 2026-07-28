@@ -9,11 +9,12 @@
 
 namespace Joomla\CMS\Filter;
 
+use enshrined\svgSanitize\Sanitizer;
 use Joomla\CMS\String\PunycodeHelper;
 use Joomla\Filter\InputFilter as BaseInputFilter;
 
 // phpcs:disable PSR1.Files.SideEffects
-\defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
 /**
@@ -88,7 +89,7 @@ class InputFilter extends BaseInputFilter
      */
     public static function getInstance($tagsArray = [], $attrArray = [], $tagsMethod = 0, $attrMethod = 0, $xssAuto = 1, $stripUSC = 0)
     {
-        $sig = md5(serialize([$tagsArray, $attrArray, $tagsMethod, $attrMethod, $xssAuto]));
+        $sig = md5(serialize([$tagsArray, $attrArray, $tagsMethod, $attrMethod, $xssAuto, $stripUSC]));
 
         if (empty(self::$instances[$sig])) {
             self::$instances[$sig] = new InputFilter($tagsArray, $attrArray, $tagsMethod, $attrMethod, $xssAuto, $stripUSC);
@@ -218,7 +219,7 @@ class InputFilter extends BaseInputFilter
         // Make sure we can scan nested file descriptors
         $descriptors = $file;
 
-        if (isset($file['name']) && isset($file['tmp_name'])) {
+        if (isset($file['name'], $file['tmp_name'])) {
             $descriptors = static::decodeFileData(
                 [
                     $file['name'],
@@ -294,7 +295,7 @@ class InputFilter extends BaseInputFilter
                     || $options['shorttag_in_content'] || $options['phar_stub_in_content']
                     || ($options['fobidden_ext_in_content'] && !empty($options['forbidden_extensions']))
                 ) {
-                    $fp = strlen($tempName) ? @fopen($tempName, 'r') : false;
+                    $fp = \strlen($tempName) ? @fopen($tempName, 'r') : false;
 
                     if ($fp !== false) {
                         $data = '';
@@ -454,7 +455,7 @@ class InputFilter extends BaseInputFilter
         $source = preg_replace_callback(
             '/&#x([a-f0-9]+);/mi',
             function ($m) {
-                return mb_convert_encoding(\chr(\hexdec($m[1])), 'UTF-8', 'ISO-8859-1');
+                return mb_convert_encoding(\chr(hexdec($m[1])), 'UTF-8', 'ISO-8859-1');
             },
             $source
         );
@@ -488,5 +489,40 @@ class InputFilter extends BaseInputFilter
         }
 
         return preg_replace('/[\xF0-\xF7].../s', "\xE2\xAF\x91", $source);
+    }
+
+    /**
+     * Internal method to strip a tag of disallowed attributes - extended to filter SVG content
+     *
+     * @param   array  $attrSet  Array of attribute pairs to filter
+     *
+     * @return  array  Filtered array of attribute pairs
+     *
+     * @since 5.4.2
+     */
+    protected function cleanAttributes(array $attrSet)
+    {
+        // Do the heavy lifting in the upstream library
+        $attrSet = parent::cleanAttributes($attrSet);
+
+        // Decode and check base64-encoded svgs
+        return array_map(
+            function ($attribute) {
+                // Check for presence of relevant tags
+                if (!preg_match('/"data:.*svg.*;base64,(.*)"/U', $attribute, $matches)) {
+                    return $attribute;
+                }
+
+                // Extract SVG
+                $svg = base64_decode($matches[1], true);
+
+                // Sanitize svg
+                $sanitizer = new Sanitizer();
+
+                // Replace content
+                return str_replace($matches[1], base64_encode($sanitizer->sanitize($svg)), $attribute);
+            },
+            $attrSet,
+        );
     }
 }

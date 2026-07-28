@@ -4,11 +4,11 @@
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -204,6 +204,7 @@ class WFEditorPlugin extends CMSObject
             'version' => $version,
             'title' => Text::_('WF_' . strtoupper($this->getName() . '_TITLE')),
             'name' => $name,
+            'caller' => $this->get('caller'),
             'language' => WFLanguage::getTag(),
             'direction' => $this->isRtl() ? 'rtl' : 'ltr',
             'compress_javascript' => $this->getParam('editor.compress_javascript', 0),
@@ -287,7 +288,6 @@ class WFEditorPlugin extends CMSObject
 
         $document->addScript(array('jquery.min'), 'jquery');
         $document->addScript(array('jquery-ui.min'), 'jquery');
-        $document->addScript(array('jquery-ui.touch.min'), 'jquery');
 
         $document->addScript(array('plugin.min.js'));
         $document->addStyleSheet(array('plugin.min.css'), 'media');
@@ -422,10 +422,15 @@ class WFEditorPlugin extends CMSObject
 
                 // json associative array
                 if (is_array($attribute) && array_key_exists('name', $attribute)) {
-                    extract($attribute);
+                    $name = $attribute['name'];
+                    $value = $attribute['value'] ?? '';
                 }
 
                 if ($name && $value !== '') {
+                    if (!preg_match('#^[a-zA-Z][a-zA-Z0-9_-]*$#', $name)) {
+                        continue;
+                    }
+
                     $value = trim($value, " \t\n\r\0\x0B'\"");
                     $value = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
                     $defaults[$name] = $value;

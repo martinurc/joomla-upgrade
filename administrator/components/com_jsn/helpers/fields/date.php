@@ -42,8 +42,8 @@ class JsnDateFieldHelper
 		$placeholder=($item->params->get('date_placeholder','')!='' ? 'hint="'.JsnHelper::xmlentities($item->params->get('date_placeholder','')).'"' : 'hint="COM_JSN_CLICKONCALENDAR"');
 		$formformat=($item->params->get('date_formformat','')!='' ? 'formformat="'.JsnHelper::xmlentities($item->params->get('date_formformat','')).'"' : 'formformat="d MM yyyy"');
 		
-		if($item->params->get('field_readonly','')==1 && JFactory::getApplication()->isSite()) $readonly='readonlydate="true"';
-		elseif($item->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('view')!='registration' && JFactory::getApplication()->isSite()) $readonly='readonlydate="true"';
+		if($item->params->get('field_readonly','')==1 && JFactory::getApplication()->isClient('site')) $readonly='readonlydate="true"';
+		elseif($item->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('view')!='registration' && JFactory::getApplication()->isClient('site')) $readonly='readonlydate="true"';
 		else $readonly='';
 
 		$xml='
@@ -86,8 +86,8 @@ class JsnDateFieldHelper
 	
 	public static function storeData($field, $data, &$storeData)
 	{
-		//if($field->params->get('field_readonly','')==1 && JFactory::getApplication()->isSite()) return;
-		//if($field->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('task')=='profile.save' && JFactory::getApplication()->isSite()) return;
+		//if($field->params->get('field_readonly','')==1 && JFactory::getApplication()->isClient('site')) return;
+		//if($field->params->get('field_readonly','')==2 && JFactory::getApplication()->input->get('task')=='profile.save' && JFactory::getApplication()->isClient('site')) return;
 		$alias=$field->alias;
 		if(isset($data[$alias]) && $data[$alias]!='0000-00-00 00:00:00' && $data[$alias]!='0000-00-00')
 		{

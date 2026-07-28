@@ -1,0 +1,1 @@
+INSERT INTO #__action_logs_extensions (extension) VALUES ('com_rsform');

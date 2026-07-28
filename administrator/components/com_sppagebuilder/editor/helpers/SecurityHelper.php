@@ -7,6 +7,7 @@
  * @license http://www.gnu.org/licenses/gpl-2.0.html GNU/GPLv2 or later
  */
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filesystem\Path;
 
@@ -17,6 +18,10 @@ final class SecurityHelper
 {
 	public static function isActionableFolder(string $folder)
 	{
+		$params = ComponentHelper::getParams('com_media');
+		$filesFolderPath = $params->get('file_path', 'images');
+		$imagesFolderPath = $params->get('image_path', 'images');
+
 		$folder = strtolower(Path::clean($folder));
 		$parts = explode(DIRECTORY_SEPARATOR, $folder);
 		$parts = array_filter($parts, function ($part)
@@ -25,7 +30,7 @@ final class SecurityHelper
 		});
 		$parts = array_values($parts);
 
-		if (empty($parts) || !is_array($parts) || count($parts) < 2 || $parts[0] !== 'images')
+		if (empty($parts) || !is_array($parts) || count($parts) < 2 || ($parts[0] !== $filesFolderPath && $parts[0] !== $imagesFolderPath))
 		{
 			return false;
 		}
@@ -35,6 +40,10 @@ final class SecurityHelper
 
 	public static function isGetablePath(string $path)
 	{
+		$params = ComponentHelper::getParams('com_media');
+		$filesFolderPath = $params->get('file_path', 'images');
+		$imagesFolderPath = $params->get('image_path', 'images');
+
 		$path = strtolower(Path::clean($path));
 		$pathArray = explode(DIRECTORY_SEPARATOR, $path);
 		$pathArray = array_filter($pathArray, function ($part)
@@ -44,7 +53,7 @@ final class SecurityHelper
 
 		$pathArray = array_values($pathArray);
 
-		if (empty($pathArray) || !is_array($pathArray) || count($pathArray) < 1 || $pathArray[0] !== 'images')
+		if (empty($pathArray) || !is_array($pathArray) || count($pathArray) < 1 || ($pathArray[0] !== $filesFolderPath && $pathArray[0] !== $imagesFolderPath))
 		{
 			return false;
 		}

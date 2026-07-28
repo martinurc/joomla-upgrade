@@ -14,7 +14,6 @@ use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Component\ComponentHelper;
-use Joomla\CMS\Version;
 
 require_once JPATH_ROOT . '/components/com_sppagebuilder/helpers/autoload.php';
 

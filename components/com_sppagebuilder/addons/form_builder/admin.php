@@ -22,10 +22,13 @@ SpAddonsConfig::addonConfig([
         'general'          => [
             'title'  => Text::_('COM_SPPAGEBUILDER_GLOBAL_GENERAL'),
             'fields' => [
-                'sp_form_builder_item'   => [
+                'sp_form_builder_steps'  => [
                     'type'  => 'repeatable',
-                    'title' => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_ITEMS'),
+                    'title' => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEPS'),
                     'std'   => [
+                        [
+                            'step_title'           => 'Step 1',
+                            'sp_form_builder_item' => [
                         [
                             'title'             => 'First Name',
                             'field_name'        => 'first-name',
@@ -65,11 +68,31 @@ SpAddonsConfig::addonConfig([
                             'field_required_star' => 1,
                             'field_width'         => ['xl' => 100, 'lg' => 100, 'md' => 100, 'sm' => 100, 'xs' => 100],
                         ],
+                            ],
+                        ],
                     ],
                     'attr'  => [
-                        'builder_item_option' => [
-                            'title'  => Text::_('COM_SPPAGEBUILDER_GLOBAL_BASIC'),
+                        'step_option' => [
+                            'title'  => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP'),
                             'fields' => [
+                                'step_title' => [
+                                    'type'  => 'text',
+                                    'title' => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_TITLE'),
+                                    'std'   => 'Step 1',
+                                ],
+                                'step_icon' => [
+                                    'type'  => 'icon',
+                                    'title' => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_ICON'),
+                                    'std'   => '',
+                                ],
+                                'sp_form_builder_item' => [
+                                    'type'  => 'repeatable',
+                                    'title' => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_ITEMS'),
+                                    'std'   => [],
+                                    'attr'  => [
+                                        'builder_item_option' => [
+                                            'title'  => Text::_('COM_SPPAGEBUILDER_GLOBAL_BASIC'),
+                                            'fields' => [
 
                                 'field_type'                          => [
                                     'type'   => 'select',
@@ -199,6 +222,24 @@ SpAddonsConfig::addonConfig([
                                         ['field_type', '!=', 'heading'],
                                     ],
                                     'std'     => 'First Name',
+                                ],
+                                'date_formatter'                       => [
+                                    'type'    => 'select',
+                                    'is_clearable' => false,
+                                    'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_FIELD_DATE_FORMATTER'),
+                                    'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_FIELD_DATE_FORMATTER_DESC'),
+                                    'values' => [
+                                        'Y-m-d'         => 'YYYY-MM-DD (2024-12-31)',
+                                        'd/m/Y'         => 'DD/MM/YYYY (31/12/2024)',
+                                        'm/d/Y'         => 'MM/DD/YYYY (12/31/2024)',
+                                        'd-m-Y'         => 'DD-MM-YYYY (31-12-2024)',
+                                        'd M, Y'        => 'DD MMM, YYYY (31 Dec, 2024)',
+                                        'F j, Y'        => 'Month DD, YYYY (Dec 31, 2024)',
+                                    ],
+                                    'depends' => [
+                                        ['field_type', '=', 'date'],
+                                    ],
+                                    'std'     => 'Y-m-d',
                                 ],
                                 'field_width'                         => [
                                     'type'       => 'slider',
@@ -405,6 +446,10 @@ SpAddonsConfig::addonConfig([
                         ],
                     ],
                 ],
+                            ],
+                        ],
+                    ],
+                ],
 
                 'message_separator'      => [
                     'type' => 'separator',
@@ -447,6 +492,12 @@ SpAddonsConfig::addonConfig([
                     'title' => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_REDIRECT'),
                     'desc'  => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_REDIRECT_DESC'),
                     'std'   => 0,
+                ],
+                'send_copy_to_applicant' => [
+                    'type' => 'checkbox',
+                    'title' => Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_SEND_COPY'),
+                    'desc' => Text::_('COM_SPPAGEBUILDER_ADDON_AJAX_CONTACT_SEND_COPY_DESC'),
+                    'std' => 0
                 ],
 
                 'redirect_url'           => [
@@ -536,6 +587,446 @@ SpAddonsConfig::addonConfig([
                     'desc'       => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STYLE_HORI_GAP_DESC'),
                     'max'        => 200,
                     'responsive' => true,
+                ],
+            ],
+        ],
+
+        'steps_settings'   => [
+            'title'  => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEPS_SETTINGS'),
+            'fields' => [
+                'step_indicator_type'        => [
+                    'type'   => 'select',
+                    'title'  => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_INDICATOR_TYPE'),
+                    'values' => [
+                        'none'         => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_TYPE_NONE'),
+                        'text'         => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_TYPE_TEXT'),
+                        'icon'         => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_TYPE_ICON'),
+                        'number'       => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_TYPE_NUMBER'),
+                        'progress_bar' => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_TYPE_PROGRESS_BAR'),
+                        'number_text'  => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_TYPE_NUMBER_TEXT'),
+                        'icon_text'    => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_TYPE_ICON_TEXT'),
+                    ],
+                    'std'    => 'number_text',
+                ],
+                'step_indicator_shape'       => [
+                    'type'    => 'select',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_INDICATOR_SHAPE'),
+                    'values'  => [
+                        'circle'  => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_SHAPE_CIRCLE'),
+                        'square'  => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_SHAPE_SQUARE'),
+                        'rounded' => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_SHAPE_ROUNDED'),
+                    ],
+                    'std'     => 'circle',
+                    'depends' => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'text'], ['step_indicator_type', '!=', 'progress_bar']],
+                ],
+                'step_indicator_spacing'     => [
+                    'type'       => 'slider',
+                    'title'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_SPACING'),
+                    'max'        => 200,
+                    'std'        => 20,
+                    'responsive' => true,
+                    'depends'    => [['step_indicator_type', '!=', 'none']],
+                ],
+                'step_indicator_padding'     => [
+                    'type'       => 'slider',
+                    'title'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_PADDING'),
+                    'max'        => 100,
+                    'std'        => 8,
+                    'responsive' => true,
+                    'depends'    => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'text'], ['step_indicator_type', '!=', 'progress_bar']],
+                ],
+                'step_indicator_icon_size'   => [
+                    'type'       => 'slider',
+                    'title'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_ICON_SIZE'),
+                    'max'        => 100,
+                    'std'        => 16,
+                    'responsive' => true,
+                    'depends'    => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'text'], ['step_indicator_type', '!=', 'number'], ['step_indicator_type', '!=', 'progress_bar'], ['step_indicator_type', '!=', 'number_text']],
+                ],
+                'step_indicator_typography'  => [
+                    'type'      => 'typography',
+                    'title'     => Text::_('COM_SPPAGEBUILDER_GLOBAL_TYPOGRAPHY'),
+                    'fallbacks' => [
+                        'font'           => 'step_indicator_font_family',
+                        'size'           => 'step_indicator_fontsize',
+                        'letter_spacing' => 'step_indicator_letterspace',
+                        'weight'         => 'step_indicator_font_style.weight',
+                        'italic'         => 'step_indicator_font_style.italic',
+                        'underline'      => 'step_indicator_font_style.underline',
+                        'uppercase'      => 'step_indicator_font_style.uppercase',
+                    ],
+                    'depends'   => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'icon']],
+                ],
+
+                'step_indicator_state_separator' => [
+                    'type'    => 'separator',
+                    'depends' => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar']],
+                ],
+                'step_indicator_state'       => [
+                    'type'    => 'buttons',
+                    'values'  => [
+                        ['label' => Text::_('COM_SPPAGEBUILDER_GLOBAL_INACTIVE'), 'value' => 'inactive'],
+                        ['label' => Text::_('COM_SPPAGEBUILDER_GLOBAL_ACTIVE'), 'value' => 'active'],
+                        ['label' => Text::_('COM_SPPAGEBUILDER_GLOBAL_COMPLETED'), 'value' => 'completed'],
+                    ],
+                    'std'     => 'active',
+                    'tabs'    => true,
+                    'depends' => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar']],
+                ],
+
+                'step_indicator_inactive_text'   => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_TEXT'),
+                    'std'     => '#9DA3B0',
+                    'depends' => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar'], ['step_indicator_state', '=', 'inactive']],
+                ],
+                'step_indicator_inactive_icon'   => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_ICON'),
+                    'std'     => '#9DA3B0',
+                    'depends' => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar'], ['step_indicator_type', '!=', 'text'], ['step_indicator_state', '=', 'inactive']],
+                ],
+                'step_indicator_inactive_border' => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_BORDER'),
+                    'std'     => '#E1E1E1',
+                    'depends' => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar'], ['step_indicator_type', '!=', 'text'], ['step_indicator_state', '=', 'inactive']],
+                ],
+                'step_indicator_inactive_bg'     => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_BACKGROUND'),
+                    'std'     => '#FFFFFF',
+                    'depends' => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar'], ['step_indicator_type', '!=', 'text'], ['step_indicator_state', '=', 'inactive']],
+                ],
+
+                'step_indicator_active_text'     => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_TEXT'),
+                    'std'     => '#3162F5',
+                    'depends' => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar'], ['step_indicator_state', '=', 'active']],
+                ],
+                'step_indicator_active_icon'     => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_ICON'),
+                    'std'     => '#3162F5',
+                    'depends' => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar'], ['step_indicator_type', '!=', 'text'], ['step_indicator_state', '=', 'active']],
+                ],
+                'step_indicator_active_border'   => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_BORDER'),
+                    'std'     => '#3162F5',
+                    'depends' => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar'], ['step_indicator_type', '!=', 'text'], ['step_indicator_state', '=', 'active']],
+                ],
+                'step_indicator_active_bg'       => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_BACKGROUND'),
+                    'std'     => '#FFFFFF',
+                    'depends' => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar'], ['step_indicator_type', '!=', 'text'], ['step_indicator_state', '=', 'active']],
+                ],
+
+                'step_indicator_completed_text'   => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_TEXT'),
+                    'std'     => '#3162F5',
+                    'depends' => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar'], ['step_indicator_state', '=', 'completed']],
+                ],
+                'step_indicator_completed_icon'   => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_ICON'),
+                    'std'     => '#FFFFFF',
+                    'depends' => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar'], ['step_indicator_type', '!=', 'text'], ['step_indicator_state', '=', 'completed']],
+                ],
+                'step_indicator_completed_border' => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_BORDER'),
+                    'std'     => 'rgba(0,0,0,0)',
+                    'depends' => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar'], ['step_indicator_type', '!=', 'text'], ['step_indicator_state', '=', 'completed']],
+                ],
+                'step_indicator_completed_bg'     => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_BACKGROUND'),
+                    'std'     => '#3162F5',
+                    'depends' => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar'], ['step_indicator_type', '!=', 'text'], ['step_indicator_state', '=', 'completed']],
+                ],
+
+                'step_indicator_divider_separator' => [
+                    'type'    => 'separator',
+                    'depends' => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar']],
+                ],
+                'step_indicator_divider_width'   => [
+                    'type'       => 'slider',
+                    'title'      => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_DIVIDER_WIDTH'),
+                    'max'        => 50,
+                    'std'        => 2,
+                    'responsive' => true,
+                    'depends'    => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar']],
+                ],
+                'step_indicator_divider_gap'     => [
+                    'type'       => 'slider',
+                    'title'      => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_DIVIDER_GAP'),
+                    'max'        => 100,
+                    'std'        => 20,
+                    'responsive' => true,
+                    'depends'    => [['step_indicator_type', '!=', 'none'], ['step_indicator_type', '!=', 'progress_bar']],
+                ],
+
+                'step_indicator_progress_text'   => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_TEXT'),
+                    'std'     => '#484F66',
+                    'depends' => [['step_indicator_type', '=', 'progress_bar']],
+                ],
+                'step_indicator_progress_color'  => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_COLOR'),
+                    'std'     => '#3366FF',
+                    'depends' => [['step_indicator_type', '=', 'progress_bar']],
+                ],
+                'step_indicator_progress_bg'     => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_BACKGROUND'),
+                    'std'     => '#E1E9FF',
+                    'depends' => [['step_indicator_type', '=', 'progress_bar']],
+                ],
+                'step_indicator_progress_height' => [
+                    'type'       => 'slider',
+                    'title'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_HEIGHT'),
+                    'max'        => 100,
+                    'std'        => 20,
+                    'responsive' => true,
+                    'depends'    => [['step_indicator_type', '=', 'progress_bar']],
+                ],
+                'step_indicator_progress_radius' => [
+                    'type'       => 'slider',
+                    'title'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_BORDER_RADIUS'),
+                    'max'        => 50,
+                    'std'        => 20,
+                    'responsive' => true,
+                    'depends'    => [['step_indicator_type', '=', 'progress_bar']],
+                ],
+            ],
+        ],
+
+        'step_button'      => [
+            'title'  => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_BUTTON'),
+            'fields' => [
+                'step_btn_typography'              => [
+                    'type'      => 'typography',
+                    'title'     => Text::_('COM_SPPAGEBUILDER_GLOBAL_TYPOGRAPHY'),
+                    'fallbacks' => [
+                        'font'           => 'step_btn_font_family',
+                        'size'           => 'step_btn_fontsize',
+                        'letter_spacing' => 'step_btn_letterspace',
+                        'weight'         => 'step_btn_font_style.weight',
+                        'italic'         => 'step_btn_font_style.italic',
+                        'underline'      => 'step_btn_font_style.underline',
+                        'uppercase'      => 'step_btn_font_style.uppercase',
+                    ],
+                ],
+
+                'step_btn_type'                    => [
+                    'type'   => 'select',
+                    'title'  => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_STYLE'),
+                    'values' => [
+                        'default'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_DEFAULT'),
+                        'primary'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_PRIMARY'),
+                        'secondary' => Text::_('COM_SPPAGEBUILDER_GLOBAL_SECONDARY'),
+                        'success'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_SUCCESS'),
+                        'info'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_INFO'),
+                        'warning'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_WARNING'),
+                        'danger'    => Text::_('COM_SPPAGEBUILDER_GLOBAL_DANGER'),
+                        'dark'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_DARK'),
+                        'custom'    => Text::_('COM_SPPAGEBUILDER_GLOBAL_CUSTOM'),
+                    ],
+                    'std'    => 'custom',
+                ],
+
+                'step_btn_appearance'              => [
+                    'type'   => 'select',
+                    'title'  => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_APPEARANCE'),
+                    'values' => [
+                        ''         => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_APPEARANCE_FLAT'),
+                        'gradient' => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_APPEARANCE_GRADIENT'),
+                        'outline'  => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_APPEARANCE_OUTLINE'),
+                    ],
+                ],
+
+                'step_btn_shape'                   => [
+                    'type'   => 'select',
+                    'title'  => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_SHAPE'),
+                    'values' => [
+                        'rounded' => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_SHAPE_ROUNDED'),
+                        'square'  => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_SHAPE_SQUARE'),
+                        'round'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_SHAPE_ROUND'),
+                    ],
+                    'std'    => 'rounded',
+                ],
+
+                'step_btn_size'                    => [
+                    'type'   => 'select',
+                    'title'  => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_SIZE'),
+                    'values' => [
+                        ''       => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_SIZE_DEFAULT'),
+                        'lg'     => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_SIZE_LARGE'),
+                        'xlg'    => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_SIZE_XLARGE'),
+                        'sm'     => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_SIZE_SMALL'),
+                        'xs'     => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_SIZE_EXTRA_SAMLL'),
+                        'custom' => Text::_('COM_SPPAGEBUILDER_GLOBAL_CUSTOM'),
+                    ],
+                ],
+
+                'step_btn_padding'                 => [
+                    'type'       => 'padding',
+                    'title'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_PADDING'),
+                    'responsive' => true,
+                    'std'        => ['xl' => '8px 22px 10px 22px', 'lg' => '', 'md' => '', 'sm' => '', 'xs' => ''],
+                    'depends'    => [['step_btn_size', '=', 'custom']],
+                ],
+
+                'step_btn_margin'                  => [
+                    'type'       => 'margin',
+                    'title'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_MARGIN'),
+                    'responsive' => true,
+                ],
+
+                'step_btn_block'                   => [
+                    'type'   => 'select',
+                    'title'  => Text::_('COM_SPPAGEBUILDER_GLOBAL_BUTTON_BLOCK'),
+                    'values' => [
+                        ''               => Text::_('JNO'),
+                        'sppb-btn-block' => Text::_('JYES'),
+                    ],
+                ],
+
+                'step_btn_gap'                     => [
+                    'type'       => 'slider',
+                    'title'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_GAP'),
+                    'max'        => 100,
+                    'std'        => 6,
+                    'responsive' => true,
+                ],
+
+                'step_btn_target_separator'        => [
+                    'type' => 'separator',
+                ],
+
+                'step_btn_target'                  => [
+                    'type'   => 'buttons',
+                    'values' => [
+                        ['label' => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_NEXT_BUTTON'), 'value' => 'next'],
+                        ['label' => Text::_('COM_SPPAGEBUILDER_ADDON_FORM_BUILDER_STEP_PREV_BUTTON'), 'value' => 'prev'],
+                    ],
+                    'std'    => 'next',
+                    'tabs'   => true,
+                ],
+
+                'step_next_label'                  => [
+                    'type'    => 'text',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_LABEL'),
+                    'std'     => 'Next',
+                    'depends' => [['step_btn_target', '=', 'next']],
+                ],
+                'step_next_position'               => [
+                    'type'    => 'alignment',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_POSITION'),
+                    'depends' => [['step_btn_target', '=', 'next']],
+                ],
+                'step_prev_label'                  => [
+                    'type'    => 'text',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_LABEL'),
+                    'std'     => 'Previous',
+                    'depends' => [['step_btn_target', '=', 'prev']],
+                ],
+                'step_prev_position'               => [
+                    'type'    => 'alignment',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_POSITION'),
+                    'depends' => [['step_btn_target', '=', 'prev']],
+                ],
+
+                'step_btn_style_tab'               => [
+                    'type'    => 'buttons',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_STYLE'),
+                    'values'  => [
+                        ['label' => Text::_('COM_SPPAGEBUILDER_GLOBAL_NORMAL'), 'value' => 'normal'],
+                        ['label' => Text::_('COM_SPPAGEBUILDER_GLOBAL_HOVER'), 'value' => 'hover'],
+                    ],
+                    'std'     => 'normal',
+                    'tabs'    => true,
+                    'depends' => [['step_btn_type', '=', 'custom']],
+                ],
+
+                'step_next_color'                  => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_COLOR'),
+                    'std'     => '#FFFFFF',
+                    'depends' => [['step_btn_target', '=', 'next'], ['step_btn_type', '=', 'custom'], ['step_btn_style_tab', '=', 'normal']],
+                ],
+                'step_next_background_color'       => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_BACKGROUND'),
+                    'std'     => '#3366FF',
+                    'depends' => [['step_btn_target', '=', 'next'], ['step_btn_type', '=', 'custom'], ['step_btn_appearance', '!=', 'gradient'], ['step_btn_style_tab', '=', 'normal']],
+                ],
+                'step_next_background_gradient'    => [
+                    'type'    => 'gradient',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_BACKGROUND_GRADIENT'),
+                    'std'     => ['color' => '#3366FF', 'color2' => '#0037DD', 'deg' => '45', 'type' => 'linear'],
+                    'depends' => [['step_btn_target', '=', 'next'], ['step_btn_type', '=', 'custom'], ['step_btn_appearance', '=', 'gradient'], ['step_btn_style_tab', '=', 'normal']],
+                ],
+                'step_next_color_hover'            => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_COLOR'),
+                    'std'     => '#FFFFFF',
+                    'depends' => [['step_btn_target', '=', 'next'], ['step_btn_type', '=', 'custom'], ['step_btn_style_tab', '=', 'hover']],
+                ],
+                'step_next_background_color_hover' => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_BACKGROUND'),
+                    'std'     => '#0037DD',
+                    'depends' => [['step_btn_target', '=', 'next'], ['step_btn_type', '=', 'custom'], ['step_btn_appearance', '!=', 'gradient'], ['step_btn_style_tab', '=', 'hover']],
+                ],
+                'step_next_background_gradient_hover' => [
+                    'type'    => 'gradient',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_BACKGROUND_GRADIENT'),
+                    'std'     => ['color' => '#0037DD', 'color2' => '#3366FF', 'deg' => '45', 'type' => 'linear'],
+                    'depends' => [['step_btn_target', '=', 'next'], ['step_btn_type', '=', 'custom'], ['step_btn_appearance', '=', 'gradient'], ['step_btn_style_tab', '=', 'hover']],
+                ],
+
+                'step_prev_color'                  => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_COLOR'),
+                    'std'     => '#3366FF',
+                    'depends' => [['step_btn_target', '=', 'prev'], ['step_btn_type', '=', 'custom'], ['step_btn_style_tab', '=', 'normal']],
+                ],
+                'step_prev_background_color'       => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_BACKGROUND'),
+                    'std'     => '#FFFFFF',
+                    'depends' => [['step_btn_target', '=', 'prev'], ['step_btn_type', '=', 'custom'], ['step_btn_appearance', '!=', 'gradient'], ['step_btn_style_tab', '=', 'normal']],
+                ],
+                'step_prev_background_gradient'    => [
+                    'type'    => 'gradient',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_BACKGROUND_GRADIENT'),
+                    'std'     => ['color' => '#FFFFFF', 'color2' => '#E5E5E5', 'deg' => '45', 'type' => 'linear'],
+                    'depends' => [['step_btn_target', '=', 'prev'], ['step_btn_type', '=', 'custom'], ['step_btn_appearance', '=', 'gradient'], ['step_btn_style_tab', '=', 'normal']],
+                ],
+                'step_prev_color_hover'            => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_COLOR'),
+                    'std'     => '#3366FF',
+                    'depends' => [['step_btn_target', '=', 'prev'], ['step_btn_type', '=', 'custom'], ['step_btn_style_tab', '=', 'hover']],
+                ],
+                'step_prev_background_color_hover' => [
+                    'type'    => 'color',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_BACKGROUND'),
+                    'std'     => '#E5E5E5',
+                    'depends' => [['step_btn_target', '=', 'prev'], ['step_btn_type', '=', 'custom'], ['step_btn_appearance', '!=', 'gradient'], ['step_btn_style_tab', '=', 'hover']],
+                ],
+                'step_prev_background_gradient_hover' => [
+                    'type'    => 'gradient',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_BACKGROUND_GRADIENT'),
+                    'std'     => ['color' => '#E5E5E5', 'color2' => '#FFFFFF', 'deg' => '45', 'type' => 'linear'],
+                    'depends' => [['step_btn_target', '=', 'prev'], ['step_btn_type', '=', 'custom'], ['step_btn_appearance', '=', 'gradient'], ['step_btn_style_tab', '=', 'hover']],
                 ],
             ],
         ],
@@ -814,7 +1305,7 @@ SpAddonsConfig::addonConfig([
                     'title'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_PADDING'),
                     'responsive' => true,
                     'std'        => ['xl' => '8px 22px 10px 22px', 'lg' => '', 'md' => '', 'sm' => '', 'xs' => ''],
-                    'depends'    => [['btn_type', '=', 'custom']],
+                    'depends'    => [['btn_size', '=', 'custom']],
                 ],
 
                 'btn_margin'                     => [

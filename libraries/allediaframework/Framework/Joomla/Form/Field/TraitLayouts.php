@@ -3,7 +3,7 @@
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2021-2023 Joomlashack.com. All rights reserved
+ * @copyright 2021-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -22,14 +22,15 @@
  * along with AllediaFramework.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// phpcs:disable PSR1.Files.SideEffects.FoundWithSymbols
-
 namespace Alledia\Framework\Joomla\Form\Field;
 
-use Joomla\CMS\Filesystem\Path;
 use Joomla\CMS\Version;
+use Joomla\Filesystem\Path;
 
+// phpcs:disable PSR1.Files.SideEffects
 defined('_JEXEC') or die();
+
+// phpcs:enable PSR1.Files.SideEffects
 
 /**
  * Intended for use by form field classes to
@@ -78,16 +79,5 @@ trait TraitLayouts
         }
 
         return null;
-    }
-
-    /**
-     * @return void
-     * @deprecated v3.3.1
-     */
-    protected function setListLayout()
-    {
-        if (Version::MAJOR_VERSION >= 4) {
-            $this->layout = 'joomla.form.field.list-fancy-select';
-        }
     }
 }

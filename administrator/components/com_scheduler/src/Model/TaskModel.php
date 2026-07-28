@@ -27,6 +27,7 @@ use Joomla\Component\Scheduler\Administrator\Helper\ExecRuleHelper;
 use Joomla\Component\Scheduler\Administrator\Helper\SchedulerHelper;
 use Joomla\Component\Scheduler\Administrator\Table\TaskTable;
 use Joomla\Component\Scheduler\Administrator\Task\TaskOption;
+use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Symfony\Component\OptionsResolver\Exception\AccessException;
 use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
@@ -109,16 +110,16 @@ class TaskModel extends AdminModel
     /**
      * TaskModel constructor. Needed just to set $app
      *
-     * @param   array                      $config       An array of configuration options
-     * @param   MVCFactoryInterface|null   $factory      The factory
-     * @param   FormFactoryInterface|null  $formFactory  The form factory
+     * @param   array                  $config       An array of configuration options
+     * @param   ?MVCFactoryInterface   $factory      The factory
+     * @param   ?FormFactoryInterface  $formFactory  The form factory
      *
      * @since  4.1.0
      * @throws \Exception
      */
-    public function __construct($config = [], MVCFactoryInterface $factory = null, FormFactoryInterface $formFactory = null)
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null, ?FormFactoryInterface $formFactory = null)
     {
-        $config['events_map'] = $config['events_map'] ?? [];
+        $config['events_map'] ??= [];
 
         $config['events_map'] = array_merge(
             [
@@ -153,7 +154,7 @@ class TaskModel extends AdminModel
      * @param   array  $data      Data that needs to go into the form
      * @param   bool   $loadData  Should the form load its data from the DB?
      *
-     * @return Form|boolean  A JForm object on success, false on failure.
+     * @return Form|boolean  A Form object on success, false on failure.
      *
      * @since  4.1.0
      * @throws \Exception
@@ -254,7 +255,7 @@ class TaskModel extends AdminModel
      * @since  4.1.0
      * @throws \Exception
      */
-    public function getTable($name = 'Task', $prefix = 'Table', $options = []): Table
+    public function getTable($name = 'Task', $prefix = 'Administrator', $options = []): Table
     {
         return parent::getTable($name, $prefix, $options);
     }
@@ -358,7 +359,11 @@ class TaskModel extends AdminModel
     public function getTask(array $options = []): ?\stdClass
     {
         $resolver = new OptionsResolver();
-        $this->configureTaskGetterOptions($resolver);
+
+        try {
+            static::configureTaskGetterOptions($resolver);
+        } catch (\Exception $e) {
+        }
 
         try {
             $options = $resolver->resolve($options);
@@ -384,7 +389,7 @@ class TaskModel extends AdminModel
                     ->bind(':taskId', $options['id'], ParameterType::INTEGER);
             } else {
                 $id = $this->getNextTaskId($db, $now, $options);
-                if (count($id) === 0) {
+                if (\count($id) === 0) {
                     return null;
                 }
                 $lockQuery->where($db->quoteName('id') . ' = :taskId')
@@ -393,7 +398,7 @@ class TaskModel extends AdminModel
 
             $db->setQuery($lockQuery)->execute();
             $affectedRows = $db->getAffectedRows();
-        } catch (\RuntimeException $e) {
+        } catch (\RuntimeException) {
             return null;
         } finally {
             $db->unlockTables();
@@ -409,21 +414,27 @@ class TaskModel extends AdminModel
     /**
      * Checks if there are any running tasks in the database.
      *
-     * @param \JDatabaseDriver $db The database driver to use.
+     * @param DatabaseInterface $db The database driver to use.
      * @return bool True if there are running tasks, false otherwise.
      * @since 4.4.9
      */
     private function hasRunningTasks($db): bool
     {
+        $now       = Factory::getDate('now', 'UTC');
+        $timeout   = ComponentHelper::getParams('com_scheduler')->get('timeout', 300);
+        $threshold = (clone $now)->modify("-$timeout seconds")->toSql();
+
         $lockCountQuery = $db->getQuery(true)
             ->select('COUNT(id)')
             ->from($db->quoteName(self::TASK_TABLE))
             ->where($db->quoteName('locked') . ' IS NOT NULL')
-            ->where($db->quoteName('state') . ' = 1');
+            ->where($db->quoteName('locked') . ' > :threshold')
+            ->where($db->quoteName('state') . ' = 1')
+            ->bind(':threshold', $threshold);
 
         try {
             $runningCount = $db->setQuery($lockCountQuery)->loadResult();
-        } catch (\RuntimeException $e) {
+        } catch (\RuntimeException) {
             return false;
         }
 
@@ -441,7 +452,7 @@ class TaskModel extends AdminModel
      *                      - allowDisabled: Whether to allow disabled tasks.
      *                      - id: The ID of the task.
      * @return Query The lock query.
-     * @since 4.4.9
+     * @since 5.2.0
      */
     private function buildLockQuery($db, $now, $options)
     {
@@ -477,7 +488,7 @@ class TaskModel extends AdminModel
     /**
      * Retrieves the ID of the next task based on the given criteria.
      *
-     * @param \JDatabaseDriver $db The database object.
+     * @param DatabaseInterface $db The database object.
      * @param string $now The current time.
      * @param array $options The options for retrieving the next task.
      *                       - includeCliExclusive: Whether to include CLI exclusive tasks.
@@ -485,7 +496,7 @@ class TaskModel extends AdminModel
      *                       - allowDisabled: Whether to allow disabled tasks.
      * @return array The ID of the next task, or an empty array if no task is found.
      *
-     * @since 4.4.9
+     * @since 5.2.0
      * @throws \RuntimeException If there is an error executing the query.
      */
     private function getNextTaskId($db, $now, $options)
@@ -522,7 +533,7 @@ class TaskModel extends AdminModel
 
         try {
             return $db->setQuery($idQuery)->loadColumn();
-        } catch (\RuntimeException $e) {
+        } catch (\RuntimeException) {
             return [];
         }
     }
@@ -530,10 +541,10 @@ class TaskModel extends AdminModel
     /**
      * Fetches a task from the database based on the current time.
      *
-     * @param \JDatabaseDriver $db The database driver to use.
+     * @param DatabaseInterface $db The database driver to use.
      * @param string $now The current time in the database's time format.
      * @return \stdClass|null The fetched task object, or null if no task was found.
-     * @since 4.4.9
+     * @since 5.2.0
      * @throws \RuntimeException If there was an error executing the query.
      */
     private function fetchTask($db, $now): ?\stdClass
@@ -546,7 +557,7 @@ class TaskModel extends AdminModel
 
         try {
             $task = $db->setQuery($getQuery)->loadObject();
-        } catch (\RuntimeException $e) {
+        } catch (\RuntimeException) {
             return null;
         }
 
@@ -556,7 +567,6 @@ class TaskModel extends AdminModel
 
         return $task;
     }
-
 
     /**
      * Set up an {@see OptionsResolver} to resolve options compatible with the {@see GetTask()} method.
@@ -612,7 +622,12 @@ class TaskModel extends AdminModel
             $data['last_execution'] = Factory::getDate('now', 'GMT')->format('Y-m')
                 . "-$basisDayOfMonth $basisHour:$basisMinute:00";
         } else {
-            $data['last_execution'] = $this->getItem($id)->last_execution;
+            $item = $this->getItem($id);
+
+            $data['last_execution'] = $item->last_execution;
+
+            // Prevent changing the task type when editing an existing task.
+            $data['type'] = $item->type;
         }
 
         // Build the `cron_rules` column from `execution_rules`
@@ -627,7 +642,7 @@ class TaskModel extends AdminModel
 
         // If no params, we set as empty array.
         // ? Is this the right place to do this
-        $data['params'] = $data['params'] ?? [];
+        $data['params'] ??= [];
 
         // Parent method takes care of saving to the table
         return parent::save($data);
@@ -678,7 +693,7 @@ class TaskModel extends AdminModel
      */
     private function buildExecutionRules(array $executionRules): array
     {
-        // Maps interval strings, use with sprintf($map[intType], $interval)
+        // Maps interval strings, use with \sprintf($map[intType], $interval)
         $intervalStringMap = [
             'minutes' => 'PT%dM',
             'hours'   => 'PT%dH',
@@ -688,14 +703,14 @@ class TaskModel extends AdminModel
         ];
 
         $ruleType        = $executionRules['rule-type'];
-        $ruleClass       = strpos($ruleType, 'interval') === 0 ? 'interval' : $ruleType;
+        $ruleClass       = str_starts_with($ruleType, 'interval') ? 'interval' : $ruleType;
         $buildExpression = '';
 
         if ($ruleClass === 'interval') {
             // Rule type for intervals interval-<minute/hours/...>
             $intervalType    = explode('-', $ruleType)[1];
             $interval        = $executionRules["interval-$intervalType"];
-            $buildExpression = sprintf($intervalStringMap[$intervalType], $interval);
+            $buildExpression = \sprintf($intervalStringMap[$intervalType], $interval);
         }
 
         if ($ruleClass === 'cron-expression') {
@@ -731,7 +746,7 @@ class TaskModel extends AdminModel
         /** @var TaskTable $table */
         $table = $this->getTable();
 
-        $user = Factory::getApplication()->getIdentity();
+        $user = $this->getCurrentUser();
 
         $context = $this->option . '.' . $this->name;
 
@@ -754,7 +769,7 @@ class TaskModel extends AdminModel
                 // Prune items that are already at the given state.
                 $lockedColumnName = $table->getColumnAlias('locked');
 
-                if (property_exists($table, $lockedColumnName) && \is_null($table->get($lockedColumnName))) {
+                if (property_exists($table, $lockedColumnName) && \is_null($table->$lockedColumnName)) {
                     unset($pks[$i]);
                 }
             }

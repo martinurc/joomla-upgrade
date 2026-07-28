@@ -23,7 +23,7 @@ use Joomla\Input\Input;
  * Interface defining a Joomla! CMS Application class
  *
  * @since  4.0.0
- * @note   In Joomla 5 this interface will no longer extend EventAwareInterface
+ * @note   In Joomla 6 this interface will no longer extend EventAwareInterface
  * @property-read   Input  $input  {@deprecated 4.0 will be removed in 6.0} The Joomla Input property. Deprecated in favour of getInput()
  */
 interface CMSApplicationInterface extends ExtensionManagerInterface, ConfigurationAwareApplicationInterface, EventAwareInterface
@@ -91,6 +91,22 @@ interface CMSApplicationInterface extends ExtensionManagerInterface, Configurati
      * @since  4.0.0
      */
     public const MSG_DEBUG = 'debug';
+
+    /**
+     * Constant defining an enqueued message message
+     *
+     * @var    string
+     * @since  5.4.2
+     */
+    public const MSG_MESSAGE = 'message';
+
+    /**
+     * Constant defining an enqueued success message
+     *
+     * @var    string
+     * @since  5.4.2
+     */
+    public const MSG_SUCCESS = 'success';
 
     /**
      * Enqueue a system message.
@@ -177,11 +193,11 @@ interface CMSApplicationInterface extends ExtensionManagerInterface, Configurati
     /**
      * Allows the application to load a custom or default identity.
      *
-     * @param   User  $identity  An optional identity object. If omitted, the factory user is created.
+     * @param   ?User  $identity  An optional identity object. If omitted, the factory user is created.
      *
      * @return  $this
      *
      * @since   4.0.0
      */
-    public function loadIdentity(User $identity = null);
+    public function loadIdentity(?User $identity = null);
 }

@@ -217,6 +217,10 @@ class RSFormProFieldCaptcha extends RSFormProField
 		$form 			= RSFormProHelper::getForm($this->formId);
 		$captchaCode 	= Factory::getSession()->get('com_rsform.captcha.captchaId' . $this->componentId);
 		$value			= $this->getValue();
+		if ($value)
+		{
+			$value = strtolower(trim($value));
+		}
 
 		// Logged in users don't need to pass Captcha if this option is enabled on the form.
 		if (Factory::getUser()->id && $form->RemoveCaptchaLogged)

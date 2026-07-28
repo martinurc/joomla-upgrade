@@ -14,6 +14,7 @@ defined('_JEXEC') or die('Restricted access');
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Uri\Uri;
+use Joomla\CMS\Version;
 
 /**
  * Autoload the required classes in a required scope.
@@ -103,4 +104,23 @@ class BuilderAutoload
 		$doc->addScript(Uri::root(true) . '/components/com_sppagebuilder/assets/js/common.js');
 		HTMLHelper::_('behavior.core');
 	}
+
+	public static function loadAliases()
+	{
+		$joomlaVersion = defined('JVERSION') ? JVERSION : (new Version())->getShortVersion();
+
+		if (version_compare($joomlaVersion, '6.0', '>='))
+		{
+			$classAliases = require JPATH_ROOT . '/administrator/components/com_sppagebuilder/config/aliases.php';
+
+			foreach ($classAliases as $original => $alias)
+			{
+				if (!class_exists($alias, false) && class_exists($original))
+				{
+					class_alias($original, $alias);
+				}
+			}
+		}
+	}
+
 }

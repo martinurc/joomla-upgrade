@@ -100,6 +100,30 @@ trait UploadFontTrait
 
 		if (File::upload($fontFile['tmp_name'], $zipPath, false, true))
 		{
+			$zip = new ZipArchive;
+
+			if ($zip->open($zipPath) === true)
+			{
+				for ($i = 0; $i < $zip->numFiles; $i++)
+				{
+					$name = str_replace('\\', '/', $zip->getNameIndex($i));
+					if (
+						str_contains($name, '../') ||
+						str_starts_with($name, '/') ||
+						preg_match('#^[a-zA-Z]:#', $name)
+					)
+					{
+						$zip->close();
+						File::delete($zipPath);
+
+						$response['message'] = 'Invalid ZIP structure.';
+						$this->sendResponse($response, 400);
+					}
+				}
+
+				$zip->close();
+			}
+
 			$unzipped = $this->unzip($zipPath);
 			$fontName = '';
 
@@ -114,7 +138,25 @@ trait UploadFontTrait
 
 					if ($extension === 'css')
 					{
+						$content = file_get_contents($file);
+
+						if (strpos($content, '@font-face') === false)
+						{
+							continue;
+						}
+
 						$fontName = $this->extractFontFamilyFromPath($file);
+
+						if (empty($fontName))
+						{
+							$fontName = basename(dirname($file));
+						}
+						else
+						{
+							$fontName = preg_replace('/[^a-zA-Z0-9_-]/', '', $fontName);
+						}
+
+						break;
 					}
 				}
 			}
@@ -123,7 +165,7 @@ trait UploadFontTrait
 			{
 				File::delete($zipPath);
 				Folder::delete($extractDirectory);
-				$response['message'] = 'Max size limit exceeded.';
+				$response['message'] = 'Invalid font package.';
 				$this->sendResponse($response, 500);
 			}
 
@@ -138,9 +180,23 @@ trait UploadFontTrait
 
 				Folder::create($mediaDirectory, 0755);
 
+				$base = realpath($extractDirectory);
+
 				foreach ($fontFiles as $file)
 				{
-					File::move($file, $mediaDirectory . '/' . basename($file));
+					$real = realpath($file);
+
+					if ($real === false || $base === false)
+					{
+						continue;
+					}
+
+					if (!str_starts_with($real, $base . DIRECTORY_SEPARATOR))
+					{
+						continue;
+					}
+
+					File::move($real, $mediaDirectory . '/' . basename($real));
 				}
 			}
 
@@ -189,17 +245,17 @@ trait UploadFontTrait
 
 		if ($extractedResult)
 		{
-			$files = Folder::files($extractDestination);
+			$files = Folder::files($extractDestination, '.', true, true);
 
 			if (!empty($files))
 			{
 				foreach ($files as $file)
 				{
-					$extension = \strtolower(\pathinfo($file, PATHINFO_EXTENSION));
+					$extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
-					if (\in_array($extension, ['css', 'woff', 'woff2']))
+					if (in_array($extension, ['css', 'woff', 'woff2']))
 					{
-						$requiredFiles[] = $extractDestination . '/' . $file;
+						$requiredFiles[] =  $file;
 					}
 				}
 			}
@@ -215,10 +271,9 @@ trait UploadFontTrait
 			return null;
 		}
 
-		$content = \file_get_contents($path);
+		$content = file_get_contents($path);
+		preg_match('/font-family:\s*["\'](.*?)["\']/', $content, $matches);
 
-		$pattern = "@font-family:\s*'(.*?)'@";
-		preg_match($pattern, $content, $matches);
 
 		return isset($matches[1]) ? $matches[1] : null;
 	}

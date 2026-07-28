@@ -8,7 +8,7 @@
 // no direct access
 defined('_JEXEC') or die;
 
-use Joomla\CMS\Filesystem\Folder;
+use Joomla\Filesystem\Folder;
 use Joomla\CMS\Factory;
 
 class RSFormProCaptcha
@@ -152,7 +152,10 @@ class RSFormProCaptcha
 
 		ob_start();
 		imagepng($image);
-		imagedestroy($image);
+		if (version_compare(PHP_VERSION, '8.0.0', '<'))
+		{
+			imagedestroy($image);
+		}
 		$data = ob_get_contents();
 		ob_end_clean();
 
@@ -209,7 +212,10 @@ class RSFormProCaptchaError
 
 		ob_start();
 		imagepng($image);
-		imagedestroy($image);
+		if (version_compare(PHP_VERSION, '8.0.0', '<'))
+		{
+			imagedestroy($image);
+		}
 		$data = ob_get_contents();
 		ob_end_clean();
 

@@ -10,7 +10,9 @@ namespace JoomShaper\SPPageBuilder\DynamicContent;
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Session\Session;
+use Joomla\CMS\Version;
 use Joomla\Input\Input;
 use JoomShaper\SPPageBuilder\DynamicContent\Http\Request;
 use JoomShaper\SPPageBuilder\DynamicContent\Http\Response;
@@ -90,9 +92,23 @@ class DynamicContent
      */
     public function dispatch(string $task, Input $input)
     {
+        $joomlaVersion = defined('JVERSION') ? JVERSION : (new Version())->getShortVersion();
+        $isJoomla6OrHigher = version_compare($joomlaVersion, '6.0', '>=');
+        
+        if ($isJoomla6OrHigher) {
+            $context = $input->getString('_context', '');
+            
+            $requestData = array_merge(
+                $input->get->getArray(),
+                $input->post->getArray()
+            );
+        } else {
+            $context = $input->getString('_context', '');
+            $requestData = $input->getArray();
+        }
+        
         /** @var Request $request */
-        $request = new Request($input->getArray());
-        $context = $request->getString('_context', '');
+        $request = new Request($requestData);
 
         if (empty($context)) {
             return response()->json(['message' => 'Context is required. Please provide a valid context for the request using the `_context` parameter.'], Response::HTTP_BAD_REQUEST);

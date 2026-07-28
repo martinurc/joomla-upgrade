@@ -1,20 +1,23 @@
 <?xml version="1.0" ?>
-<extension version="3.4" type="plugin" group="jce" method="upgrade">
+<extension type="plugin" group="jce" method="upgrade">
 	<name>WF_TEMPLATEMANAGER_TITLE</name>
-	<version>2.9.89</version>
-	<creationDate>16-07-2025</creationDate>
+	<version>2.9.99.9</version>
+	<creationDate>08-07-2026</creationDate>
 	<author>Ryan Demmer</author>
 	<authorEmail>info@joomlacontenteditor.net</authorEmail>
 	<authorUrl>https://www.joomlacontenteditor.net/</authorUrl>
-	<copyright>Copyright (C) 2006 - 2025 Ryan Demmer. All rights reserved</copyright>
-	<license>GNU/GPL Version 2 or later - http://www.gnu.org/licenses/gpl-2.0.html</license>
+	<copyright>Copyright (C) 2006 - 2026 Ryan Demmer. All rights reserved</copyright>
+	<license>GNU/GPL Version 2 or later - http://www.gnu.org/licenses/gpl-2.0.html; see LICENSE.txt</license>
 	<description>WF_TEMPLATEMANAGER_DESC</description>
 	<icon>templatemanager</icon>
 	<files></files>
 	<fields name="templatemanager">
 		<fieldset name="config" addfieldpath="/plugins/system/jcepro/editor/plugins/templatemanager/fields">
-			<field name="dir" type="directorypath" default="" size="50" label="WF_PARAM_DIRECTORY" description="WF_PARAM_DIRECTORY_DESC"/>
-			<field name="max_size" class="input-small" hint="1024" max="" type="uploadmaxsize" step="128" label="WF_PARAM_UPLOAD_SIZE" description="WF_PARAM_UPLOAD_SIZE_DESC" />
+			<field name="dir" type="keyvalue" default="" size="50" label="WF_PARAM_DIRECTORY" description="WF_PARAM_DIRECTORY_DESC" sortable="true">
+                <field name="path"  type="text" placeholder="images" size="50" label="WF_PARAM_DIRECTORY_PATH" />
+                <field name="label" type="text" size="50" label="WF_PARAM_DIRECTORY_LABEL" />
+            </field>
+			<field name="max_size" class="input-small" hint="10240" max="" type="uploadmaxsize" step="128" label="WF_PARAM_UPLOAD_SIZE" description="WF_PARAM_UPLOAD_SIZE_DESC" />
 			<field name="extensions" type="filetype" class="extensions" default="html,htm,txt,md" label="WF_PARAM_EXTENSIONS" description="WF_PARAM_EXTENSIONS_DESC">
 				<option value="html">html</option>
 				<option value="htm">htm</option>
@@ -39,6 +42,7 @@
 
 			<field name="templates" type="templates" default="" label="WF_TEMPLATEMANAGER_TEMPLATES" description="WF_TEMPLATEMANAGER_TEMPLATES_DESC" showon="template_list:1">
 				<field type="text" name="name" size="30" default="" label="WF_TEMPLATEMANAGER_TEMPLATES_NAME" description="WF_TEMPLATEMANAGER_TEMPLATES_NAME_DESC" />
+				<field type="text" name="description" size="30" default="" label="WF_TEMPLATEMANAGER_TEMPLATES_DESCRIPTION" description="WF_TEMPLATEMANAGER_TEMPLATES_DESCRIPTION_DESC" />
 
 				<field type="mediajce" name="thumbnail" size="30" mediatype="images" default="" label="WF_TEMPLATEMANAGER_TEMPLATES_THUMBNAIL" description="WF_TEMPLATEMANAGER_TEMPLATES_THUMBNAIL_DESC" />
 
@@ -51,9 +55,11 @@
 				<field type="code" name="html" filter="safehtml" rows="8" cols="6" default="" label="WF_TEMPLATEMANAGER_TEMPLATES_HTML" spellcheck="false" description="WF_TEMPLATEMANAGER_TEMPLATES_HTML_DESC" />
 			</field>
 
+			<field name="templates_limit" type="text" size="10" default="25" label="WF_TEMPLATEMANAGER_TEMPLATES_LIMIT" description="WF_TEMPLATEMANAGER_TEMPLATES_LIMIT_DESC" showon="template_list:1" />
+
 			<field name="replace_values" type="keyvalue" default="" label="WF_TEMPLATEMANAGER_REPLACEMENT_VALUES" description="WF_TEMPLATEMANAGER_REPLACEMENT_VALUES_DESC">
-				<field type="text" name="name" label="WF_LABEL_NAME" size="50" />
-				<field type="text" name="value" label="WF_LABEL_VALUE" size="50" />
+				<field type="text" name="name" label="WF_LABEL_NAME" />
+				<field type="text" name="value" label="WF_LABEL_VALUE" />
 			</field>
 
 			<field name="selected_content_classes" type="text" size="100" default="" label="WF_TEMPLATEMANAGER_CONTENT_CLASSES" description="WF_TEMPLATEMANAGER_CONTENT_CLASSES_DESC"/>
@@ -64,12 +70,17 @@
 
 			<field type="heading" label="WF_PROFILES_PLUGINS_ACCESS" />
 
-			<field name="allow_save" type="yesno" default="1" label="WF_TEMPLATEMANAGER_NEW_TEMPLATE" description="WF_TEMPLATEMANAGER_NEW_TEMPLATE_DESC">
+			<field name="help_button" type="yesno" default="1" label="WF_PARAM_HELP_BUTTON" description="WF_PARAM_HELP_BUTTON_DESC">
+                <option value="1">JYES</option>
+                <option value="0">JNO</option>
+            </field>
+
+			<field name="allow_save" type="yesno" default="0" label="WF_TEMPLATEMANAGER_NEW_TEMPLATE" description="WF_TEMPLATEMANAGER_NEW_TEMPLATE_DESC">
 				<option value="1">JYES</option>
 				<option value="0">JNO</option>
 			</field>
 
-			<field name="upload" type="yesno" default="1" label="WF_PARAM_UPLOAD" description="WF_PARAM_UPLOAD_DESC">
+			<field name="upload" type="yesno" default="0" label="WF_PARAM_UPLOAD" description="WF_PARAM_UPLOAD_DESC">
 				<option value="1">JYES</option>
 				<option value="0">JNO</option>
 			</field>
@@ -103,7 +114,7 @@
 				<option value="0">JNO</option>
 			</field>
 
-			<field name="inline_upload" type="yesno" default="1" label="WF_PARAM_INLINE_UPLOAD" description="WF_PARAM_INLINE_UPLOAD_DESC">
+			<field name="inline_upload" type="yesno" default="0" label="WF_PARAM_INLINE_UPLOAD" description="WF_PARAM_INLINE_UPLOAD_DESC">
 				<option value="1">JYES</option>
 				<option value="0">JNO</option>
 			</field>

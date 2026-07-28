@@ -4,7 +4,7 @@
  * @subpackage  Editors.Jce
  *
  * @copyright   Copyright (C) 2005 - 2023 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -130,11 +130,41 @@ trait FormTrait
 
         if ($form->getName() === 'com_jce.profile.browser') {
             // file browser manifest
-            $browser = JPATH_PLUGINS . '/system/jcepro/forms/browser.xml';
+            $browser = JPATH_PLUGINS . '/system/jcepro/editor/plugins/browser/browser.xml';
 
             if (is_file($browser)) {
                 if ($browser_xml = simplexml_load_file($browser)) {
                     $form->setField($browser_xml);
+                }
+            }
+
+            // set processed flag
+            $this->processed = true;
+        }
+
+        // Image Manager options
+        if ($form->getName() === 'com_jce.profile.imgmanager') {
+            // file browser manifest
+            $imgmanager = JPATH_PLUGINS . '/system/jcepro/editor/plugins/imgmanager/imgmanager.xml';
+
+            if (is_file($imgmanager)) {                
+                if ($imgmanager_xml = simplexml_load_file($imgmanager)) {                    
+                    $form->setField($imgmanager_xml);
+                }
+            }
+
+            // set processed flag
+            $this->processed = true;
+        }
+
+        // Link options
+        if ($form->getName() === 'com_jce.profile.link') {
+            // file browser manifest
+            $link = JPATH_PLUGINS . '/system/jcepro/editor/plugins/link/link.xml';
+
+            if (is_file($link)) {                
+                if ($link_xml = simplexml_load_file($link)) {                    
+                    $form->setField($link_xml);
                 }
             }
 

@@ -43,6 +43,8 @@ class SppagebuilderAddonDiv extends SppagebuilderAddons
 			'display' => 'display',
 			'width' => 'width',
 			'height' => 'height',
+			'max_width' => 'max-width',
+			'max_height' => 'max-height',
 			'overflow' => 'overflow'
 		];
 		$units = [
@@ -71,21 +73,45 @@ class SppagebuilderAddonDiv extends SppagebuilderAddons
 		}
 
 		if (isset($settings->display) && \in_array($settings->display, ['flex', 'inline-flex'])) {
+			$currentFlexDirection = $cssHelper->getResponsiveValue($settings->flex_direction);
+			$isColumnDirection = isset($currentFlexDirection) && $currentFlexDirection === 'column';
+
+			$justifyKey = $isColumnDirection ? 'justify_content_vertical' : 'justify_content';
+			$alignKey = $isColumnDirection ? 'align_items_vertical' : 'align_items';
+
 			$props = array_merge($props, [
 				'flex_direction' => 'flex-direction',
-				'justify_content' => 'justify-content',
-				'align_items' => 'align-items',
+				$justifyKey => 'justify-content',
+				$alignKey => 'align-items',
 				'flex_gap' => 'gap',
 				'flex_wrap' => 'flex-wrap'
 			]);
 
 			$units = array_merge($units, [
 				'flex_direction' => false,
-				'justify_content' => false,
-				'align_items' => false,
+				$justifyKey => false,
+				$alignKey => false,
 				'flex_gap' => false,
 				'flex_wrap' => false,
 			]);
+		}
+
+		if (isset($settings->display) && \in_array($settings->display, ['grid'], true)) {
+			$props = array_merge($props, [
+				'grid_auto_flow' => 'grid-auto-flow',
+				'grid_justify' => 'justify-content',
+				'grid_align' => 'align-items',
+			]);
+
+			$units = array_merge($units, [
+				'grid_auto_flow' => false,
+				'grid_justify' => false,
+				'grid_align' => false,
+			]);
+
+			$css .= $cssHelper->parseGridTemplate(':self', $settings, 'grid_template_columns', 'grid-template-columns');
+			$css .= $cssHelper->parseGridTemplate(':self', $settings, 'grid_template_rows', 'grid-template-rows');
+			$css .= $cssHelper->parseGridGap(':self', $settings, 'grid_gap');
 		}
 
 		$divStyle = $cssHelper->generateStyle(':self', $settings, $props, $units);

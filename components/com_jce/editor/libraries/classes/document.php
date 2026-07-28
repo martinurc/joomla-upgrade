@@ -1,17 +1,18 @@
 <?php
+
 /**
  * @package     JCE
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\Path;
+use Joomla\Filesystem\Path;
 use Joomla\CMS\Object\CMSObject;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
@@ -466,13 +467,19 @@ class WFDocument extends CMSObject
         $app = Factory::getApplication();
 
         // get plugin name and assign to query
-        $name = $this->get('name');
+        $name   = $this->get('name');
+
+        $caller = $this->get('caller');
 
         // re-map plugin name
         if (array_key_exists($name, self::$queryMap)) {
             $name = self::$queryMap[$name];
         }
 
+        if ($caller) {
+            $name .= '.' . $caller;
+        }
+        
         $query['plugin'] = $name;
 
         // set slot
@@ -498,7 +505,7 @@ class WFDocument extends CMSObject
             return !empty($value);
         });
 
-       return http_build_query($query);
+        return http_build_query($query);
     }
 
     private function getHash($files)

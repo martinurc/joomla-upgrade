@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   AllediaFramework
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2016-2023 Joomlashack.com. All rights reserved
+ * @copyright 2016-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of AllediaFramework.
@@ -23,19 +24,16 @@
 
 namespace Alledia\Framework\Joomla\Extension;
 
-defined('_JEXEC') or die();
-
+use Alledia\Framework\Factory;
 use JFormFieldCustomFooter;
-use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\File;
 use Joomla\Registry\Registry;
 use SimpleXMLElement;
 
-/**
- * Generic extension class
- *
- * @todo : Make this class compatible with non-Alledia extensions
- */
+// phpcs:disable PSR1.Files.SideEffects
+defined('_JEXEC') or die();
+
+// phpcs:enable PSR1.Files.SideEffects
+
 class Generic
 {
     /**
@@ -150,13 +148,13 @@ class Generic
         $element = $this->getElementToDb();
 
         // Load the extension info from database
-        $db    = Factory::getDbo();
+        $db    = Factory::getDatabase();
         $query = $db->getQuery(true)
             ->select([
                 $db->quoteName('extension_id'),
                 $db->quoteName('name'),
                 $db->quoteName('enabled'),
-                $db->quoteName('params')
+                $db->quoteName('params'),
             ])
             ->from('#__extensions')
             ->where($db->quoteName('type') . ' = ' . $db->quote($this->type))
@@ -206,7 +204,7 @@ class Generic
             'template'  => 'templates/',
             'library'   => 'libraries/',
             'cli'       => 'cli/',
-            'module'    => 'modules/'
+            'module'    => 'modules/',
         ];
 
         $basePath = $this->basePath . '/' . $folders[$this->type];
@@ -254,7 +252,7 @@ class Generic
     {
         $prefixes = [
             'component' => 'com_',
-            'module'    => 'mod_'
+            'module'    => 'mod_',
         ];
 
         $fullElement = '';
@@ -306,7 +304,7 @@ class Generic
         if (!isset($this->manifestXml) || $force) {
             $path = $this->getManifestPath();
 
-            if (File::exists($path)) {
+            if (is_file($path)) {
                 $this->manifestXml = simplexml_load_file($path);
             } else {
                 $this->manifestXml = false;
@@ -366,7 +364,7 @@ class Generic
      */
     public function getUpdateURL()
     {
-        $db    = Factory::getDbo();
+        $db    = Factory::getDatabase();
         $query = $db->getQuery(true)
             ->select('sites.location')
             ->from('#__update_sites AS sites')
@@ -383,7 +381,7 @@ class Generic
      */
     public function setUpdateURL($url)
     {
-        $db = Factory::getDbo();
+        $db = Factory::getDatabase();
 
         // Get the update site id
         $join  = $db->quoteName('#__update_sites_extensions') . ' AS extensions '
@@ -413,11 +411,11 @@ class Generic
      */
     public function storeParams()
     {
-        $db = Factory::getDbo();
+        $db = Factory::getDatabase();
 
         $updateObject = (object)[
             'params'       => $this->params->toString(),
-            'extension_id' => $this->id
+            'extension_id' => $this->id,
         ];
 
         $db->updateObject('#__extensions', $updateObject, ['extension_id']);
@@ -444,9 +442,8 @@ class Generic
     }
 
     /**
-     * @TODO: Move to the licensed class?
-     *
      * @return string
+     * @throws \Throwable
      */
     public function getFooterMarkup()
     {
@@ -454,7 +451,7 @@ class Generic
 
         if ($manifest->alledia) {
             $configPath = $this->getExtensionPath() . '/config.xml';
-            if (File::exists($configPath)) {
+            if (is_file($configPath)) {
                 $config = $this->getConfig();
 
                 if (is_object($config)) {

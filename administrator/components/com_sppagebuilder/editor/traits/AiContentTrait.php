@@ -101,6 +101,36 @@ trait AiContentTrait
             ], 400);
         }
 
+        $modelStr = (string) $model;
+        $isGeminiImageModel = (bool) preg_match('/^gemini-.+-flash-image(-preview)?$/i', $modelStr);
+        $isGeminiTextModel = !$isGeminiImageModel && (bool) preg_match('/^gemini-/i', $modelStr);
+
+        if ($isGeminiImageModel && $type !== 'image') {
+            $this->sendResponse([
+                'status' => false,
+                'message' => Text::_('COM_SPPAGEBUILDER_AI_GEMINI_IMAGE_ONLY_MODEL'),
+            ], 400);
+        }
+
+        if ($isGeminiImageModel && $type === 'image') {
+            $this->getGeminiImageContent($apiKey, $model, $prompt);
+
+            return;
+        }
+
+        if ($isGeminiTextModel && $type !== 'text') {
+            $this->sendResponse([
+                'status' => false,
+                'message' => Text::_('COM_SPPAGEBUILDER_AI_GEMINI_TEXT_ONLY_MODEL'),
+            ], 400);
+        }
+
+        if ($type === 'text' && $isGeminiTextModel) {
+            $this->getGeminiTextContent($apiKey, $model, $prompt, $maxTokens);
+
+            return;
+        }
+
         $endpoint = 'https://api.openai.com/v1/chat/completions';
 
         // Request data
@@ -241,6 +271,223 @@ trait AiContentTrait
             'status' => false,
             'message' => Text::_("COM_SPPAGEBUILDER_GLOBAL_SOMETHING_WENT_WRONG")
         ], 500);
+    }
+
+    /**
+     * Text generation via Google Generative Language API (Gemini).
+     *
+     * @param   string  $apiKey     Google AI API key (same settings field as OpenAI; use a Google AI Studio key for Gemini models).
+     * @param   string  $model      Model id, e.g. gemini-2.5-flash
+     * @param   string  $prompt     User prompt
+     * @param   int     $maxTokens  Max output tokens
+     *
+     * @return  void
+     */
+    private function getGeminiTextContent($apiKey, $model, $prompt, $maxTokens)
+    {
+        $endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/'
+            . rawurlencode($model)
+            . ':generateContent?key=' . rawurlencode($apiKey);
+
+        $maxOut = $maxTokens > 0 ? $maxTokens : 8192;
+
+        $data = [
+            'contents' => [
+                [
+                    'parts' => [
+                        ['text' => $prompt],
+                    ],
+                ],
+            ],
+            'generationConfig' => [
+                'maxOutputTokens' => $maxOut,
+            ],
+        ];
+
+        $payload = json_encode($data);
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $endpoint);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+        ]);
+
+        $response = curl_exec($ch);
+        $error = null;
+
+        if ($response === false) {
+            $error = curl_error($ch);
+        }
+
+        curl_close($ch);
+
+        if ($error !== null) {
+            $this->sendResponse([
+                'status' => false,
+                'message' => $error,
+            ], 500);
+
+            return;
+        }
+
+        $responseArray = json_decode($response, true);
+
+        if ($responseArray && isset($responseArray['error']['message'])) {
+            $this->sendResponse([
+                'status' => false,
+                'message' => $responseArray['error']['message'],
+            ], 400);
+
+            return;
+        }
+
+        $text = '';
+
+        if (!empty($responseArray['candidates'][0]['content']['parts']) && is_array($responseArray['candidates'][0]['content']['parts'])) {
+            foreach ($responseArray['candidates'][0]['content']['parts'] as $part) {
+                if (isset($part['text'])) {
+                    $text .= $part['text'];
+                }
+            }
+        }
+
+        if ($text === '') {
+            $this->sendResponse([
+                'status' => false,
+                'message' => Text::_('COM_SPPAGEBUILDER_GLOBAL_SOMETHING_WENT_WRONG'),
+            ], 500);
+
+            return;
+        }
+
+        // Same shape as OpenAI chat completion so the editor can read choices[0].message.content
+        $this->sendResponse([
+            'choices' => [
+                [
+                    'message' => [
+                        'content' => $text,
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Image generation via Google Generative Language API (Gemini native image models, e.g. Nano Banana).
+     *
+     * @param   string  $apiKey   Google AI API key
+     * @param   string  $model    Model id (e.g. gemini-2.5-flash-image)
+     * @param   string  $prompt   Text prompt
+     *
+     * @return  void
+     */
+    private function getGeminiImageContent($apiKey, $model, $prompt)
+    {
+        if ($prompt === '') {
+            $this->sendResponse([
+                'status' => false,
+                'message' => Text::_('COM_SPPAGEBUILDER_GLOBAL_SOMETHING_WENT_WRONG'),
+            ], 400);
+
+            return;
+        }
+
+        $endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/'
+            . rawurlencode($model)
+            . ':generateContent?key=' . rawurlencode($apiKey);
+
+        $data = [
+            'contents' => [
+                [
+                    'parts' => [
+                        ['text' => $prompt],
+                    ],
+                ],
+            ],
+            'generationConfig' => [
+                'responseModalities' => ['TEXT', 'IMAGE'],
+            ],
+        ];
+
+        $payload = json_encode($data);
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $endpoint);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+        ]);
+
+        $response = curl_exec($ch);
+        $error = null;
+
+        if ($response === false) {
+            $error = curl_error($ch);
+        }
+
+        curl_close($ch);
+
+        if ($error !== null) {
+            $this->sendResponse([
+                'status' => false,
+                'message' => $error,
+            ], 500);
+
+            return;
+        }
+
+        $responseArray = json_decode($response, true);
+
+        if ($responseArray && isset($responseArray['error']['message'])) {
+            $this->sendResponse([
+                'status' => false,
+                'message' => $responseArray['error']['message'],
+            ], 400);
+
+            return;
+        }
+
+        $openAiStyleData = [];
+
+        foreach ($responseArray['candidates'] ?? [] as $candidate) {
+            foreach ($candidate['content']['parts'] ?? [] as $part) {
+                if (!is_array($part)) {
+                    continue;
+                }
+
+                $inline = $part['inlineData'] ?? $part['inline_data'] ?? null;
+
+                if (!is_array($inline) || empty($inline['data'])) {
+                    continue;
+                }
+
+                $mime = $inline['mimeType'] ?? $inline['mime_type'] ?? 'image/png';
+
+                // Editor expects HTTP or data URLs in data[].url (same as OpenAI url field).
+                $openAiStyleData[] = [
+                    'url' => 'data:' . $mime . ';base64,' . $inline['data'],
+                ];
+            }
+        }
+
+        if ($openAiStyleData === []) {
+            $this->sendResponse([
+                'status' => false,
+                'message' => Text::_('COM_SPPAGEBUILDER_GLOBAL_SOMETHING_WENT_WRONG'),
+            ], 500);
+
+            return;
+        }
+
+        $this->sendResponse([
+            'created' => time(),
+            'data' => $openAiStyleData,
+        ]);
     }
 
     private function makeCurlFile($file)

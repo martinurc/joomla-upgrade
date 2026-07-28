@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package   ShackDefaultFiles
  * @contact   www.joomlashack.com, help@joomlashack.com
- * @copyright 2015-2024 Joomlashack.com. All rights reserved
+ * @copyright 2015-2026 Joomlashack.com. All rights reserved
  * @license   https://www.gnu.org/licenses/gpl.html GNU/GPL
  *
  * This file is part of ShackDefaultFiles.
@@ -21,15 +22,24 @@
  * along with ShackDefaultFiles.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use Joomla\CMS\Form\Field\SpacerField;
 use Joomla\CMS\Form\FormHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Version;
 
+
+// phpcs:disable PSR1.Files.SideEffects
 defined('_JEXEC') or die();
 
-FormHelper::loadFieldClass('Spacer');
+if (Version::MAJOR_VERSION < 4) {
+    FormHelper::loadFieldClass('Spacer');
+    class_alias(JFormFieldSpacer::class, SpacerField::class);
+}
+// phpcs:enable PSR1.Files.SideEffects
+// phpcs:disable PSR1.Classes.ClassDeclaration.MissingNamespace
 
-class JFormFieldSubtitle extends JFormFieldSpacer
+class JFormFieldSubtitle extends SpacerField
 {
     /**
      * @inheritDoc
@@ -57,7 +67,7 @@ class JFormFieldSubtitle extends JFormFieldSpacer
             $class = $this->description ? 'hasTooltip' : '';
             $class = $this->required == true ? $class . ' required' : $class;
 
-            // Add the opening label tag and main attributes attributes.
+            // Add the opening label tag and main attributes.
             $label .= '<' . $tag . ' id="' . $this->id . '-lbl" class="' . $class . '"';
 
             if ($this->description) {

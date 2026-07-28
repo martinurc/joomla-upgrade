@@ -59,6 +59,13 @@ SpAddonsConfig::addonConfig([
                     'type' => 'separator',
                 ],
 
+                'aria_label' => [
+                    'type' => 'text',
+                    'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_ARIA_LABEL'),
+                    'desc' => Text::_('COM_SPPAGEBUILDER_GLOBAL_ARIA_LABEL_DESC'),
+                    'std'  => '',
+                ],
+
                 'scroll_to' => [
                     'type'  => 'checkbox',
                     'title' => Text::_('COM_SPPAGEBUILDER_ADDON_LINK_LIST_ENABLE_SCROLL_TO'),

@@ -13,6 +13,7 @@ defined('_JEXEC') or die;
 use Exception;
 use Joomla\CMS\Language\Text;
 use JoomShaper\SPPageBuilder\DynamicContent\Concerns\Validator;
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\CollectionIds;
 use JoomShaper\SPPageBuilder\DynamicContent\Controller;
 use JoomShaper\SPPageBuilder\DynamicContent\Http\Request;
 use JoomShaper\SPPageBuilder\DynamicContent\Http\Response;
@@ -58,6 +59,7 @@ class CollectionItemsController extends Controller
             'access'        => $request->getInt('access', 1), 
             'language'      => $request->getString('language', '*'),
             'created_by'    => $request->getInt('created_by', null),
+            'association'   => $request->getRaw('association'),
         ];
 
         if (empty($payload['created_by'])) {
@@ -90,6 +92,7 @@ class CollectionItemsController extends Controller
             'created_by'    => $request->getInt('created_by', getCurrentLoggedInUser()->id),
             'modified'      => Date::sqlSafeDate(),
             'modified_by'   => getCurrentLoggedInUser()->id,
+            'association'   => $request->getRaw('association'),
         ];
 
         withException($this->service, function ($service) use ($payload) {
@@ -199,6 +202,22 @@ class CollectionItemsController extends Controller
             'modified'       => $request->getString('modified', '*'),
         ];
 
+        if ($payload['collection_id'] === CollectionIds::ARTICLES_COLLECTION_ID) {
+            $collectionsService = new \JoomShaper\SPPageBuilder\DynamicContent\Services\CollectionsService();
+            return response()->json(
+                $collectionsService->fetchArticleItems($payload),
+                Response::HTTP_OK
+            );
+        }
+
+        if ($payload['collection_id'] === CollectionIds::TAGS_COLLECTION_ID) {
+            $collectionsService = new \JoomShaper\SPPageBuilder\DynamicContent\Services\CollectionsService();
+            return response()->json(
+                $collectionsService->fetchTagsItems($payload),
+                Response::HTTP_OK
+            );
+        }
+
         withException($this->service, function ($service) use ($payload) {
             return response()->json(
                 $service->fetchAll($payload),
@@ -267,6 +286,26 @@ class CollectionItemsController extends Controller
 
         if (!$collectionId) {
             return response()->json(['message' => Text::_('COM_SPPAGEBUILDER_COLLECTION_ITEMS_COLLECTION_ID_REQUIRED')], Response::HTTP_BAD_REQUEST);
+        }
+
+        if ($collectionId === CollectionIds::ARTICLES_COLLECTION_ID) {
+            $schema = [
+                ['key' => 'title', 'name' => 'Title', 'type' => 'text'],
+                ['key' => 'published', 'name' => 'Status', 'type' => 'switch'],
+                ['key' => 'created', 'name' => 'Created', 'type' => 'date-time'],
+                ['key' => 'username', 'name' => 'Author', 'type' => 'text'],
+                ['key' => 'category', 'name' => 'Category', 'type' => 'text'],
+                ['key' => 'hits', 'name' => 'Hits', 'type' => 'number'],
+            ];
+            return response()->json($schema, Response::HTTP_OK);
+        }
+
+        if ($collectionId === CollectionIds::TAGS_COLLECTION_ID) {
+            $schema = [
+                ['key' => 'title', 'name' => 'Title', 'type' => 'text'],
+                ['key' => 'alias', 'name' => 'Alias', 'type' => 'text'],
+            ];
+            return response()->json($schema, Response::HTTP_OK);
         }
 
         withException($this->service, function ($service) use ($collectionId) {

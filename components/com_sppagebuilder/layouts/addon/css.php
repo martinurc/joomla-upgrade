@@ -70,12 +70,14 @@ $propsMap = [
 	'global_addon_position_top' => !empty($settings->global_custom_position) ? 'top' : null,
 	'global_addon_z_index' => !empty($settings->global_custom_position) ? 'z-index' : null,
 	'global_width' => !empty($settings->use_global_width) ? 'width' : null,
+	'global_max_width' => !empty($settings->use_global_width) ? 'max-width' : null,
 ];
 $units = [
 	'global_margin' => false,
 	'global_seclect_position' => false,
 	'global_addon_z_index' => false,
-	'global_width' => '%'
+	'global_width' => '%',
+	'global_max_width' => 'px',
 ];
 $modifier = ['global_margin' => 'spacing'];
 $wrapperStyle = $cssHelper->generateStyle(':self', $settings, $propsMap, $units, $modifier);

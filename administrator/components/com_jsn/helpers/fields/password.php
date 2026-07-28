@@ -26,7 +26,7 @@ class JsnPasswordFieldHelper
 	{
 		$version=new JVersion();
 		$xml='';
-		if(JFactory::getApplication()->isSite())
+		if(JFactory::getApplication()->isClient('site'))
 		{
 			$configUsers=JComponentHelper::getParams('com_users');
 			$configJsn=JComponentHelper::getParams('com_jsn');

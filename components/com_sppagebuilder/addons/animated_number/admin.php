@@ -79,6 +79,26 @@ SpAddonsConfig::addonConfig([
 					'depends' => [['use_number_format', '=', '1']]
 				],
 
+				'fraction' => [
+					'type'        => 'slider',
+					'std'         => 0,
+					'min'         => 0,
+					'max'         => 1000,
+					'step'        => 1,
+					'title'       => Text::_('COM_SPPAGEBUILDER_ADDON_ANIMATED_NUMBER_FRACTION'),
+					'desc'        => Text::_('COM_SPPAGEBUILDER_ADDON_ANIMATED_NUMBER_FRACTION_DESC'),
+					'placeholder' => Text::_('COM_SPPAGEBUILDER_ADDON_ANIMATED_NUMBER_FRACTION_PLACEHOLDER'),
+					'std'         => '',
+				],
+
+				'fraction_separator' => [
+					'type'    => 'text',
+					'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_ANIMATED_NUMBER_FRACTION_SEPARATOR'),
+					'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_ANIMATED_NUMBER_FRACTION_SEPARATOR_DESC'),
+					'std'     => '.',
+					'inline'  => true,
+				],
+
 				'alignment' => [
 					'type'              => 'alignment',
 					'title'  			=> Text::_('COM_SPPAGEBUILDER_GLOBAL_ALIGNMENT'),

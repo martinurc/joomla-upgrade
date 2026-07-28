@@ -10,6 +10,7 @@ defined ('_JEXEC') or die ('restricted aceess');
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Plugin\CMSPlugin;
+use JoomShaper\SPPageBuilder\DynamicContent\Site\PageSeoSettings;
 
 $sppb_helper_path = JPATH_ADMINISTRATOR . '/components/com_sppagebuilder/helpers/sppagebuilder.php';
 
@@ -54,6 +55,13 @@ class plgSpsimpleportfolioSppagebuilder extends CMSPlugin
 
 		if ( $isSppagebuilderEnabled && $isIntegrationEnabled )
 		{
+			$pageContent = SppagebuilderHelper::getPageContent($option, $view, $item->id);
+
+			if ($pageContent)
+			{
+				$item->seoInstance = PageSeoSettings::make(ApplicationHelper::preparePageData($pageContent));
+			}
+
 			$item->description = SppagebuilderHelper::onIntegrationPrepareContent($item->description, $option, $view, $item->id);
 		}
 	}

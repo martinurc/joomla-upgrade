@@ -9,10 +9,18 @@
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Application\ConsoleApplication;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Version;
+use Joomla\Component\Finder\Administrator\Indexer\Indexer;
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\CollectionIds;
+use JoomShaper\SPPageBuilder\DynamicContent\Models\Page;
+use JoomShaper\SPPageBuilder\DynamicContent\Services\CollectionDataService;
+use JoomShaper\SPPageBuilder\DynamicContent\Services\CollectionItemsService;
+use JoomShaper\SPPageBuilder\DynamicContent\Site\CollectionHelper;
 
 $version = new Version();
 $JoomlaVersion = $version->getShortVersion();
@@ -182,6 +190,12 @@ class PlgFinderSppagebuilder extends FinderIndexerAdapter
 	 */
 	protected function index( FinderIndexerResult $item, $format = 'html')
 	{
+		$app = Factory::getApplication();
+		if($app instanceof ConsoleApplication)
+		{
+			return;
+		}
+		
 		$item->setLanguage();
 
 		// Check if the extension is enabled
@@ -189,6 +203,7 @@ class PlgFinderSppagebuilder extends FinderIndexerAdapter
 		{
 			return;
 		}
+
 
 		// Set the item context
 		$item->context = 'com_sppagebuilder.page';
@@ -200,9 +215,47 @@ class PlgFinderSppagebuilder extends FinderIndexerAdapter
 			$item->body = $item->text;
 		}
 
-		// Set the summary and the body from page builder settings object.
-		$item->summary = SppagebuilderHelperSite::getPrettyText($item->body);
-		$item->body = SppagebuilderHelperSite::getPrettyText($item->body);
+		if( isset($item->extension_view ) && $item->extension_view == 'dynamic_content:detail')
+		{
+			$input = Factory::getApplication()->input;
+			$viewId = $item->view_id;
+			$itemIds = CollectionItemsService::fetchItemIdsByCollectionId($viewId);
+			
+			foreach($itemIds as $itemId)
+			{
+				$itemClone = clone $item;
+				$input->set('collection_item_id', [$itemId]);
+
+				$itemClone->summary = SppagebuilderHelperSite::getPrettyText($itemClone->body);
+				$itemClone->body = SppagebuilderHelperSite::getPrettyText($itemClone->body);
+				$linkObject = (object) ['type' => 'page', 'page' => $itemClone->id]; 
+				$itemClone->url = $this->generateDynamicContentLink($linkObject, ['id' => $itemId]);
+				$itemClone->route = $itemClone->url;
+				$itemClone->path = $itemClone->route;
+
+				if (isset($menuItem->title) && $menuItem->title)
+				{
+					$itemClone->title = $menuItem->title;
+				} else {
+					$itemClone->title = CollectionDataService::getItemTitleById($itemId, $viewId) ?? $itemClone->title;
+				}
+
+				$itemClone->addInstruction(Indexer::META_CONTEXT, 'user');
+				$itemClone->addTaxonomy('Type', 'Page');
+				$itemClone->addTaxonomy('Language', $itemClone->language);
+
+				$this->indexer->index($itemClone);
+			}
+
+			return;
+
+		} else {
+			// Set the summary and the body from page builder settings object.
+			$item->summary = SppagebuilderHelperSite::getPrettyText($item->body);
+			$item->body = SppagebuilderHelperSite::getPrettyText($item->body);
+		}
+
+		
 
 		$item->url = $this->getUrl($item->id, $this->extension, $this->layout);
 		$link = 'index.php?option=com_sppagebuilder&view=page&id=' . $item->id;
@@ -226,7 +279,7 @@ class PlgFinderSppagebuilder extends FinderIndexerAdapter
 		}
 
 		// Handle the page author data.
-		$item->addInstruction(FinderIndexer::META_CONTEXT, 'user');
+		$item->addInstruction(Indexer::META_CONTEXT, 'user');
 
 		// Add the type taxonomy data.
 		$item->addTaxonomy('Type', 'Page');
@@ -284,4 +337,63 @@ class PlgFinderSppagebuilder extends FinderIndexerAdapter
 
 		return $item;
 	}
+
+	private function generateDynamicContentLink($link, $item)
+    {
+        if (empty($link) || empty($item)) {
+            return null;
+        }
+
+        $linkType = $link->type ?? null;
+
+        if (empty($linkType)) {
+            return null;
+        }
+
+        switch ($linkType) {
+            case 'page':
+                $pageId = $link->page ?? null;
+                if ($pageId === CollectionIds::ARTICLES_COLLECTION_ID) {
+                    return CollectionHelper::getJoomlaSingleArticleRoute($item);
+                }
+                $page = !empty($pageId)
+                    ? Page::where('id', $pageId)->first(['extension_view', 'view_id', 'id'])
+                    : null;
+
+                if (empty($page) || $page->isEmpty()) {
+                    return null;
+                }
+
+                if ($page->extension_view === 'dynamic_content:detail') {
+                    $routeUrl = '/index.php?option=com_sppagebuilder&view=dynamic';
+
+                    if ($page->view_id === CollectionIds::ARTICLES_COLLECTION_ID) {
+                        $routeUrl = CollectionHelper::getJoomlaSingleArticleRoute($item);
+                        return Route::_($routeUrl, false);
+                    } else if ($page->view_id === CollectionIds::TAGS_COLLECTION_ID) {
+                        $menuItemId = CollectionHelper::getTagsMenuItemId();
+                        if (!empty($menuItemId)) {
+                            $routeUrl .= '&Itemid=' . $menuItemId;
+                        }
+                        return Route::_(CollectionHelper::buildRouteWithTagItemId($routeUrl, $item['id']), false);
+                    } else {
+                        $menuItemId = CollectionHelper::getCurrentMenuItemId($page->view_id);
+                        if (!empty($menuItemId)) {
+                            $routeUrl .= '&Itemid=' . $menuItemId;
+                        }
+                        return Route::_(CollectionHelper::buildRouteWithCollectionItemId($routeUrl, $item['id']), false);
+                    }
+                }
+
+                $routeUrl = '/index.php?option=com_sppagebuilder&view=page&id=' . $page->id;
+                return Route::_($routeUrl, false);
+            case 'url':
+                return $link->url ?? null;
+            case 'menu':
+                return Route::_($link->menu, false);
+            case 'popup': // Implement popup link later
+            default:
+                return null;
+        }
+    }
 }

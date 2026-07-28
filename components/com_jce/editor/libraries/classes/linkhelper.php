@@ -1,14 +1,15 @@
 <?php
+
 /**
  * @package     JCE
  * @subpackage  Editor
  *
  * @copyright   Copyright (C) 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
+ * @copyright   Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 
@@ -37,18 +38,56 @@ abstract class WFLinkHelper
         return $url;
     }
 
-    public static function removeItemId($url)
+    private static function getDefaultItemId()
     {
-        $url = preg_replace('#&Itemid=[0-9]+#', '', $url);
+        // get menus
+        $menus = Factory::getApplication()->getMenu('site');
 
-        return $url;
+        // get "default" menu
+        $default = $menus->getDefault();
+
+        return $default ? (int) $default->id : 0;
     }
 
     public static function removeAlias($url)
     {
-        $url = preg_replace('#\:[\w-]+#ui', '', $url);
+        // Only strip alias after a numeric ID (e.g. id=1:article-alias)
+        $url = preg_replace('#(?<=\d):[\w-]+#u', '', $url);
 
         return $url;
+    }
+
+    private static function parseQueryVars($url)
+    {
+        $parsed = parse_url($url, PHP_URL_QUERY);
+        $parsed = str_replace('&amp;', '&', $parsed);
+        parse_str($parsed, $vars);
+        return $vars;
+    }
+
+    public static function removeItemId($url)
+    {
+        if (strpos($url, 'Itemid') === false) {
+            return $url;
+        }
+
+        $vars = self::parseQueryVars($url);
+
+        if (!array_key_exists('Itemid', $vars)) {
+            return $url;
+        }
+
+        // remove the itemid
+        unset($vars['Itemid']);
+
+        if (empty($vars)) {
+            return 'index.php';
+        }
+
+        // rebuild the query string, preserving colons (valid in query values)
+        $query = str_replace('%3A', ':', http_build_query($vars));
+
+        return 'index.php?' . $query;
     }
 
     public static function removeHomeItemId($url)
@@ -57,27 +96,17 @@ abstract class WFLinkHelper
             return $url;
         }
 
-        $parsed = parse_url($url, PHP_URL_QUERY);
-        $parsed = str_replace('&amp;', '&', $parsed);
-
-        parse_str($parsed, $vars);
+        $vars = self::parseQueryVars($url);
 
         if (!array_key_exists('Itemid', $vars)) {
             return $url;
         }
 
-        // get menus
-        $menus = Factory::getApplication()->getMenu('site');
-        // get "default" menu
-        $default = $menus->getDefault();
+        $defaultId = self::getDefaultItemId();
 
-        // Itemid is unique
-        if ($default->id != $vars['Itemid']) {
-            return $url;
+        if ((int) $defaultId === (int) $vars['Itemid']) {
+            $url = self::removeItemId($url);
         }
-
-        // remove "default" Itemid
-        $url = self::removeItemId($url);
 
         return $url;
     }

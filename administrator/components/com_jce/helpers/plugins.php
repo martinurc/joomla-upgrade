@@ -1,18 +1,18 @@
 <?php
 
 /**
- * @copyright     Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
- * @license       GNU/GPL 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * @copyright     Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
+ * @license       GNU General Public License version 2 or later; see LICENSE.txt
  * JCE is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
  * is derivative of works licensed under the GNU General Public License or
  * other free or open source software licenses
  */
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\File;
-use Joomla\CMS\Filesystem\Folder;
+use Joomla\Filesystem\File;
+use Joomla\Filesystem\Folder;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Table\Table;
@@ -347,7 +347,7 @@ abstract class JcePluginsHelper
             $plugins = explode(',', $profile->plugins);
             $key = array_search($plugin->name, $plugins);
 
-            if ($key) {
+            if ($key !== false) {
                 unset($plugins[$key]);
                 $profile->plugins = implode(',', array_values($plugins));
             }
@@ -367,10 +367,10 @@ abstract class JcePluginsHelper
                     }
                     $profile->rows = implode(';', $lists);
                 }
+            }
 
-                if (!$profile->store()) {
-                    throw new Exception(Text::sprintf('WF_INSTALLER_REMOVE_FROM_GROUP_ERROR', $plugin->name));
-                }
+            if (!$profile->store()) {
+                throw new Exception(Text::sprintf('WF_INSTALLER_REMOVE_FROM_GROUP_ERROR', $plugin->name));
             }
         }
 
@@ -397,7 +397,7 @@ abstract class JcePluginsHelper
         }
     }
 
-    public static function postInstall($route, $plugin, $installer)
+    public static function postInstall($route, $plugin, $_installer)
     {
         $db = Factory::getDBO();
 

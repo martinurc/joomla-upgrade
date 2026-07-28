@@ -12,6 +12,8 @@ use ApplicationHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Pathway\Pathway;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Registry\Registry;
 use JoomShaper\SPPageBuilder\DynamicContent\Constants\FieldTypes;
@@ -19,6 +21,7 @@ use JoomShaper\SPPageBuilder\DynamicContent\Models\CollectionField;
 use JoomShaper\SPPageBuilder\DynamicContent\Services\CollectionDataService;
 use JoomShaper\SPPageBuilder\DynamicContent\Services\CollectionItemsService;
 use JoomShaper\SPPageBuilder\DynamicContent\Supports\Arr;
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\CollectionIds;
 use stdClass;
 
 class PageSeoSettings
@@ -131,6 +134,8 @@ class PageSeoSettings
         $this->prepareOgMetaTags();
         $this->prepareTwitterMetaTags();
         $this->preparePageMetaTags();
+        $this->prepareSchemaOrgJsonLd();
+        $this->preparePathway();
     }
 
     /**
@@ -146,20 +151,79 @@ class PageSeoSettings
         if (empty($itemId)) {
             return null;
         }
+        $input = Factory::getApplication()->input;
+        $collectionType = $input->get('collection_type');
 
-        $data = (new CollectionDataService())->fetchCollectionItemById($itemId);
-        $collectionId = $data['collection_id'] ?? null;
-        $fieldKeys = $this->getFieldKeys($collectionId);
-
-        foreach ($data as $key => $value) {
-            if (array_key_exists($key, $fieldKeys)) {
-                $data[$fieldKeys[$key]] = $value;
-                unset($data[$key]);
+        if ($collectionType === 'articles') {
+            if (!\class_exists('SppagebuilderHelperArticles')) {
+                require_once JPATH_ROOT . '/components/com_sppagebuilder/helpers/articles.php';
             }
+
+            try {
+                $articlesCount = \SppagebuilderHelperArticles::getArticlesCount();
+                $articles = \SppagebuilderHelperArticles::getArticles($articlesCount);
+                foreach ($articles as $article) {
+                    if ($article->id == $itemId) {
+                        $data = CollectionHelper::getDetailPageDataFromArticles();
+                        $collectionId = $data['collection_id'] ?? null;
+                        $fieldKeys = $this->getFieldKeys($collectionId);
+
+                        foreach ($data as $key => $value) {
+                            if (array_key_exists($key, $fieldKeys)) {
+                                $data[$fieldKeys[$key]] = $value;
+                                unset($data[$key]);
+                            }
+                        }
+
+                        $this->collectionData = $data;
+                        return $this;
+                    }
+                }
+            } catch (\Exception $e) {
+            }
+        } else if ($collectionType === 'tags') {
+            $db = \Joomla\CMS\Factory::getDbo();
+            $query = $db->getQuery(true)
+                ->select('COUNT(*)')
+                ->from('#__tags')
+                ->where('id = ' . (int) $itemId)
+                ->where('published = 1');
+            $db->setQuery($query);
+            $tagCount = $db->loadResult();
+            
+            if ($tagCount > 0) {
+                $data = CollectionHelper::getDetailPageDataFromTags();
+                $collectionId = $data['collection_id'] ?? null;
+                $fieldKeys = $this->getFieldKeys($collectionId);
+
+                foreach ($data as $key => $value) {
+                    if (array_key_exists($key, $fieldKeys)) {
+                        $data[$fieldKeys[$key]] = $value;
+                        unset($data[$key]);
+                    }
+                }
+
+                $this->collectionData = $data;
+                return $this;
+            }
+        } else {
+            $data = (new CollectionDataService())->fetchCollectionItemById($itemId);
+            $collectionId = $data['collection_id'] ?? null;
+            $fieldKeys = $this->getFieldKeys($collectionId);
+    
+            foreach ($data as $key => $value) {
+                if (array_key_exists($key, $fieldKeys)) {
+                    if (is_string($value) && strpos($value, '{') === 0 && strpos($value, '}') === strlen($value) - 1 && strpos($value, 'src') !== false) {
+                        $value = json_decode($value);
+                        $value = $value->src;
+                    }
+                    $data[$fieldKeys[$key]] = $value;
+                    unset($data[$key]);
+                }
+            }
+    
+            $this->collectionData = $data;
         }
-
-        $this->collectionData = $data;
-
         return $this;
     }
 
@@ -174,6 +238,40 @@ class PageSeoSettings
     {
         if (empty($collectionId)) {
             return [];
+        }
+
+        if ($collectionId === CollectionIds::ARTICLES_COLLECTION_ID) {
+            // Articles source - return predefined field keys
+            return [
+                'title' => '{{title}}',
+                'alias' => '{{alias}}',
+                'introtext' => '{{intro text}}',
+                'fulltext' => '{{full text}}',
+                'featured_image' => '{{featured image}}',
+                'image_intro' => '{{intro image}}',
+                'image_fulltext' => '{{full image}}',
+                'image_intro_caption' => '{{intro image caption}}',
+                'image_fulltext' => '{{full image caption}}',
+                'link' => '{{article link}}',
+                'username' => '{{author}}',
+                'category' => '{{category}}',
+                'created date' => '{{created date}}',
+                'modified' => '{{modified}}',
+                'hits' => '{{hits}}',
+                'published' => '{{published}}'
+            ];
+        }
+
+        if ($collectionId === CollectionIds::TAGS_COLLECTION_ID) {
+            // Tags source - return predefined field keys
+            return [
+                'title' => '{{title}}',
+                'alias' => '{{alias}}',
+                'description' => '{{description}}',
+                'created' => '{{created}}',
+                'modified' => '{{modified}}',
+                'published' => '{{published}}'
+            ];
         }
 
         $fields = CollectionField::where('collection_id', $collectionId)
@@ -206,7 +304,7 @@ class PageSeoSettings
      * @return string
      * @since 5.5.0
      */
-    protected function parseVariable($value)
+    protected function parseVariable($value, $isStripTags = false)
     {
         if (empty($value) || empty($this->collectionData)) {
             return $value;
@@ -224,7 +322,11 @@ class PageSeoSettings
             $replacement = $this->collectionData[$match] ?? null;
 
             if (is_null($replacement)) {
-                continue;
+                return "";
+            }
+
+            if ($isStripTags) {
+                $replacement = strip_tags($replacement);
             }
 
             $value = str_replace($match, $replacement, $value);
@@ -279,7 +381,7 @@ class PageSeoSettings
         $ogImage = $this->pageData->og_image ?? '';
         $ogDescription = $this->pageData->og_description ?? '';
         $ogAlt = '';
-        
+        $metaDescription = $attributes->meta_description ?? '';
 
         if (!empty($ogImage) && is_string($ogImage)) {
             if (preg_match("@^{@", $ogImage)) {
@@ -295,21 +397,26 @@ class PageSeoSettings
             }
         }
 
-        if (is_object($ogImage) && isset($ogImage->src)) {
-            $ogImage = $ogImage->src;
+        if (is_object($ogImage)) {
+            if(isset($ogImage->src)) {
+                $ogImage = $ogImage->src;
+            } else {
+                $ogImage = '';
+            }
         }
-
-        
 
         $attributes->og_title = $this->parseVariable($ogTitle);
         $attributes->og_image = $this->parseVariable($ogImage) ?? '';
         $attributes->og_alt = $this->parseVariable($ogAlt);
+        $attributes->meta_description = $this->parseVariable($metaDescription, true) ?? '';
 
-        if (stripos($attributes->og_image, 'http') !== 0) {
+
+        
+        if (!empty($attributes->og_image) && stripos($attributes->og_image, 'http') !== 0) {
             $attributes->og_image = Uri::root() . $attributes->og_image;
         }
 
-        $attributes->og_description = $this->parseVariable($ogDescription);
+        $attributes->og_description = $this->parseVariable($ogDescription, true);
         $this->attributes = new Registry($attributes);
         return $this;
     }
@@ -329,8 +436,11 @@ class PageSeoSettings
             $pageTitle = $this->menu->title ?? '';
         }
 
-        if (!empty($this->collectionData) && !empty($this->collectionData['{{title}}'])) {
-            $pageTitle = $this->collectionData['{{title}}'];
+        if (!empty($this->collectionData)) {
+            $titleValue = $this->getTitleFieldValue();
+            if (!empty($titleValue)) {
+                $pageTitle = $titleValue;
+            }
         }
 
         $globalTitle = (int) $this->globalConfig->get('sitename_pagetitles');
@@ -342,6 +452,41 @@ class PageSeoSettings
 		}
 
         return $pageTitle;
+    }
+
+    /**
+     * Get the value of the title field by type
+     *
+     * @return string|null
+     * @since 6.2.0
+     */
+    protected function getTitleFieldValue()
+    {
+        if (empty($this->collectionData)) {
+            return null;
+        }
+
+        $collectionId = $this->collectionData['collection_id'] ?? null;
+
+        if (empty($collectionId)) {
+            return null;
+        }
+
+        if ($collectionId === CollectionIds::ARTICLES_COLLECTION_ID || $collectionId === CollectionIds::TAGS_COLLECTION_ID) {
+            return $this->collectionData['{{title}}'] ?? null;
+        }
+
+        $titleField = CollectionField::where('collection_id', $collectionId)
+            ->where('type', FieldTypes::TITLE)
+            ->first();
+
+        if (empty($titleField)) {
+            return null;
+        }
+
+        $titleFieldKey = '{{' . strtolower($titleField->name) . '}}';
+        
+        return $this->collectionData[$titleFieldKey] ?? null;
     }
 
     /**
@@ -379,6 +524,7 @@ class PageSeoSettings
 
         $language = $this->pageData->language ?? $this->app->getLanguage()->getTag();
         $language = $language === '*' ? $this->app->getLanguage()->getTag() : $language;
+        $language = str_replace('-', '_', $language);
 
         if(!$isOgDisabled){
             $this->document->addCustomTag('<meta property="og:locale" content="' . $language . '" />');
@@ -519,6 +665,108 @@ class PageSeoSettings
      * @return self
      * @since 5.5.0
      */
+    /**
+     * Output Schema.org JSON-LD from page attribs.schema (Joomla schemaorg plugin shape).
+     *
+     * @return self
+     * @since  5.x
+     */
+    protected function prepareSchemaOrgJsonLd()
+    {
+        if (($this->pageData->extension_view ?? '') === 'popup') {
+            return $this;
+        }
+
+        $raw = $this->attributes->get('schema');
+
+        if ($raw === null || $raw === '' || $raw === []) {
+            return $this;
+        }
+
+        if (\is_object($raw)) {
+            $raw = json_decode(json_encode($raw), true);
+        }
+
+        if (!\is_array($raw)) {
+            return $this;
+        }
+
+        $raw = $this->parseSchemaVariableRecursive($raw);
+
+        $thisDoc = Factory::getDocument();
+        $thisApp = Factory::getApplication();
+
+        $graph = PageSchemaOrgBuilder::build($this->pageData, $raw, $thisDoc, $thisApp);
+
+        if ($graph === null || empty($graph['@graph']) || !\is_array($graph['@graph'])) {
+            return $this;
+        }
+
+        $flags = \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_HEX_TAG | \JSON_PRETTY_PRINT;
+        $json  = json_encode($graph, $flags);
+
+        if ($json === false) {
+            return $this;
+        }
+
+        $this->document->addCustomTag(
+            '<script type="application/ld+json">' . "\n" . $json . "\n" . '</script>'
+        );
+
+        return $this;
+    }
+
+    /**
+     * Replace {{collection field}} tokens in schema strings (detail / dynamic pages).
+     *
+     * @param   mixed  $data
+     *
+     * @return  mixed
+     */
+    protected function parseSchemaVariableRecursive($data)
+    {
+        if (\is_string($data)) {
+            return $this->replaceCollectionPlaceholders($data);
+        }
+
+        if (!\is_array($data)) {
+            return $data;
+        }
+
+        $out = [];
+
+        foreach ($data as $k => $v) {
+            $out[$k] = $this->parseSchemaVariableRecursive($v);
+        }
+
+        return $out;
+    }
+
+    protected function replaceCollectionPlaceholders(string $value): string
+    {
+        if ($value === '' || empty($this->collectionData)) {
+            return $value;
+        }
+
+        if (!preg_match_all('/\{\{[^}]+\}\}/', $value, $matches)) {
+            return $value;
+        }
+
+        foreach ($matches[0] as $match) {
+            $replacement = $this->collectionData[$match] ?? $this->collectionData[strtolower($match)] ?? null;
+
+            if ($replacement !== null && !\is_scalar($replacement)) {
+                $replacement = '';
+            }
+
+            if ($replacement !== null && (string) $replacement !== '') {
+                $value = str_replace($match, (string) $replacement, $value);
+            }
+        }
+
+        return $value;
+    }
+
     protected function preparePageMetaTags()
     {
         $metaDescription = $this->attributes->get('meta_description', '');
@@ -544,6 +792,43 @@ class PageSeoSettings
         if (!empty($robots)) {
             $this->document->setMetadata('robots', $robots);
         }
+
+        return $this;
+    }
+
+    /**
+     * Prepare the pathway for dynamic content detail pages
+     *
+     * @return self
+     * @since 6.2.3
+     */
+    protected function preparePathway()
+    {
+        if (empty($this->collectionData)) {
+            return $this;
+        }
+
+        $pathway = $this->app->getPathway();
+        
+        if (empty($pathway)) {
+            return $this;
+        }
+
+        $titleValue = $this->getTitleFieldValue();
+        
+        if (empty($titleValue)) {
+            return $this;
+        }
+
+        $currentUri = Uri::getInstance();
+        $currentPath = $currentUri->getPath();
+        
+        $query = $currentUri->getQuery();
+        if (!empty($query)) {
+            $currentPath .= '?' . $query;
+        }
+
+        $pathway->addItem($titleValue, $currentPath);
 
         return $this;
     }

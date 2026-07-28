@@ -526,6 +526,13 @@ SpAddonsConfig::addonConfig([
                     'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_LINK'),
                 ],
 
+                'button_aria_label' => [
+                    'type' => 'text',
+                    'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_ARIA_LABEL'),
+                    'desc' => Text::_('COM_SPPAGEBUILDER_GLOBAL_ARIA_LABEL_DESC'),
+                    'std' => '',
+                ],
+
                 'button_typography' => [
                     'type' => 'typography',
                     'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_TYPOGRAPHY'),

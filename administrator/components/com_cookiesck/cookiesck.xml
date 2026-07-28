@@ -9,7 +9,7 @@
 	<author>Cedric Keiflin</author>
 	<authorEmail>ced1870@gmail.com</authorEmail>
 	<authorUrl>https://www.joomlack.fr</authorUrl>
-	<version>3.7.4</version>
+	<version>3.8.5</version>
 	<description>Manage the Cookies on your website. Just publish the plugin to enable the toolbar on frontend.</description>
 	<scriptfile>install.php</scriptfile>
 	<administration>

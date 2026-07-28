@@ -22,6 +22,8 @@ class SppagebuilderAddonTestimonial_carousel extends SppagebuilderAddons
         $class = (isset($settings->class) && $settings->class) ? ' ' . $settings->class : '';
         $testimonial_carousel_layout = (isset($settings->testimonial_carousel_layout) && $settings->testimonial_carousel_layout) ? $settings->testimonial_carousel_layout : '';
         $carousel_autoplay = (isset($settings->carousel_autoplay) && $settings->carousel_autoplay) ? $settings->carousel_autoplay : 0;
+        $loop = !isset($settings->loop) ? 1 : (int) $settings->loop;
+        $carousel_pause_on_hover = (isset($settings->carousel_pause_on_hover) && $settings->carousel_pause_on_hover) ? 1 : 0;
         $carousel_speed = (isset($settings->carousel_speed) && $settings->carousel_speed) ? $settings->carousel_speed : 1500;
         $carousel_interval = (isset($settings->carousel_interval) && $settings->carousel_interval) ? $settings->carousel_interval : 4500;
 
@@ -92,7 +94,9 @@ class SppagebuilderAddonTestimonial_carousel extends SppagebuilderAddons
 		data-arrow="' . $carousel_arrow . '"
 		data-dots="' . $carousel_bullet . '"
 		data-testi-layout="' . $testimonial_carousel_layout . '"
+		data-loop="' . ($loop ? 'true' : 'false') . '"
 		data-autoplay="' . $carousel_autoplay . '"
+		data-pause-on-hover="' . $carousel_pause_on_hover . '"
 		data-speed="' . $carousel_speed . '"
 		data-interval="' . $carousel_interval . '"
 		data-margin-xl="' . $carousel_margin_xl . '"
@@ -116,6 +120,9 @@ class SppagebuilderAddonTestimonial_carousel extends SppagebuilderAddons
 
             foreach ($settings->sp_testimonial_carousel_item as $item_key => $carousel_item)
             {
+                if(isset($carousel_item->item_visibility) && !$carousel_item->item_visibility){
+                    continue;
+                }
                 $uniqId = 'sppb-testi-' . $this->addon->id . '-carousel-item-key-' . $item_key;
                 $client_details = '';
 
@@ -266,7 +273,7 @@ class SppagebuilderAddonTestimonial_carousel extends SppagebuilderAddons
         //Bullet Style
         $carousel_bullet = (isset($settings->carousel_bullet) && $settings->carousel_bullet) ? $settings->carousel_bullet : 1;
 
-        $settings->bullet_line_height = (isset($settings->bullet_height) && $settings->bullet_height) ? (($settings->bullet_height) - ($settings->bullet_border_width)) : "";
+        $settings->bullet_line_height = (isset($settings->bullet_height) && $settings->bullet_height) ? ((int)($settings->bullet_height) - (int)($settings->bullet_border_width)) : "";
 
         if ($carousel_bullet)
         {
@@ -449,6 +456,9 @@ class SppagebuilderAddonTestimonial_carousel extends SppagebuilderAddons
         {
             foreach ($settings->sp_testimonial_carousel_item as $item_key => $carousel_item)
             {
+                if(isset($carousel_item->item_visibility) && !$carousel_item->item_visibility){
+                    continue;
+                }
                 $uniqId = '#sppb-testi-' . $this->addon->id . '-carousel-item-key-' . $item_key;
                 $css .= $uniqId . '.sppb-carousel-extended-item .sppb-testimonial-carousel-rating:before {';
                 if(isset($carousel_item->client_rating) && $carousel_item->client_rating){
@@ -716,6 +726,9 @@ class SppagebuilderAddonTestimonial_carousel extends SppagebuilderAddons
 					}
 
 				_.each(data.sp_testimonial_carousel_item, function(carousel_item, caro_index){
+                    if(carousel_item.item_visibility !== undefined && carousel_item.item_visibility === false){
+                        return;
+                    }
 					const uniqId = `#sppb-testi-${data.id}-carousel-item-key-${caro_index}`;
 			#>
             <# if (carousel_item.client_rating) { #>
@@ -788,6 +801,7 @@ class SppagebuilderAddonTestimonial_carousel extends SppagebuilderAddons
 				data-dots="{{data.carousel_bullet}}"
 				data-testi-layout="{{data.testimonial_carousel_layout}}"
 				data-autoplay="{{data.carousel_autoplay}}"
+				data-pause-on-hover="{{data.carousel_pause_on_hover}}"
 				data-speed="{{data.carousel_speed}}"
 				data-interval="{{data.carousel_interval}}"
 				data-margin-xl="{{carousel_margin_xl}}"
@@ -802,6 +816,9 @@ class SppagebuilderAddonTestimonial_carousel extends SppagebuilderAddons
 				data-item-number-xs="{{carousel_item_number_xs || 1}}">
 				<# if(_.isArray(data.sp_testimonial_carousel_item)){
 					_.each(data.sp_testimonial_carousel_item, function(carousel_item, caro_index){
+                    if(carousel_item.item_visibility !== undefined && carousel_item.item_visibility === false){
+                        return;
+                    }
 					const uniqId= `sppb-testi-${data.id}-carousel-item-key-${caro_index}`;
 					let client_details = "";
 					var carouselImg = {}

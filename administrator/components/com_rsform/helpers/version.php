@@ -9,7 +9,7 @@ defined('_JEXEC') or die;
 
 class RSFormProVersion
 {
-	public $version = '3.4.2';
+	public $version = '3.4.9';
 	public $key		= '2XKJ3KS7JO';
 	
 	public function __toString()

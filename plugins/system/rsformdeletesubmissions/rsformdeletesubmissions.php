@@ -83,7 +83,7 @@ class plgSystemRsformdeletesubmissions extends CMSPlugin
 		$remove = array();
         foreach ($items as $i => $item)
         {
-            if ($item->element == 'com_rsform')
+            if (isset($item->element) && $item->element == 'com_rsform')
             {
                 if (
                     ($item->link === 'index.php?option=com_rsform&view=forms' && !$user->authorise('forms.manage', 'com_rsform')) ||

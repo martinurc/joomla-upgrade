@@ -21,7 +21,9 @@ use Joomla\CMS\Filesystem\Folder;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Language\Multilanguage;
+use Joomla\CMS\Menu\AdministratorMenuItem;
 use Joomla\CMS\Version;
+use JoomShaper\SPPageBuilder\DynamicContent\Constants\CollectionIds;
 
 JLoader::register('SppagebuilderHelper', JPATH_ADMINISTRATOR . '/components/com_sppagebuilder/helpers/sppagebuilder.php');
 
@@ -46,6 +48,8 @@ class  plgSystemSppagebuilder extends CMSPlugin
 
 	protected $autoloadLanguage = true;
 	protected $popupContents = [];
+	protected $articleDetailsPageContent = '';
+	protected $articleIndexPageContent = '';
 
 	private function getPopupsByIds(array $ids)
 	{
@@ -255,7 +259,10 @@ class  plgSystemSppagebuilder extends CMSPlugin
 				if (!$params->get('disablecss', 0))
 				{
 					SppagebuilderHelperSite::addStylesheet('sppagebuilder.css');
-					SppagebuilderHelperSite::addStylesheet('animate.min.css');
+					if (!$params->get('disableanimatecss', 0))
+					{
+						SppagebuilderHelperSite::addStylesheet('animate.min.css');
+					}
 					SppagebuilderHelperSite::addContainerMaxWidth();
 				}
 
@@ -364,6 +371,18 @@ class  plgSystemSppagebuilder extends CMSPlugin
 
 		if ($app->isClient('site')) {
 			$this->loadPopupContent();
+
+			if ($option === 'com_content' && ($view === 'article' || $view === 'category' || $view === 'featured' || $view === 'archive')) {
+				self::loadPageBuilderSiteLanguage();
+				SppagebuilderHelperSite::addStylesheet('dynamic-content.css');
+				SppagebuilderHelperSite::addScript('dynamic-content.js');
+			}
+
+			if ($option === 'com_content' && $view === 'article') {
+				$this->loadArticleDetailsPage();
+			} else if ($option === 'com_content' && ($view === 'category' || $view === 'featured' || $view === 'archive')) {
+				$this->loadArticleIndexPage();
+			}
 		}
 	}
 
@@ -511,8 +530,12 @@ class  plgSystemSppagebuilder extends CMSPlugin
 
 		if (!empty($popupAttribs['background_type']) && !empty($popupAttribs['bg_media']) && $popupAttribs['background_type'] === 'image')
 		{
+			$bgImageSrc = $popupAttribs['bg_media']['src'];
+			if (!preg_match('#^(https?://|//)#', $bgImageSrc) && substr($bgImageSrc, 0, 1) !== '/') {
+				$bgImageSrc = Uri::root(true) . '/' . ltrim($bgImageSrc, '/');
+			}
 			$cssOutput .= ' .page-' . $popupId . '.sp-pagebuilder-popup .builder-container {
-				background-image: url("' . $popupAttribs['bg_media']['src'] . '");
+				background-image: url("' . $bgImageSrc . '");
 				background-repeat: ' . (!empty($popupAttribs['bg_media_repeat']) ? $popupAttribs['bg_media_repeat'] : 'no-repeat') . ';
 				background-attachment: ' . (!empty($popupAttribs['bg_media_attachment']) ? $popupAttribs['bg_media_attachment'] : 'initial') . ';
 				background-position: ' . (!empty($popupAttribs['bg_media_position']) ? $popupAttribs['bg_media_position'] : 'initial') . ';
@@ -576,8 +599,12 @@ class  plgSystemSppagebuilder extends CMSPlugin
 
 			if (!empty($popupAttribs['overlay']) && !empty($popupAttribs['overlay_bg_media']) && !empty($popupAttribs['overlay_background_type']) && $popupAttribs['overlay_background_type'] === 'image')
 			{
+				$overlayBgImageSrc = $popupAttribs['overlay_bg_media']['src'];
+				if (!preg_match('#^(https?://|//)#', $overlayBgImageSrc) && substr($overlayBgImageSrc, 0, 1) !== '/') {
+					$overlayBgImageSrc = Uri::root(true) . '/' . ltrim($overlayBgImageSrc, '/');
+				}
 				$cssOutput .= ' #sp-pagebuilder-overlay-' . $popupId . ' {
-					background-image: url("' . $popupAttribs['overlay_bg_media']['src'] . '");
+					background-image: url("' . $overlayBgImageSrc . '");
 					background-repeat: ' . (!empty($popupAttribs['overlay_bg_media_repeat']) ? $popupAttribs['overlay_bg_media_repeat'] : 'no-repeat') . ';
 					background-attachment: ' . (!empty($popupAttribs['overlay_bg_media_attachment']) ? $popupAttribs['overlay_bg_media_attachment'] : 'initial') . ';
 					background-position: ' . (!empty($popupAttribs['overlay_bg_media_position']) ? $popupAttribs['overlay_bg_media_position'] : 'initial') . ';
@@ -635,7 +662,7 @@ class  plgSystemSppagebuilder extends CMSPlugin
 		}
 		else if (isset($popupAttribs['overlay']) && $popupAttribs['overlay'] === 0)
 		{
-			echo ' #sp-pagebuilder-overlay-' . $popupId . ' {
+			$cssOutput .= ' #sp-pagebuilder-overlay-' . $popupId . ' {
 				display: none;
 			} ';
 		}
@@ -1094,10 +1121,16 @@ class  plgSystemSppagebuilder extends CMSPlugin
 				let isShown = false;
 
 				if (clickType === "random") {
-					document.addEventListener("click", () => {
+					document.addEventListener("click", (event) => {
 						if (isRestricted(' . $popupId . ')) return; 
 						if (!isPermitted(' . $popupId . ')) return;
 						if (!isWithinDateRange(' . $popupId . ')) return;
+
+						let closePopupArea = "#sp-pagebuilder-popup-close-btn-' . $popupId . '";
+						let targetNode = event.target;
+						if (targetNode.closest(closePopupArea)) {
+							return;
+						}
 
 						clicked++;
 						if (clicked >= clickCount) {
@@ -1364,7 +1397,7 @@ class  plgSystemSppagebuilder extends CMSPlugin
 		$popupAttribs['enter_animation'] = isset($popupAttribs['enter_animation']) ? $popupAttribs['enter_animation'] : 'fadeIn';
 		$popupAttribs['exit_animation'] = isset($popupAttribs['exit_animation']) ? $popupAttribs['exit_animation'] : 'rotateIn';
 
-		$scriptContent = 'window.addEventListener("DOMContentLoaded", (event) => {
+		$scriptContent = 'window.addEventListener("DOMContentLoaded", (event) => { 
 			function getImageSrc(imageSrc) {
 				if (!imageSrc?.src) return imageSrc;
 				if (imageSrc.src.includes("http://") || imageSrc.src.includes("https://")) {
@@ -1466,6 +1499,10 @@ class  plgSystemSppagebuilder extends CMSPlugin
 			$popupId = $popup->id;
 			$body = $app->getBody();
 
+			if (!$this->isPopupAccessLevelPermitted($popup->access)) {
+				continue;
+			}
+
 			$popupAttribs = !empty($popup->attribs) && is_string($popup->attribs) ? json_decode($popup->attribs, true) : [];
 			$scriptContent = $this->getScriptContent($popupId, $popupAttribs);
 			$cssOutput = $this->getCssOutput($popupAttribs, $popupId);
@@ -1478,9 +1515,17 @@ class  plgSystemSppagebuilder extends CMSPlugin
 
 			$advancedScriptContent = $this->getAdvancedScriptContent($popupId, $popupAttribs);
 
+			$responsive_class = '';
+
+			$responsive_class .= (isset($popupAttribs['hidden_xl']) && filter_var($popupAttribs['hidden_xl'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-xl ' : '';
+			$responsive_class .= (isset($popupAttribs['hidden_lg']) && filter_var($popupAttribs['hidden_lg'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-lg ' : '';
+			$responsive_class .= (isset($popupAttribs['hidden_md']) && filter_var($popupAttribs['hidden_md'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-md ' : '';
+			$responsive_class .= (isset($popupAttribs['hidden_sm']) && filter_var($popupAttribs['hidden_sm'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-sm ' : '';
+			$responsive_class .= (isset($popupAttribs['hidden_xs']) && filter_var($popupAttribs['hidden_xs'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-xs ' : '';
+
 			$popupDiv = '
-			<div id="sp-pagebuilder-overlay-'. $popupId . '" style="position: fixed; inset: 0; z-index: 9999;"></div>
-			<div class="sp-page-builder  page-' . $popupId . '  sp-pagebuilder-popup">
+			<div class="' .$responsive_class. '" id="sp-pagebuilder-overlay-'. $popupId . '" style="position: fixed; inset: 0; z-index: 9999;"></div>
+			<div class="sp-page-builder  page-' . $popupId . '  sp-pagebuilder-popup '. $responsive_class .'">
 				<div class="sp-pagebuilder-container-popup">
 					<div class=" page-content builder-container">' . $popupContent . '</div>
 				</div>
@@ -1493,6 +1538,30 @@ class  plgSystemSppagebuilder extends CMSPlugin
 
 			$app->setBody($body . $popupDiv);
 		}
+	}
+
+	/**
+	 * Checks if the current user has permission to access the popup based on its access level.
+	 * 
+	 * This method retrieves the current user's authorized view levels and checks if the
+	 * popup's access level is included in that list. If it is, the user is permitted to
+	 * view the popup; otherwise, they are not.
+	 * 
+	 * @param int $popupAccessLevel The access level of the popup.
+	 * 
+	 * @return bool True if the user is permitted to view the popup, false otherwise.
+	 */
+	private function isPopupAccessLevelPermitted($popupAccessLevel)
+	{
+		$user = Factory::getUser();
+		$userAccessLevels = $user->getAuthorisedViewLevels();
+
+		if (in_array($popupAccessLevel, $userAccessLevels))
+		{
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
@@ -1555,11 +1624,55 @@ class  plgSystemSppagebuilder extends CMSPlugin
 			$app->enqueueMessage($e->getMessage(), 'error');
 		}
 	}
+
+
+	function isShaperHelixUltimate()
+	{
+		/** @var CMSApplication $app */
+		$doc = new DOMDocument();
+		libxml_use_internal_errors(true);	
+		try {
+			/** @var CMSApplication $app */
+			$app = Factory::getApplication();
+			$body = $app->getBody();
+			$doc->loadHTML($body);
+			libxml_clear_errors();
+			$xpath = new DOMXPath($doc);
+			/** @var DOMElement $bodyNode */
+			$bodyNode = $xpath->query('//body')->item(0);
+			return $bodyNode ? strpos($bodyNode->getAttribute('class'), 'helix-ultimate') !== false : false;
+		} catch (Exception $e) {
+			return false;
+		}
+	}
+
+	function divWithHtml(DOMDocument $doc, string $html): DOMElement {
+		$wrapper = $doc->createElement('div');
+	
+		$tmp = new DOMDocument();
+		libxml_use_internal_errors(true);
+		$tmp->loadHTML('<?xml encoding="UTF-8"><div id="__frag__">'.$html.'</div>',
+			LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+		libxml_clear_errors();
+	
+		$xp  = new DOMXPath($tmp);
+		$box = $xp->query('//*[@id="__frag__"]')->item(0);
+	
+		if ($box) {
+			foreach (iterator_to_array($box->childNodes) as $child) {
+				$wrapper->appendChild($doc->importNode($child, true));
+			}
+		}
+		return $wrapper;
+	}
 	
 	function onAfterRender()
 	{
 		/** @var CMSApplication $app */
 		$app = Factory::getApplication();
+		$input = $app->input;
+		$option = $input->get('option', '', 'STRING');
+		$view = $input->get('view', '', 'STRING');
 		
 		if ($app->isClient('administrator'))
 		{
@@ -1570,9 +1683,6 @@ class  plgSystemSppagebuilder extends CMSPlugin
 				return;
 			}
 
-			$input = $app->input;
-			$option = $input->get('option', '', 'STRING');
-			$view = $input->get('view', '', 'STRING');
 			$layout = $input->get('layout', '', 'STRING');
 			$id = $input->get($integration['id_alias'], 0, 'INT');
 
@@ -1622,7 +1732,13 @@ class  plgSystemSppagebuilder extends CMSPlugin
 			}
 			else
 			{
-				$dashboardHTML = '<a href="' . $backendEditorLink . '" class="sp-pagebuilder-button-outline">Edit with Backend Editor</a><a href="' . $frontendEditorLink . '" class="sp-pagebuilder-button">Edit with Frontend Editor</a>';
+				$sppbParams = ComponentHelper::getParams('com_sppagebuilder');
+				$enableFrontendEditing = (bool) $sppbParams->get('enable_frontend_editing', 1);
+				$dashboardHTML = '<a href="' . $backendEditorLink . '" class="sp-pagebuilder-button-outline">Edit with Backend Editor</a>';
+				if ($enableFrontendEditing)
+				{
+					$dashboardHTML .= '<a href="' . $frontendEditorLink . '" class="sp-pagebuilder-button">Edit with Frontend Editor</a>';
+				}
 			}
 
 			if ($option === 'com_k2')
@@ -1645,12 +1761,336 @@ class  plgSystemSppagebuilder extends CMSPlugin
 		if ($app->isClient('site'))
 		{
 			$this->renderPopup();
+
+			if ($view !== 'form' && $this->isStandardHTMLDocument($app->getBody()) === true)
+			{
+				$this->renderColorSwitcher();
+			}
+
+			if ($option === 'com_content' && $view === 'article') {
+				$body = $app->getBody();
+				$doc = new DOMDocument();
+				libxml_use_internal_errors(true);
+				$doc->loadHTML($body, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+				libxml_clear_errors();
+
+				if ($this->articleDetailsPageContent) {
+					$xpath = new DOMXPath($doc);
+					if (!empty($xpath->query('//main')) && $xpath->query('//main')->length > 0) {
+						$querySelector = "//main";
+						if ($this->isShaperHelixUltimate()) {
+							$querySelector = "//*[@id='sp-main-body']";
+						}
+
+						foreach ($xpath->query($querySelector) as $node) {
+							while ($node->firstChild) {
+								$node->removeChild($node->firstChild);
+							}
+							$div = $this->divWithHtml($doc, $this->articleDetailsPageContent);
+							$div->setAttribute('class', 'page-content');
+							$divWrapper = $doc->createElement('div');
+							$divWrapper->setAttribute('id', 'sp-page-builder');
+							$divWrapper->setAttribute('class', 'sp-page-builder');
+							$divWrapper->appendChild($div);
+							$node->appendChild($divWrapper);
+						}
+						
+						$out = $doc->saveHTML();
+						$app->setBody($out);
+					}
+				}
+			} else if ($option === 'com_content' && ($view === 'category' || $view === 'featured' || $view === 'archive')) {
+				$body = $app->getBody();
+				$doc = new DOMDocument();
+				libxml_use_internal_errors(true);
+				$doc->loadHTML($body, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+				libxml_clear_errors();
+
+				if ($this->articleIndexPageContent) {
+					$xpath = new DOMXPath($doc);
+					if (!empty($xpath->query('//main')) && $xpath->query('//main')->length > 0) {
+						$querySelector = "//main";
+						if ($this->isShaperHelixUltimate()) {
+							$querySelector = "//*[@id='sp-main-body']";
+						}
+
+						foreach ($xpath->query($querySelector) as $node) {
+							while ($node->firstChild) {
+								$node->removeChild($node->firstChild);
+							}
+							$div = $this->divWithHtml($doc, $this->articleIndexPageContent);
+							$div->setAttribute('class', 'page-content');
+							$divWrapper = $doc->createElement('div');
+							$divWrapper->setAttribute('id', 'sp-page-builder');
+							$divWrapper->setAttribute('class', 'sp-page-builder');
+							$divWrapper->appendChild($div);
+							$node->appendChild($divWrapper);
+						}
+		
+						$out = $doc->saveHTML();
+						$app->setBody($out);
+					}
+				}
+			}
 		}
 	}
 
-	private function getDefaultColors()
+	/**
+	 * Render the color switcher.
+	 *
+	 * @return 	void
+	 * @since 	5.7.0
+	 */
+	private function renderColorSwitcher()
 	{
-		$colorPrefix = '--sppb-';
+		$params = ComponentHelper::getParams('com_sppagebuilder');
+		$colorVariables = $params->get('sppb_color_variables', []);
+		$isEnabledColoSwitcher = $params->get('show_color_switcher', 0);
+		
+		$modes = [];
+		$colors = [];
+
+		foreach($colorVariables as $colorVariable) {
+			$path = $colorVariable->path;
+			$mode = $path[1];
+			$value = $colorVariable->value;
+			
+			if (!isset($colors[$mode])) {
+				array_push($modes, $mode);
+				$colors[$mode] = [$value];
+			} else {
+				array_push($colors[$mode], $value);
+			}
+		}
+
+		if($isEnabledColoSwitcher && count($modes) > 1) {
+			$app = Factory::getApplication();
+			$body = $app->getBody();
+			$colorSwitcherContent = '
+				<div class="sppb-color-switcher-modes">
+					<div class="sppb-color-switcher-toggle">
+						<svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                			<path fill-rule="evenodd" clip-rule="evenodd" d="M0.25 0.75H7.25V12.75C7.25 14.683 5.683 16.25 3.75 16.25C1.817 16.25 0.25 14.683 0.25 12.75V0.75ZM1.75 2.25V12.75C1.75 13.8546 2.64543 14.75 3.75 14.75C4.85457 14.75 5.75 13.8546 5.75 12.75V2.25H1.75Z" fill="#415162"></path>
+                			<path d="M4.25 12.716C4.25 12.9921 4.02614 13.216 3.75 13.216C3.47386 13.216 3.25 12.9921 3.25 12.716C3.25 12.4398 3.47386 12.216 3.75 12.216C4.02614 12.216 4.25 12.4398 4.25 12.716Z" fill="#415162"></path>
+            				<path fill-rule="evenodd" clip-rule="evenodd" d="M9.89941 0.9375L14.8492 5.88725L8 13L7.96967 10.6454L12.7278 5.88725L9.89941 3.05882L8 5L7.96967 2.86724L9.89941 0.9375Z" fill="#415162"></path>
+                			<path fill-rule="evenodd" clip-rule="evenodd" d="M15.75 9.25V16.25H6L7.5 14.75H14.25V10.75H11L12.5 9.25H15.75Z" fill="#415162"></path>
+            			</svg>
+						<span>
+                			<i class="fas fa-chevron-up"></i>
+                			<i class="fas fa-chevron-down"></i>
+            			</span>
+					</div>
+					<div class="sppb-color-switcher-colors-wrapper">
+					<div class="sppb-color-switcher-colors">
+					' . implode('', array_map(function($mode) use ($colors) {
+						$gradientColors = count($colors[$mode]) > 1 
+							? $colors[$mode][0] . ' 50%, ' . $colors[$mode][1] . ' 50%'
+							: $colors[$mode][0] . ' 100%';
+						
+						return sprintf(
+							'<span class="sppb-color-switcher-color" data-mode="%s" style="background-image: linear-gradient(-45deg, %s)"></span>',
+							$mode,
+							$gradientColors
+						);
+					}, $modes)) . '
+					</div>
+					</div>
+				</div>
+			';
+			$app->setBody($body . $colorSwitcherContent);
+		}
+	}
+
+	private function getArticleDetailsPage($id) {
+		if (empty($id)) {
+			return '';
+		}
+
+		try {
+			$db = Factory::getDbo();
+			
+			$query = $db->getQuery(true)
+				->select('*')
+				->from($db->quoteName('#__sppagebuilder'))
+				->where($db->quoteName('extension') . ' = ' . $db->quote('com_sppagebuilder'))
+				->where($db->quoteName('extension_view') . ' = ' . $db->quote('dynamic_content:detail'))
+				->where($db->quoteName('view_id') . ' = ' . CollectionIds::ARTICLES_COLLECTION_ID)
+				->where($db->quoteName('published') . ' = 1');
+			
+			$db->setQuery($query);
+			$page = $db->loadObject();
+
+			if (empty($page)) {
+				return '';
+			}
+			
+			if (!class_exists('ApplicationHelper')) {
+				require_once JPATH_ROOT . '/administrator/components/com_sppagebuilder/editor/helpers/ApplicationHelper.php';
+			}
+			
+			$page = ApplicationHelper::preparePageData($page);
+			
+			$app = Factory::getApplication();
+			$input = $app->input;
+			$input->set('collection_item_id', [$id]);
+			$input->set('collection_type', 'articles');
+			
+			if (!class_exists('AddonParser')) {
+				require_once JPATH_ROOT . '/components/com_sppagebuilder/parser/addon-parser.php';
+			}
+			
+			if (!class_exists('SppagebuilderHelperSite')) {
+				require_once JPATH_ROOT . '/components/com_sppagebuilder/helpers/helper.php';
+			}
+			
+			SppagebuilderHelperSite::initView($page);
+			
+			$content = AddonParser::viewAddons($page->text, 0, 'page-' . $page->id);
+
+			$css = '';
+			if (isset($page->css) && $page->css) {
+				$css = '<style type="text/css">' . $page->css . '</style>';
+			}
+			
+			return $css . $content;
+			
+		} catch (Exception $e) {
+			// Log error for debugging
+			$app = Factory::getApplication();
+			if ($app->isClient('administrator')) {
+				$app->enqueueMessage('Error rendering article details page: ' . $e->getMessage(), 'error');
+			}
+			return '';
+		}
+	}
+
+	private function getArticleIndexPage($id) {
+		try {
+			$db = Factory::getDbo();
+			
+			$query = $db->getQuery(true)
+				->select('*')
+				->from($db->quoteName('#__sppagebuilder'))
+				->where($db->quoteName('extension') . ' = ' . $db->quote('com_sppagebuilder'))
+				->where($db->quoteName('extension_view') . ' = ' . $db->quote('dynamic_content:index'))
+				->where($db->quoteName('view_id') . ' = ' . CollectionIds::ARTICLES_COLLECTION_ID)
+				->where($db->quoteName('published') . ' = 1');
+			
+			$db->setQuery($query);
+			$page = $db->loadObject();
+
+			if (empty($page)) {
+				return '';
+			}
+			
+			
+			if (!class_exists('ApplicationHelper')) {
+				require_once JPATH_ROOT . '/administrator/components/com_sppagebuilder/editor/helpers/ApplicationHelper.php';
+			}
+			
+			$page = ApplicationHelper::preparePageData($page);
+			
+			$app = Factory::getApplication();
+			$input = $app->input;
+			$input->set('collection_item_id', [$id]);
+			$input->set('collection_type', 'articles');
+			
+			
+			if (!class_exists('AddonParser')) {
+				require_once JPATH_ROOT . '/components/com_sppagebuilder/parser/addon-parser.php';
+			}
+			
+			if (!class_exists('SppagebuilderHelperSite')) {
+				require_once JPATH_ROOT . '/components/com_sppagebuilder/helpers/helper.php';
+			}
+			
+			SppagebuilderHelperSite::initView($page);
+			
+			$content = AddonParser::viewAddons($page->text, 0, 'page-' . $page->id);
+			
+			$css = '';
+			if (isset($page->css) && $page->css) {
+				$css = '<style type="text/css">' . $page->css . '</style>';
+			}
+			
+			return $css . $content;
+		} catch (Exception $e) {
+			// Log error for debugging
+			$app = Factory::getApplication();
+			if ($app->isClient('administrator')) {
+				$app->enqueueMessage('Error rendering article index page: ' . $e->getMessage(), 'error');
+			}
+			return '';
+		}
+	}
+
+	private function loadArticleDetailsPage()
+	{
+		$app = Factory::getApplication();
+		$input = $app->input;
+		$id = $input->get('id', 0, 'INT');
+
+		$params = ComponentHelper::getParams('com_sppagebuilder');
+		$showArticleDetailsPageAsDefault = $params->get('show_article_details_page_as_default', 0);
+		
+		if (empty($id)) {
+			return;
+		}
+
+		if (!$showArticleDetailsPageAsDefault) {
+			$db = Factory::getDbo();
+			$query = $db->getQuery(true);
+			$query->select(['id, content'])
+				->from($db->quoteName('#__sppagebuilder'))
+				->where($db->quoteName('extension_view') . ' = ' . $db->quote('article'))
+				->where($db->quoteName('view_id') . ' = ' . $db->quote($id))
+				->where($db->quoteName('active') . ' = ' . $db->quote('1'))
+				->where($db->quoteName('published') . ' = 1');
+			$db->setQuery($query);
+
+			$result = $db->loadObject();
+
+			if (!empty($result->content)) {
+				$articleContent = json_decode($result->content);
+
+				if (!empty($articleContent)) {
+					return null;
+				}
+
+			}
+		}
+		
+		$detailsPage = $this->getArticleDetailsPage($id);
+		
+		if (!empty($detailsPage)) {
+			$this->articleDetailsPageContent = $detailsPage;
+		}
+	}
+
+	private function loadArticleIndexPage()
+	{
+		$app = Factory::getApplication();
+		$input = $app->input;
+		$id = $input->get('id', 0, 'INT');
+		
+		
+		$indexPage = $this->getArticleIndexPage($id);
+		
+		if (!empty($indexPage)) {
+			$this->articleIndexPageContent = $indexPage;
+		}
+	}
+
+	/**
+	 * Get the default colors from the template style (Helix)
+	 * 
+	 * @return mixed
+	 * @since 5.7.0
+	 */
+	private function getDefaultThemeColors()
+	{
+		$colorPrefix = 'sppb';
+
 		$keysToExtract = [
 			"topbar_bg_color",
 			"topbar_text_color",
@@ -1693,6 +2133,12 @@ class  plgSystemSppagebuilder extends CMSPlugin
 
 			$styleObjDecoded = \json_decode($styleObj);
 
+			$isCustomTemplateStyle = isset($styleObjDecoded->custom_style) && $styleObjDecoded->custom_style == 1;
+
+			if(!$isCustomTemplateStyle && isset($styleObjDecoded->preset) && !empty($styleObjDecoded->preset)) {
+				$styleObjDecoded = json_decode($styleObjDecoded->preset);
+			}
+
 			$newStyleObj = new \stdClass();
 
 			foreach ($keysToExtract as $key) {
@@ -1712,9 +2158,10 @@ class  plgSystemSppagebuilder extends CMSPlugin
 			foreach ($styleObjDecoded as $key => $value) {
 				if (is_string($value) && !empty($value)) {
 					array_push($colorValues, [
-						'id' => uniqid(),
+						'path' => [$colorPrefix . '-'  . str_replace('_', '-', strtolower
+						($key)), ''],
 						'value' => $value,
-						'name' => $colorPrefix . str_replace('_', '-', strtolower($key))
+						'isTemplateColor' => true,
 					]);
 				}
 			}
@@ -1726,46 +2173,6 @@ class  plgSystemSppagebuilder extends CMSPlugin
 	}
 
 	/**
-	 * Get the SPPB colors from the database.
-	 *
-	 * @return 	array
-	 * @since 	5.5.6
-	 */
-	private function getSPPBColors()
-	{
-		$db = Factory::getDbo();
-		$query = $db->getQuery(true);
-		$query->select(['id', 'name', 'colors'])
-			->from($db->quoteName('#__sppagebuilder_colors'))
-			->where($db->quoteName('published') . ' = 1');
-		$db->setQuery($query);
-
-		$colors = [];
-
-		try
-		{
-			$colors = $db->loadObjectList();
-		}
-		catch (\Exception $e)
-		{
-			return [];
-		}
-
-		if (!empty($colors))
-		{
-			foreach ($colors as &$color)
-			{
-				$color->colors = \json_decode($color->colors);
-			}
-
-			unset($color);
-		}
-		
-
-		return $colors;
-	}
-
-	/**
 	 * Remove the Joomla! default template styles for the editor view.
 	 *
 	 * @return 	void
@@ -1774,56 +2181,135 @@ class  plgSystemSppagebuilder extends CMSPlugin
 	public function onBeforeCompileHead()
 	{
 		/** @var CMSApplication */
+
 		$app = Factory::getApplication();
-		$colorPrefix = '--sppb-';
 		$input = $app->input;
 		$option = $input->get('option');
 		$view = $input->get('view', 'editor');
 
 		$version = new Version();
 		$JoomlaVersion = (float) $version->getShortVersion();
-		
-		$colorVariableNames = [];
-		$themeColors = $this->getDefaultColors();
-		$sppbColors = $this->getSPPBColors();
-		
-		$themeColorsArray = json_decode($themeColors);
 
-		foreach ($themeColorsArray as $color) {
-			array_push($colorVariableNames, $color->name . ": ". $color->value);
+		$doc = $app->getDocument();
+
+		$params = ComponentHelper::getParams('com_sppagebuilder');
+		$colorVariables = $params->get('sppb_color_variables', []);
+		$configuredDefaultColorMode = $params->get('sppb_default_color_mode', '');
+		$defaultColorMode = '';
+		$themeColors = json_decode($this->getDefaultThemeColors());
+		$themeColorVariables = [];
+		$modes = [];
+
+		if(!empty($themeColors)) {
+			foreach($themeColors as $themeColor) {
+				$variableName = '--' . $themeColor->path[0];
+				$colorValue = $themeColor->value;
+				array_push($themeColorVariables, $variableName . ": " . $colorValue);
+			}
+
+			$themeColorVariableString = ':root {'. implode("; ", $themeColorVariables) . '}';
+
+			$doc->addStyleDeclaration($themeColorVariableString);
 		}
 
-		if (!empty($sppbColors))
-		{
-			foreach ($sppbColors as $color)
-			{
-				if (isset($color->colors) && !empty($color->colors))
-				{
-					foreach ($color->colors as $colorValue)
-					{
-						if(isset($color->name) && isset($colorValue->name) && isset($colorValue->value))
-						{
-							$color->name = str_replace(' ', '-', trim($color->name));
-							$colorValue->name = str_replace(' ', '-', trim($colorValue->name));
-							$colorValue->name = str_replace('_', '-', $colorValue->name);
-							$colorName = strtolower($colorPrefix . $color->name . '-' . $colorValue->name);
+		if(!empty($colorVariables)) {
+			if(count($colorVariables) > 0) {
+				foreach($colorVariables as $colorVariable) {
+					$path = $colorVariable->path;
+					$mode = $path[1];
 
-							array_push($colorVariableNames, $colorName . ": ". $colorValue->value);
-						}
-					}
+					array_push($modes, $mode);
 				}
+
+				$modes = array_unique($modes);
+				$defaultColorMode = $modes[0];
 			}
 		}
 
-		$colorVariableNames = array_unique($colorVariableNames);
+		$resolvedDefaultColorMode = $defaultColorMode;
+		if (!empty($configuredDefaultColorMode) && in_array($configuredDefaultColorMode, $modes, true))
+		{
+			$resolvedDefaultColorMode = $configuredDefaultColorMode;
+		}
 
-		$colorVariableString = ':root {'. implode(";", $colorVariableNames) . '}';
+		$isEnabledColoSwitcher = $params->get('show_color_switcher', 0);
 
-		$doc = $app->getDocument();
-    
-		// Add CSS variables
-		$doc->addStyleDeclaration($colorVariableString);
+		if ($app->isClient('site')) {
+            $cookie = $app->input->cookie->get('sppb_user_timezone', null, 'STRING');
 
+			if(!$cookie){
+				$timeZoneCookie = <<<JS
+				(function () {
+					try {
+						var SPPB_TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+						if (!SPPB_TIME_ZONE){
+							return;
+						}
+
+						document.cookie =
+							'sppb_user_timezone=' + encodeURIComponent(SPPB_TIME_ZONE) +
+							'; path=/' +
+							'; max-age=43200'; // 12 hours
+					} catch (e) {}
+				})();
+				JS;
+
+				$doc->addScriptDeclaration($timeZoneCookie);
+			}
+        }
+		
+		$doc->addScriptDeclaration('
+			const initColorMode = () => {
+				const colorVariableData = [];
+				const sppbColorVariablePrefix = "--sppb";
+				let activeColorMode = localStorage.getItem("sppbActiveColorMode") || "' . $resolvedDefaultColorMode . '";
+				' . (!$isEnabledColoSwitcher ? ('activeColorMode = "' . $resolvedDefaultColorMode . '"') : '') . ';
+				const modes = ' . json_encode($modes) . ';
+
+				if(!modes?.includes(activeColorMode)) {
+					activeColorMode = "' . $resolvedDefaultColorMode . '";
+					localStorage.setItem("sppbActiveColorMode", activeColorMode);
+				}
+
+				document?.body?.setAttribute("data-sppb-color-mode", activeColorMode);
+
+				if (!localStorage.getItem("sppbActiveColorMode")) {
+					localStorage.setItem("sppbActiveColorMode", activeColorMode);
+				}
+
+				if (window.sppbColorVariables) {
+					const colorVariables = typeof(window.sppbColorVariables) === "string" ? JSON.parse(window.sppbColorVariables) : window.sppbColorVariables;
+
+					for (const colorVariable of colorVariables) {
+						const { path, value } = colorVariable;
+						const variable = String(path[0]).trim().toLowerCase().replaceAll(" ", "-");
+						const mode = path[1];
+						const variableName = `${sppbColorVariablePrefix}-${variable}`;
+
+						if (activeColorMode === mode) {
+							colorVariableData.push(`${variableName}: ${value}`);
+						}
+					}
+
+					document.documentElement.style.cssText += colorVariableData.join(";");
+				}
+			};
+
+			window.sppbColorVariables = ' . json_encode($colorVariables) . ';
+			
+			initColorMode();
+
+			document.addEventListener("DOMContentLoaded", initColorMode);
+		');
+		
+
+
+		if($app->isClient('site') && $view !== 'form' && $isEnabledColoSwitcher)
+		{
+			SppagebuilderHelper::addScript('color-switcher.js', '');
+			SppagebuilderHelper::addStylesheet('color-switcher.css', '');
+		}
 
 		if ($app->isClient('administrator') && $option === 'com_sppagebuilder' && $view === 'editor')
 		{
@@ -1879,6 +2365,12 @@ class  plgSystemSppagebuilder extends CMSPlugin
 				$input->set('tmpl', 'component');
 			}
 		}
+	}
+
+	private static function loadPageBuilderSiteLanguage() {
+		$lang = Factory::getLanguage();
+		$lang->load('com_sppagebuilder', JPATH_SITE, 'en-GB', true);
+		$lang->load('com_sppagebuilder', JPATH_SITE, null, true);
 	}
 
 	private static function loadPageBuilderLanguage()
@@ -2053,6 +2545,17 @@ class  plgSystemSppagebuilder extends CMSPlugin
 			{
 				$moduleId = array_pop(explode('.', $module->name));
 				$moduleContent = $this->moduleData->content ?? $this->moduleData->text ?? '[]';
+				$moduleContentParsed = json_decode($moduleContent);
+
+				foreach($moduleContentParsed as $section)
+				{
+					if(isset($section->id) && !empty($section->id))
+					{
+						$section->id = $this->uuid();
+					}
+				}
+
+				$moduleContent = json_encode($moduleContentParsed);
 				$user = Factory::getUser();
 				$dateTime = Factory::getDate()->toSql();
 
@@ -2081,6 +2584,63 @@ class  plgSystemSppagebuilder extends CMSPlugin
 			
 		}
 
+	}
+
+	private function uuid()
+    {
+        return sprintf(
+            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000, // Version 4 UUID
+            mt_rand(0, 0x3fff) | 0x8000, // Variant
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
+    }
+
+	public function onPreprocessMenuItems($context, &$items)
+	{
+		if (version_compare(JVERSION, '4.0.0', '<')) {
+            return;
+        }
+
+		if (!Factory::getApplication()->isClient('administrator'))
+		{
+			return;
+		}
+
+		if ($context !== 'com_menus.administrator.module')
+		{
+			return;
+		}
+
+		static $isMenuItemAlreadyAdded = false;
+		if ($isMenuItemAlreadyAdded) {
+			return;
+		}
+		
+		$isMenuItemAlreadyAdded = true;
+
+		self::loadPageBuilderLanguage();
+
+		$newItem = new AdministratorMenuItem([
+			'id'     => 'custom-reports',
+			'title'  => Text::_('COM_SPPAGEBUILDER_COMMENT_TITLE'),
+			'link'   => 'index.php?option=com_sppagebuilder&view=comments',
+			'access' => 1,
+			'icon'   => 'fas fa-comment',
+			'class'  => 'menu-item-icon icon-comment',
+		]);
+
+		foreach ($items as $item)
+		{
+			
+			if ($item->title === 'COM_CONTENT_MENUS' && $item->hasChildren())
+			{
+				$item->addChild($newItem);
+				break;
+			}
+		}
 	}
 
 }

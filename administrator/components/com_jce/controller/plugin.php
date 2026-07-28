@@ -1,14 +1,14 @@
 <?php
 
 /**
- * @copyright     Copyright (c) 2009-2024 Ryan Demmer. All rights reserved
- * @license       GNU/GPL 3 - http://www.gnu.org/copyleft/gpl.html
+ * @copyright     Copyright (c) 2009-2026 Ryan Demmer. All rights reserved
+ * @license       GNU General Public License version 2 or later; see LICENSE.txt
  * JCE is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
  * is derivative of works licensed under the GNU General Public License or
  * other free or open source software licenses
  */
-defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 
 require_once JPATH_SITE . '/components/com_jce/editor/libraries/classes/application.php';
 
@@ -16,7 +16,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Filesystem\Path;
+use Joomla\Filesystem\Path;
 
 class JceControllerPlugin extends BaseController
 {
@@ -49,7 +49,8 @@ class JceControllerPlugin extends BaseController
         $app = Factory::getApplication();
         $language = Factory::getLanguage();
 
-        $plugin = $this->input->get('plugin');
+        $plugin = $this->input->get('plugin', '', 'cmd');
+        $caller = '';
 
         // get plugin name
         if (strpos($plugin, '.') !== false) {
@@ -69,10 +70,14 @@ class JceControllerPlugin extends BaseController
         }
 
         // check this is a valid plugin
-        $wf->isValidPlugin($plugin) or jexit('Invalid Plugin');
+        if (!$wf->isValidPlugin($plugin)) {
+            throw new Exception(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+        }
 
         // check a valid profile exists
-        $wf->checkProfile($plugin) or jexit('Invalid Profile');
+        if (!$wf->checkProfile($plugin)) {
+            throw new Exception(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+        }
 
         // load language files
         $language->load('com_jce', JPATH_ADMINISTRATOR);
@@ -115,7 +120,7 @@ class JceControllerPlugin extends BaseController
         }
 
         if (false === $filepath) {
-            jexit('Invalid Plugin');
+            throw new Exception(Text::_('JERROR_ALERTNOAUTHOR'), 403);
         }
 
         include_once $filepath;
