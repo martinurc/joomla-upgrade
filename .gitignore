@@ -1,4 +1,5 @@
 /images
 /media
 .cache
+/administrator/cache/_media_version
 /tmp
