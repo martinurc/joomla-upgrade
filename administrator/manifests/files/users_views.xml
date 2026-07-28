@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.1" type="file" method="upgrade">
+	<name>Easy Profile - Users View</name>
+	<author>JSN Project</author>
+	<creationDate>December 2013</creationDate>
+	<copyright>(C) 2005 - 2013 Open Source Matters. All rights reserved.</copyright>
+	<license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+	<authorEmail>fiorino.desanto@gmail.com</authorEmail>
+	<authorUrl>www.joomla.org</authorUrl>
+	<version>1.0.0</version>
+	<fileset>
+		<files folder="com_users/registration" target="components/com_users/views/registration/tmpl">
+			<filename>easyprofile.php</filename>
+		</files>
+		<files folder="com_users/editprofile" target="components/com_users/views/profile/tmpl">
+			<filename>easyprofile.php</filename>
+		</files>
+	</fileset>
+</extension>

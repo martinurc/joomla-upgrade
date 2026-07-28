@@ -1,0 +1,733 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+	<fieldset
+		name="fieldlist"
+		label="COM_JSN_CONFIG_FIELD_SETTINGS_LABEL" addfieldpath="/administrator/components/com_jsn/models/fields">
+		
+		<field 
+			name="download_id" 
+			type="text"
+			label="COM_JSN_CONFIG_DOWNLOADID"
+			description="COM_JSN_CONFIG_DOWNLOADID_DESC"
+			default=""
+		/>
+		
+		<field 
+			name="logintype" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_LOGINTYPE"
+			description="COM_JSN_CONFIG_LOGINTYPE_DESC"
+			default="USERNAME"
+		>
+			<option value="USERNAME">COM_JSN_CONFIG_LOGINTYPE_USERNAME</option>
+			<option value="USERNAMEMAIL">COM_JSN_CONFIG_LOGINTYPE_USERNAMEMAIL</option>
+			<option value="MAIL">COM_JSN_CONFIG_LOGINTYPE_MAIL</option>
+		</field>
+		
+		
+		
+		<field 
+			name="status" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_STATUS"
+			description="COM_JSN_CONFIG_STATUS_DESC"
+			default="1"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		
+		<field 
+			name="forcerequired" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_FORCEREQUIRED"
+			description="COM_JSN_CONFIG_FORCEREQUIRED_DESC"
+			default="0"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		
+		<field 
+			name="admin_frontend" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_ADMINFRONTEND"
+			description="COM_JSN_CONFIG_ADMINFRONTEND_DESC"
+			default="0"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+
+		<field 
+			name="admin_loginas" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_LOGINAS"
+			description="COM_JSN_CONFIG_LOGINAS_DESC"
+			default="1"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+
+		<field
+			name="firstLoginUrl"
+			type="menuitem"
+			disable="separator"
+			label="COM_JSN_CONFIG_FIRSTLOGINURL"
+			description="COM_JSN_CONFIG_FIRSTLOGINURL_DESC"
+			>
+			<option value="">JDEFAULT</option>
+		</field>
+		
+		<field
+			name="loginUrl"
+			type="menuitem"
+			disable="separator"
+			label="COM_JSN_CONFIG_LOGINURL"
+			description="COM_JSN_CONFIG_LOGINURL_DESC"
+			>
+			<option value="">JDEFAULT</option>
+		</field>
+			
+		<field
+			name="profileACL"
+			type="list"
+			label="COM_JSN_CONFIG_PROFILEACL"
+			description="COM_JSN_CONFIG_PROFILEACL_DESC"
+			default="2"
+			>
+			<option value="0">COM_JSN_PRIVATE</option>
+			<option value="1">COM_JSN_REGISTERED</option>
+			<option value="2">COM_JSN_PUBLIC</option>
+			<option value="3">COM_JSN_CUSTOMACCESS</option>
+
+		</field>
+		
+		<field
+			name="profileACLcustom"
+			type="accesslevel"
+			showon="profileACL:3"
+			label="COM_JSN_CONFIG_PROFILEACLCUSTOM"
+			description="COM_JSN_CONFIG_PROFILEACLCUSTOM_DESC"
+			>
+
+		</field>
+
+		<field 
+			name="sef_with" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_SEFWITH"
+			description="COM_JSN_CONFIG_SEFWITH_DESC"
+			default="username"
+		>
+			<option value="id">COM_JSN_CONFIG_SEFWITH_ID</option>
+			<option value="username">COM_JSN_CONFIG_SEFWITH_USERNAME</option>
+			
+		</field>
+		
+		<field 
+			name="googlemaps_apikey" 
+			type="text"
+			label="COM_JSN_CONFIG_GOOGLEMAPSAPIKEY"
+			description="COM_JSN_CONFIG_GOOGLEMAPSAPIKEY_DESC"
+			default=""
+		/>
+		<field name="spmain2" label="COM_JSN_CONFIG_BACKENDEXPORT" type="spacer" />
+		<field name="export_all_fields"
+			description="COM_JSN_EXPORT_ALL_FIELDS_BACKEND_DESC"
+			label="COM_JSN_EXPORT_ALL_FIELDS_BACKEND"
+			type="radio" class="btn-group"
+			default="1"
+		>
+			<option value="1">JALL</option>
+			<option value="0">COM_JSN_SELECTEDFIELDS</option>
+		</field>
+		<field name="export_list_fields"
+			description="COM_JSN_EXPORT_LIST_FIELDS_BACKEND_DESC"
+			label="COM_JSN_EXPORT_LIST_FIELDS_BACKEND"
+			default=""
+			type="parent"
+			level="2"
+			table="jsn_fields"
+			multiple="true"
+			where="a.type NOT LIKE 'delimeter'"
+			field_id="alias"
+			showon="export_all_fields:0"
+			>
+			<option value="name">COM_JSN_FORMATNAME</option>
+			<option value="_system">COM_JSN_SYSTEMFIELDS</option>
+			<option value="groups">JLIB_RULES_GROUPS</option>
+		</field>
+		<field name="export_separator" type="text"
+			description="COM_JSN_EXPORT_SEPARATOR_DESC"
+			label="COM_JSN_EXPORT_SEPARATOR"
+			filter="raw"
+			default=";"
+		/>
+	</fieldset>
+
+	<fieldset
+		name="corefield"
+		label="COM_JSN_CONFIG_CORE_FIELDS_LABEL">
+
+		<field name="spcorefields1" label="COM_JSN_CONFIG_AVATAR_TITLE" type="spacer" />
+		
+		<field 
+			name="avatar" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_AVATAR"
+			description="COM_JSN_CONFIG_AVATAR_DESC"
+			default="1"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+			<option value="2">Gravatar</option>
+		</field>
+
+		<field 
+			name="avatarletters" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_AVATARLETTERS"
+			description="COM_JSN_CONFIG_AVATARLETTERS_DESC"
+			default="0"
+			showon="avatar:1"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		
+		<field name="spcorefields0" label="COM_JSN_CONFIG_JOOMLA_NAME_TITLE" type="spacer" />
+
+		<field 
+			name="namestyle" 
+			type="list"
+			label="COM_JSN_CONFIG_NAMESTYLE"
+			description="COM_JSN_CONFIG_NAMESTYLE_DESC"
+			default="FIRSTNAME_LASTNAME"
+		>
+			<option value="FIRSTNAME_LASTNAME">COM_JSN_CONFIG_NAMESTYLE_FIRSTNAME_LASTNAME</option>
+			<option value="FIRSTNAME_SECONDNAME_LASTNAME">COM_JSN_CONFIG_NAMESTYLE_FIRSTNAME_SECONDNAME_LASTNAME</option>
+			<option value="FIRSTNAME">COM_JSN_CONFIG_NAMESTYLE_FIRSTNAME</option>
+		</field>
+		
+		<field 
+			name="formatname" 
+			type="list"
+			label="COM_JSN_CONFIG_FORMATNAME"
+			description="COM_JSN_CONFIG_FORMATNAME_DESC"
+			default="NAME"
+		>
+			<option value="NAME">COM_JSN_CONFIG_FORMATNAME_NAME</option>
+			<option value="USERNAME">COM_JSN_CONFIG_FORMATNAME_USERNAME</option>
+			<option value="NAMEUSERNAME">COM_JSN_CONFIG_FORMATNAME_NAMEUSERNAME</option>
+			<option value="USERNAMENAME">COM_JSN_CONFIG_FORMATNAME_USERNAMENAME</option>
+			<option value="CUSTOM">COM_JSN_CONFIG_FORMATNAME_CUSTOM</option>
+		</field>
+
+		<field 
+			name="formatnamecustom" 
+			type="text"
+			label="COM_JSN_CONFIG_FORMATNAMECUSTOM"
+			description="COM_JSN_CONFIG_FORMATNAMECUSTOM_DESC"
+			default="{firstname} {lastname}"
+			hint="{firstname} {lastname}"
+			showon="formatname:CUSTOM"
+		>
+		</field>
+
+		<field name="spcorefields2" label="COM_JSN_CONFIG_JOOMLA_EMAIL_TITLE" type="spacer" />
+		
+		<field 
+			name="confirmusermail" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_CONFIRMUSERMAIL"
+			description="COM_JSN_CONFIG_CONFIRMUSERMAIL_DESC"
+			default="0"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+
+		<field 
+			name="activatenewmail" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_ACTIVATE_EMAIL_ONCHANGE"
+			description="COM_JSN_CONFIG_ACTIVATE_EMAIL_ONCHANGE_DESC"
+			default="0"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+
+		<field name="spcorefields3" label="COM_JSN_CONFIG_JOOMLA_PASSWORD_TITLE" type="spacer" />
+
+		<field 
+			name="confirmuserpassword" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_CONFIRMUSERPASSWORD"
+			description="COM_JSN_CONFIG_CONFIRMUSERPASSWORD_DESC"
+			default="1"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		
+		<field
+			name="passwordstrengthmeter"
+			label="COM_JSN_CONFIG_PASSWORDSTRENGTHMETER"
+			description ="COM_JSN_CONFIG_PASSWORDSTRENGTHMETER_DESC"
+			class="btn-group"
+			type="radio"
+			default="0"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>	
+		
+	</fieldset>
+
+	<fieldset
+		name="layout"
+		label="COM_JSM_CONFIG_LAYOUTOPTIONS"
+		>
+		<field name="splayout0" label="COM_JSM_CONFIG_LAYOUT_PROFILE" type="spacer" />
+		<field 
+			name="hideempty" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_HIDEEMPTY"
+			description="COM_JSN_CONFIG_HIDEEMPTY_DESC"
+			default="0"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field 
+			name="profile_fg_tabs" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_PROFILE_FG_TABS"
+			description="COM_JSN_CONFIG_PROFILE_FG_TABS_DESC"
+			default="1"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field 
+			name="profile_contact_btn" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_PROFILE_CONTACT_BTN"
+			description="COM_JSN_CONFIG_PROFILE_CONTACT_BTN_DESC"
+			default="1"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="splayout1" label="COM_JSM_CONFIG_LAYOUT_FORMS" type="spacer" />
+		
+
+		<field 
+			name="tabs" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_TABS"
+			description="COM_JSN_CONFIG_TABS_DESC"
+			default="2"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+			<option value="2">COM_JSN_STEPBYSTEP</option>
+		</field>
+
+		<field 
+			name="layout" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_LAYOUT"
+			description="COM_JSN_CONFIG_LAYOUT_DESC"
+			default="1"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+
+		<field 
+			name="layout_width" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_LAYOUT_WIDTH"
+			description="COM_JSN_CONFIG_LAYOUT_WIDTH_DESC"
+			default="full"
+		>
+			<option value="full">COM_JSN_CONFIG_LAYOUT_WIDTH_FULL</option>
+			<option value="center">COM_JSN_CONFIG_LAYOUT_WIDTH_CENTER</option>
+		</field>
+
+		<field 
+			name="layout_maxwidth" 
+			type="text"
+			label="COM_JSN_CONFIG_LAYOUT_MAXWIDTH"
+			description="COM_JSN_CONFIG_LAYOUT_MAXWIDTH_DESC"
+			default="500"
+		/>
+
+		<field 
+			name="layout_form" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_LAYOUT_FORM"
+			description="COM_JSN_CONFIG_LAYOUT_FORM"
+			default="horizontal"
+		>
+			<option value="vertical">COM_JSN_CONFIG_LAYOUT_FORM_VERTICAL</option>
+			<option value="horizontal">COM_JSN_CONFIG_LAYOUT_FORM_HORIZONTAL</option>
+		</field>
+
+		<field 
+			name="privacyconsenttab" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_PRIVACYCONSENTTAB"
+			description="COM_JSN_CONFIG_PRIVACYCONSENTTAB_DESC"
+			default="1"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+
+
+		<field name="splayout2" label="COM_JSM_CONFIG_LAYOUT_GENERAL" type="spacer" />
+		<field 
+			name="bootstrap" 
+			type="radio" class="btn-group"
+			label="COM_JSN_INCLUDE_BOOTSTRAP"
+			description="COM_JSN_INCLUDE_BOOTSTRAP_DESC"
+			default="0"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field 
+			name="bootstrap_icons" 
+			type="radio" class="btn-group"
+			label="COM_JSN_INCLUDE_ICOMOON"
+			description="COM_JSN_INCLUDE_ICOMOON_DESC"
+			default="0"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field 
+			name="include_maincss" 
+			type="radio" class="btn-group"
+			label="COM_JSN_INCLUDE_MAINCSS"
+			description="COM_JSN_INCLUDE_MAINCSS_DESC"
+			default="1"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field 
+			name="include_tabscriptprofile" 
+			type="radio" class="btn-group"
+			label="COM_JSN_INCLUDE_TABSCRIPTPROFILE"
+			description="COM_JSN_INCLUDE_TABSCRIPTPROFILE_DESC"
+			default="1"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+
+	</fieldset>
+
+	<fieldset
+		name="socialconnect"
+		label="COM_JSM_CONFIG_SOCIALCONNECT"
+		>
+		<field name="sp0" label="COM_JSM_CONFIG_SOCIALCONNECT_GENERAL" type="spacer" />
+		<field 
+			name="socialconnect_type" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_SOCIALCONNECTLOGINTYPE"
+			description="COM_JSN_CONFIG_SOCIALCONNECTLOGINTYPE_DESC"
+			default="popup"
+		>
+			<option value="popup">COM_JSN_CONFIG_SOCIALCONNECTLOGINTYPE_POPUP</option>
+			<option value="redirect">COM_JSN_CONFIG_SOCIALCONNECTLOGINTYPE_REDIRECT</option>
+		</field>
+		<field 
+			name="socialconnect_profilelink" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_SOCIALCONNECTPROFILELINK"
+			description="COM_JSN_CONFIG_SOCIALCONNECTPROFILELINK_DESC"
+			default="1"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field 
+			name="socialconnect_profilelink_btnicon" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_SOCIALCONNECTPROFILELINKICON"
+			description="COM_JSN_CONFIG_SOCIALCONNECTPROFILELINKICON_DESC"
+			default="0"
+			showon="socialconnect_profilelink:1"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		
+		<field 
+			name="socialconnect_loginlink" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_SOCIALCONNECTLOGINLINK"
+			description="COM_JSN_CONFIG_SOCIALCONNECTLOGINLINK_DESC"
+			default="1"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		
+		<field 
+			name="socialconnect_loginlink_btnicon" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_SOCIALCONNECTLOGINLINKICON"
+			description="COM_JSN_CONFIG_SOCIALCONNECTLOGINLINKICON_DESC"
+			default="0"
+			showon="socialconnect_loginlink:1"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field 
+			name="socialconnect_confirmemail" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_SOCIALCONNECTEMAILACTIVATION"
+			description="COM_JSN_CONFIG_SOCIALCONNECTEMAILACTIVATION_DESC"
+			default="0"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+			<option value="2">COM_JSN_CONFIG_SOCIALCONNECT_EMAILMANUALLY</option>
+		</field>
+		<field 
+			name="socialconnect_skipconfirm" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_SOCIALCONNECTSKIPCONFIRM"
+			description="COM_JSN_CONFIG_SOCIALCONNECTSKIPCONFIRM_DESC"
+			default="0"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="sp_everywhere" label="COM_JSM_CONFIG_SOCIALCONNECT_EVERYWHERE" type="spacer" />
+		<field 
+			name="buttons_everywhere_tag" 
+			type="text"
+			hint="COM_JSM_CONFIG_SOCIALCONNECT_EVERYWHERE_TAG_HINT"
+			label="COM_JSM_CONFIG_SOCIALCONNECT_EVERYWHERE_TAG"
+			description="COM_JSM_CONFIG_SOCIALCONNECT_EVERYWHERE_TAG_DESC"
+			default=""
+		/>
+
+		<field name="sp1" label="COM_JSN_CONFIG_FACEBOOK" type="spacer" />
+		<field 
+			name="facebook_enabled" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_FACEBOOKENABLE"
+			description="COM_JSN_CONFIG_FACEBOOKENABLE_DESC"
+			default="0"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field 
+			name="facebook_application_id" 
+			type="text"
+			label="COM_JSN_CONFIG_FACEBOOKAPPID"
+			description="COM_JSN_CONFIG_FACEBOOKAPPID_DESC"
+			default=""
+			showon="facebook_enabled:1"
+		/>
+		<field 
+			name="facebook_application_secret" 
+			type="text"
+			label="COM_JSN_CONFIG_FACEBOOKAPPSECRET"
+			description="COM_JSN_CONFIG_FACEBOOKAPPSECRET_DESC"
+			default=""
+			showon="facebook_enabled:1"
+		/>
+		<field 
+			name="facebook_usergroups" 
+			multiple="true" 
+			type="usergroup"
+			label="COM_JSN_CONFIG_SC_USERGROUP"
+			description="COM_JSN_CONFIG_SC_USERGROUP_DESC"
+			default=""
+			showon="facebook_enabled:1"
+		/>
+		<field name="sp2" label="COM_JSN_CONFIG_TWITTER" type="spacer" />
+		<field 
+			name="twitter_enabled" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_TWITTERENABLE"
+			description="COM_JSN_CONFIG_TWITTERENABLE_DESC"
+			default="0"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field 
+			name="twitter_consumer_key" 
+			type="text"
+			label="COM_JSN_CONFIG_TWITTERCONSUMERKEY"
+			description="COM_JSN_CONFIG_TWITTERCONSUMERKEY_DESC"
+			default=""
+			showon="twitter_enabled:1"
+		/>
+		<field 
+			name="twitter_consumer_secret" 
+			type="text"
+			label="COM_JSN_CONFIG_TWITTERCONSUMERSECRET"
+			description="COM_JSN_CONFIG_TWITTERCONSUMERSECRET_DESC"
+			default=""
+			showon="twitter_enabled:1"
+		/>
+		<field 
+			name="twitter_usergroups" 
+			multiple="true" 
+			type="usergroup"
+			label="COM_JSN_CONFIG_SC_USERGROUP"
+			description="COM_JSN_CONFIG_SC_USERGROUP_DESC"
+			default=""
+			showon="twitter_enabled:1"
+		/>
+		<field name="sp3" label="COM_JSN_CONFIG_GOOGLE" type="spacer" />
+		<field 
+			name="google_enabled" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_GOOGLEENABLE"
+			description="COM_JSN_CONFIG_GOOGLEENABLE_DESC"
+			default="0"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field 
+			name="google_client_id" 
+			type="text"
+			label="COM_JSN_CONFIG_GOOGLECLIENTID"
+			description="COM_JSN_CONFIG_GOOGLECLIENTID_DESC"
+			default=""
+			showon="google_enabled:1"
+		/>
+		<field 
+			name="google_client_secret" 
+			type="text"
+			label="COM_JSN_CONFIG_GOOGLECLIENTSECRET"
+			description="COM_JSN_CONFIG_GOOGLECLIENTSECRET_DESC"
+			default=""
+			showon="google_enabled:1"
+		/>
+		<field 
+			name="google_api_key" 
+			type="text"
+			label="COM_JSN_CONFIG_GOOGLEAPIKEY"
+			description="COM_JSN_CONFIG_GOOGLEAPIKEY_DESC"
+			default=""
+			showon="google_enabled:1"
+		/>
+		<field 
+			name="google_usergroups" 
+			multiple="true" 
+			type="usergroup"
+			label="COM_JSN_CONFIG_SC_USERGROUP"
+			description="COM_JSN_CONFIG_SC_USERGROUP_DESC"
+			default=""
+			showon="google_enabled:1"
+		/>
+		<field name="sp4" label="COM_JSN_CONFIG_LINKEDIN" type="spacer" />
+		<field 
+			name="linkedin_enabled" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_LINKEDINENABLE"
+			description="COM_JSN_CONFIG_LINKEDINENABLE_DESC"
+			default="0"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field 
+			name="linkedin_api_key" 
+			type="text"
+			label="COM_JSN_CONFIG_LINKEDINAPIKEY"
+			description="COM_JSN_CONFIG_LINKEDINAPIKEY_DESC"
+			default=""
+			showon="linkedin_enabled:1"
+		/>
+		<field 
+			name="linkedin_secret_key" 
+			type="text"
+			label="COM_JSN_CONFIG_LINKEDINSECRETKEY"
+			description="COM_JSN_CONFIG_LINKEDINSECRETKEY_DESC"
+			default=""
+			showon="linkedin_enabled:1"
+		/>
+		<field 
+			name="linkedin_usergroups"
+			multiple="true" 
+			type="usergroup"
+			label="COM_JSN_CONFIG_SC_USERGROUP"
+			description="COM_JSN_CONFIG_SC_USERGROUP_DESC"
+			default=""
+			showon="linkedin_enabled:1"
+		/>
+		<field name="sp5" label="COM_JSN_CONFIG_INSTAGRAM" type="spacer" />
+		<field 
+			name="instagram_enabled" 
+			type="radio" class="btn-group"
+			label="COM_JSN_CONFIG_INSTAGRAMENABLE"
+			description="COM_JSN_CONFIG_INSTAGRAMENABLE_DESC"
+			default="0"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field 
+			name="instagram_application_id" 
+			type="text"
+			label="COM_JSN_CONFIG_INSTAGRAMCLIENTID"
+			description="COM_JSN_CONFIG_INSTAGRAMCLIENTID_DESC"
+			default=""
+			showon="instagram_enabled:1"
+		/>
+		<field 
+			name="instagram_application_secret" 
+			type="text"
+			label="COM_JSN_CONFIG_INSTAGRAMCLIENTSECRET"
+			description="COM_JSN_CONFIG_INSTAGRAMCLIENTSECRET_DESC"
+			default=""
+			showon="instagram_enabled:1"
+		/>
+		<field 
+			name="instagram_usergroups" 
+			multiple="true" 
+			type="usergroup"
+			label="COM_JSN_CONFIG_SC_USERGROUP"
+			description="COM_JSN_CONFIG_SC_USERGROUP_DESC"
+			default=""
+			showon="instagram_enabled:1"
+		/>
+		
+	</fieldset>
+
+	<fieldset
+		name="permissions"
+		label="JCONFIG_PERMISSIONS_LABEL"
+		description="JCONFIG_PERMISSIONS_DESC"
+		>
+
+		<field
+			name="rules"
+			type="rules"
+			label="JCONFIG_PERMISSIONS_LABEL"
+			filter="rules"
+			validate="rules"
+			component="com_jsn"
+			section="component" />
+	</fieldset>
+</config>

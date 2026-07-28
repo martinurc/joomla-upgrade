@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+	<fields name="params">
+		<fieldset
+			name="selectlist" 
+			label="COM_JSN_SELECT_FIELDSET_LABEL"
+		>
+
+			<field
+				name="select_defaultvalue"
+				label="COM_JSN_GENERAL_DEFAULTVALUE"
+				description ="COM_JSN_GENERAL_DEFAULTVALUE"
+				type="text"
+			/>
+			
+			<field
+				name="select_placeholder"
+				label="COM_JSN_GENERAL_PLACEHOLDER"
+				description ="COM_JSN_GENERAL_PLACEHOLDER_DESC"
+				type="text"
+			/>
+			
+			<field
+				name="select_options"
+				label="COM_JSN_CHECKBOX_OPTIONS"
+				description ="COM_JSN_CHECKBOX_OPTIONS_DESC"
+				rows="10"
+				class="span6"
+				type="textarea"
+			/>
+			
+			<field
+				name="select_multiple"
+				label="COM_JSN_OPTIONS_MULTIPLE"
+				description ="COM_JSN_OPTIONS_MULTIPLE_DESC"
+				class="btn-group"
+				type="radio"
+				default="0"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			
+			<field name="spacer_select1" label="COM_JSN_SELECT_DBDESC" type="spacer" />
+			
+			<field
+				name="select_dbopttable"
+				label="COM_JSN_SELECT_DBTABLE"
+				description ="COM_JSN_SELECT_DBTABLE_DESC"
+				type="text"
+				hint="#__content"
+				filter="raw"
+			/>
+			<field
+				name="select_dboptvalue"
+				label="COM_JSN_SELECT_DBVALUE"
+				description ="COM_JSN_SELECT_DBVALUE_DESC"
+				type="text"
+				hint="id"
+				filter="raw"
+			/>
+			<field
+				name="select_dbopttext"
+				label="COM_JSN_SELECT_DBTEXT"
+				description ="COM_JSN_SELECT_DBTEXT_DESC"
+				type="text"
+				hint="title"
+				filter="raw"
+			/>
+			<field
+				name="select_dboptwhere"
+				label="COM_JSN_SELECT_DBWHERE"
+				description ="COM_JSN_SELECT_DBWHERE_DESC"
+				type="text"
+				hint="state=1"
+				filter="raw"
+			/>
+			<field
+				name="select_dboptfiltervalue"
+				label="COM_JSN_SELECT_DBFILTERVALUE"
+				description ="COM_JSN_SELECT_DBFILTERVALUE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				field_id="alias"
+				multiple="false"
+				default="0"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+			</field>
+			<field
+				name="select_dboptfiltercolumn"
+				label="COM_JSN_SELECT_DBFILTERCOLUMN"
+				description ="COM_JSN_SELECT_DBFILTERCOLUMN_DESC"
+				type="text"
+				hint="catid"
+				filter="raw"
+				default=""
+			/>
+			
+
+		</fieldset>
+	</fields>
+</form>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<extension type="package" version="3.0" method="upgrade">
+	<name>Package AcyMailing</name>
+	<creationDate>November 2024</creationDate>
+	<packagename>acymailing</packagename>
+	<version>9.10.5</version>
+	<authorEmail>dev@acyba.com</authorEmail>
+	<author>Acyba</author>
+	<packager>Acyba</packager>
+	<url>https://www.acymailing.com</url>
+	<packagerurl>https://www.acymailing.com</packagerurl>
+	<copyright>Copyright (C) 2009-2024 ACYBA SAS - All rights reserved.</copyright>
+	<license>GNU/GPLv3 https://www.gnu.org/licenses/gpl-3.0.html</license>
+	<description>AcyMailing package containing the component and its core plugins and modules</description>
+	<files folder="packages">
+		<file type="component" client="admin" id="com_acym">com_acym.zip</file>
+		<file type="module" client="site" id="mod_acym">mod_acym.zip</file>
+		<file type="plugin" client="site" id="acymailing" group="search">plg_search_acymailing.zip</file>
+		<file type="plugin" client="site" id="acymailoverride" group="system">plg_system_acymailoverride.zip</file>
+		<file type="plugin" client="site" id="acymtriggers" group="system">plg_system_acymtriggers.zip</file>
+		<file type="plugin" client="site" id="jceacym" group="system">plg_system_jceacym.zip</file>
+	</files>
+	<scriptfile>pkg_acymailing.php</scriptfile>
+</extension>

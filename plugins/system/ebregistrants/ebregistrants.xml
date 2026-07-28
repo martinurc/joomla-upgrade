@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="system" method="upgrade">
+	<name>System - Email Registrants</name>
+	<author>Tuan Pham Ngoc</author>
+	<creationDate>December 2021</creationDate>
+	<copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+	<authorEmail>tuanpn@joomdonation.com</authorEmail>
+	<authorUrl>https://joomdonation.com</authorUrl>
+	<version>4.9.4</version>
+	<description>This plugin is used to export and send registrants of your events to administrator X Days/Hours before event date.</description>
+	<files>
+		<filename plugin="ebregistrants">ebregistrants.php</filename>
+	</files>	
+	<config>
+		<fields name="params">
+			<fieldset name="basic">
+				<field name="time_to_send" type="number" default="1" label="Number Of Days/Hours" description="Enter Number Of Hours/Days (before Event Date) registrants list will be generated and send." />
+				<field name="time_to_send_unit" type="list" default="d" label="Days Or Hours">
+					<option value="d">Days</option>
+					<option value="h">Hours</option>
+				</field>
+				<field name="trigger_code" label="Trigger Code (Leave empty unless you are using cron job to send registrants list)" type="text" size="30" default="" description="Enter a secret string here if you want to use cron job to trigger sending registrants. Refer to our documentation for more details" />
+				<field name="last_run" label="Last Run Time" type="hidden" readonly="true" size="30" description="Store Last Run Time of the plugin" />
+				<field name="cache_time" label="Cache Time (Minutes)" type="number" min="0" step="1" default="20"/>
+				<field name="time_ranges" label="Time Ranges" type="text" size="30" default="" description="If you want to send reminder emails to registrants within certain time ranges, use this parameter. For example, set it to 5,14 will make the system only send email reminder from 5am to 2pm. Set it to 8,10;14:18 will allow sending  reminders between 8 to 10 am and 2pm to 6pm." />
+			</fieldset>
+		</fields>
+	</config>	
+</extension>

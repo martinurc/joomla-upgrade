@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<form>
+    <fields name="imgmanager">
+        <fieldset name="config">
+
+            <field name="dir" type="keyvalue" default="" size="50" label="WF_PARAM_DIRECTORY" description="WF_PARAM_DIRECTORY_DESC" sortable="true">
+                <field name="path"  type="text" placeholder="images" size="50" label="WF_PARAM_DIRECTORY_PATH" />
+                <field name="label" type="text" size="50" label="WF_PARAM_DIRECTORY_LABEL" />
+            </field>
+
+        </fieldset>
+    </fields>
+</form>

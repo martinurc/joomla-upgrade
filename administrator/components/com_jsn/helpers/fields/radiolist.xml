@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+	<fields name="params">
+		<fieldset
+			name="radiolist" 
+			label="COM_JSN_RADIO_FIELDSET_LABEL"
+		>
+
+			<field
+				name="radio_defaultvalue"
+				label="COM_JSN_GENERAL_DEFAULTVALUE"
+				description ="COM_JSN_GENERAL_DEFAULTVALUE"
+				type="text"
+			/>
+			
+			<field
+				name="radio_options"
+				label="COM_JSN_RADIO_OPTIONS"
+				description ="COM_JSN_RADIO_OPTIONS_DESC"
+				rows="10"
+				class="span6"
+				type="textarea"
+			/>
+			
+			<field
+				name="radio_inline"
+				label="COM_JSN_OPTIONS_INLINE"
+				description ="COM_JSN_OPTIONS_INLINE_DESC"
+				class="btn-group"
+				type="radio"
+				default="0"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+
+			<field name="spacer_radio1" label="COM_JSN_SELECT_DBDESC" type="spacer" />
+
+			<field
+				name="radio_dbopttable"
+				label="COM_JSN_SELECT_DBTABLE"
+				description ="COM_JSN_SELECT_DBTABLE_DESC"
+				type="text"
+				hint="#__content"
+				filter="raw"
+			/>
+			<field
+				name="radio_dboptvalue"
+				label="COM_JSN_SELECT_DBVALUE"
+				description ="COM_JSN_SELECT_DBVALUE_DESC"
+				type="text"
+				hint="id"
+				filter="raw"
+			/>
+			<field
+				name="radio_dbopttext"
+				label="COM_JSN_SELECT_DBTEXT"
+				description ="COM_JSN_SELECT_DBTEXT_DESC"
+				type="text"
+				hint="title"
+				filter="raw"
+			/>
+			<field
+				name="radio_dboptwhere"
+				label="COM_JSN_SELECT_DBWHERE"
+				description ="COM_JSN_SELECT_DBWHERE_DESC"
+				type="text"
+				hint="state=1"
+				filter="raw"
+			/>
+
+		</fieldset>
+	</fields>
+</form>

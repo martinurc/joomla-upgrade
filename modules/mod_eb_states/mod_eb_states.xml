@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="module" version="3.9.0" client="site" method="upgrade">
+    <name>Events Booking - Events By State</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>August 2016</creationDate>
+    <copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <version>4.9.4</version>
+    <description>This module will display list of states in Events Booking. Users can click on a state to see all events
+        from that state
+    </description>
+    <files>
+        <filename module="mod_eb_states">mod_eb_states.php</filename>
+        <filename module="mod_eb_states">tmpl/default.php</filename>
+    </files>
+    <config>
+        <fields name="params">
+            <fieldset name="basic" addfieldpath="/administrator/components/com_eventbooking/fields">
+                <field name="moduleclass_sfx" type="text"
+                       label="Module Class Suffix" description="PARAMMODULECLASSSUFFIX">
+                </field>
+                <field name="number_states" type="text"
+                       label="Number States" description="Number of states to be showed on the module" default="0">
+                </field>
+                <field name="show_number_events" type="list"
+                       label="Show number events"
+                       description="If set to Yes, we will show number of events next to the state name" default="0">
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+                </field>
+                <field name="item_id" type="ebitemid" label="Itemid" description="Itemid"/>
+            </fieldset>
+            <fieldset name="advanced">
+                <field
+                        name="cache"
+                        type="list"
+                        label="COM_MODULES_FIELD_CACHING_LABEL"
+                        default="1"
+                        filter="integer"
+                        validate="options"
+                >
+                    <option value="1">JGLOBAL_USE_GLOBAL</option>
+                    <option value="0">COM_MODULES_FIELD_VALUE_NOCACHING</option>
+                </field>
+
+                <field
+                        name="cache_time"
+                        type="number"
+                        label="COM_MODULES_FIELD_CACHE_TIME_LABEL"
+                        default="900"
+                        filter="integer"
+                />
+
+                <field
+                        name="cachemode"
+                        type="hidden"
+                        default="static"
+                >
+                    <option value="static"></option>
+                </field>
+            </fieldset>
+        </fields>
+    </config>
+</extension>

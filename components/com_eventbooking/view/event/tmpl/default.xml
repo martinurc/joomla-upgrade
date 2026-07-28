@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+	<layout title="Event Detail">
+		<message>
+			Display a single event
+		</message>
+	</layout>
+	<fields name="request">
+		<fieldset name="request"
+			addfieldpath="/administrator/components/com_eventbooking/fields">
+			<field name="id" type="ebevent" size="3" required="true" default="0" label="Event" description="Select Event which you want to display" />
+		</fieldset>
+	</fields>
+</metadata>

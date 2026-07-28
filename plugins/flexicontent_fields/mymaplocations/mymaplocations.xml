@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.1" type="plugin" group="flexicontent_fields" method="upgrade">
+    <name>Flexicontent My Map Location</name>
+    <description>Flexicontent My Map Location</description>
+    <version>4.3.1</version>
+    <creationDate>2021-09-08 07:28:50</creationDate>
+    <author>Joomunited</author>
+    <authorEmail>contact@joomunited.com</authorEmail>
+    <authorUrl>www.joomunited.com</authorUrl>
+    <license>http://www.gnu.org/licenses/gpl-2.0.html</license>
+    <files>
+        <filename plugin="mymaplocations">mymaplocations.php</filename>
+        <filename>index.html</filename>
+		<folder>tmpl</folder>
+    </files>
+    <config>
+        <fields  name="attribs" addfieldpath="/administrator/components/com_mymaplocations/models/fields">
+            <fieldset name="group-mymaplocations-editing" label="FLEXI_FIELD_VIEWING" addfieldpath="/administrator/components/com_flexicontent/elements">
+                 <field name="lang" type="lang"   description="" />
+                  <field
+                    name="width"
+                    type="text"
+                    default="70%"
+                    label="COM_MYMAPLOCATIONS_WIDTH"
+					description="COM_MYMAPLOCATIONS_WIDTH_DESC"
+					/>
+                <field
+                    name="height"
+                    type="text"
+                    default="400"
+                   label="COM_MYMAPLOCATIONS_HEIGHT"
+					description="COM_MYMAPLOCATIONS_HEIGHT_DESC" />
+                <field
+                    name="zoom"
+                    type="text"
+                    default="10"
+                    label="COM_MYMAPLOCATIONS_ZOOM"
+					 description="COM_MYMAPLOCATIONS_ZOOM_DESC" />
+                <field
+                    name="type"
+                    type="list"
+                    label="COM_MYMAPLOCATIONS_MAP_TYPE_LABEL"
+                    description="COM_MYMAPLOCATIONS_MAP_TYPE_DESC" default="google" >
+                     <option value="0" >COM_MYMAPLOCATIONS_MAP_GOOGLE</option>
+                <option value="1">COM_MYMAPLOCATIONS_MAP_BING</option>
+				 <option value="3">Openstreetmap</option>
+                <option value="5">COM_MYMAPLOCATIONS_MAP_BAIDU</option>
+				<option value="4">Mapquest</option>
+                <option value="2">Map Box</option>
+                </field>
+                <field name="type"
+                                    type="radio"
+				class="btn-group btn-group-yesno"
+                                       default="google"
+                                      label="COM_MYMAPLOCATIONS_MAP_TYPE_LABEL"
+                    description="COM_MYMAPLOCATIONS_MAP_TYPE_DESC">
+                    <option
+                        value="google">COM_MYMAPLOCATIONS_MAP_GOOGLE
+                    </option>
+                    <option
+                        value="bing">COM_MYMAPLOCATIONS_MAP_BING
+                    </option>
+					<option value="mapbox">Mapbox</option>
+					<option value="openstreetmap">Openstreetmap+Leaflet</option>
+					<option value="4">Mapquest</option>
+                </field>
+                              <field name="google_maptype"
+               type="list"
+               default="ROADMAP"
+               label="COM_MYMAPLOCATIONS_GOOGLEMAP_TYPE_LABEL"
+               description="COM_MYMAPLOCATIONS_GOOGLEMAP_TYPE_DESC">
+            <option value="ROADMAP" >COM_MYMAPLOCATIONS_MAP_GOOGLE_ROADMAP</option>
+            <option value="SATELLITE">COM_MYMAPLOCATIONS_MAP_GOOGLE_SATELLITE</option>
+            <option value="HYBRID">COM_MYMAPLOCATIONS_MAP_GOOGLE_HYBRID</option>
+            <option value="TERRAIN">COM_MYMAPLOCATIONS_MAP_GOOGLE_TERRAIN</option>
+        </field>
+			      	<field name="map_design"
+               type="list"
+               default="1"
+               label="COM_MYMAPLOCATIONS_MAPDESIGN"
+               description="COM_MYMAPLOCATIONS_MAPDESIGN_DESC">
+            <option value="1">Default</option>
+	    <option value="2">Black and White</option>
+            <option value="3">Apple</option>
+            <option value="4">Facebook</option>
+	    <option value="5">Brown</option>
+	    <option value="6">Cobalt</option>
+	    <option value="7">Purple</option>
+	    <option value="8">Map Box</option>
+	    <option value="9">Mint</option>
+	    <option value="10">Gray</option>
+        </field>
+                <field name="bing_maptype"
+               type="list"
+               default="road"
+               label="COM_MYMAPLOCATIONS_BINGMAP_TYPE_LABEL"
+               description="COM_MYMAPLOCATIONS_BINGMAP_TYPE_DESC">
+
+                <option value="aerial" >COM_MYMAPLOCATIONS_MAP_BINGMAP_AERIAL</option>
+                <option value="birdseye">COM_MYMAPLOCATIONS_MAP_BINGMAP_BIRDSEYE</option>
+                <option value="road">COM_MYMAPLOCATIONS_MAP_BINGMAP_ROAD</option>
+				<option value="canvasDark">canvasDark</option>
+				<option value="canvasLight">canvasLight</option>
+				<option value="grayscale">grayscale</option>
+				<option value="ordnanceSurvey">ordnanceSurvey</option>
+        </field>
+				 <field name="openmapstyle" type="list" default="1" label="COM_MYMAPLOCATIONS_OPENMAPSTYLE" description="COM_MYMAPLOCATIONS_OPENMAPSTYLE_DESC" >
+<option value="1" >OpenStreetMap.Mapnik</option>
+            <option value="2">OpenStreetMap.BlackAndWhite</option>
+            <option value="3">OpenStreetMap.HOT</option>
+            <option value="4">OpenTopoMap</option>
+			<option value="5">Stamen.Toner</option>
+			<option value="6">Stamen.Watercolor</option>
+			<option value="7">Stamen.Terrain</option>
+			<option value="8">Stamen.TerrainBackground</option>
+			<option value="10">COM_MYMAPLOCATIONS_OPENMAPSTYLE_CUSTOM</option>
+		</field>
+		
+            </fieldset>
+        </fields>
+    </config>
+</extension>

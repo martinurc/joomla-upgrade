@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="system" method="upgrade">
+    <name>System - Incomplete Payment Registrations Notification</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>18-07-2023</creationDate>
+    <copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+    <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <version>4.9.4</version>
+    <description>This plugin is used to notify administrator about incomplete payment registrations.</description>
+    <files>
+        <filename plugin="icprnotify">icprnotify.php</filename>
+    </files>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field name="last_run" label="Last Run Time" type="hidden" readonly="true" size="30"
+                       description="Store Last Run Time of the plugin"/>
+                <field name="cache_time" label="Cache Time (Hours)" type="number" min="0" step="1" default="12"/>
+                <field name="notification_emails" type="text" label="Notification Emails"
+                       description="Enter emails you want to receive notification, comma separated. For example email1@domain.com,email2@domain.com. If you leave it empty, the notification emails in Configuration will be used"/>
+                <field name="subject" type="text" label="Subject" description="Subject Of The Email"/>
+                <field name="message" label="Message" type="editor" description="Body Of The Email. You can use [IDS] and [LINKS] tag to show IDs of the registration record and links to these registration records" filter="raw"/>
+                <field name="trigger_code"
+                       label="Trigger Code (Leave empty unless you are using cron job to trigger this plugin)"
+                       type="text" size="30" description="Enter a secret string here if you want to use cron job to trigger the notification. Refer to our documentation for more details"/>
+            </fieldset>
+        </fields>
+    </config>
+</extension>

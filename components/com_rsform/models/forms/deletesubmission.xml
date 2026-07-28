@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+	<fieldset name="params">
+		<field name="hash" type="text" label="COM_RSFORM_SUBMISSION_HASH" description="COM_RSFORM_SUBMISSION_HASH_DESC" required="true" />
+	</fieldset>
+</form>

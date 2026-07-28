@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="module" version="3.9.0" client="site" method="upgrade">
+	<name>Events Booking - Easy View</name>
+	<author>Tuan Pham Ngoc</author>
+	<authorEmail>tuanpn@joomdonation.com</authorEmail>
+	<authorUrl>https://joomdonation.com</authorUrl>
+	<copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+	<license>GNU General Public License version 3, or later</license>
+	<creationDate>March 2023</creationDate>
+	<version>4.9.4</version>
+	<description>This module is used to display any view configured in a menu item linked to Events Booking.</description>
+	<files>
+		<filename module="mod_eb_easyview">mod_eb_easyview.php</filename>
+	</files>
+	<config>
+		<fields name="params" addfieldpath="/administrator/components/com_eventbooking/fields">
+			<fieldset name="basic">
+				<field name="moduleclass_sfx" type="text"
+							label="Module Class Suffix" description="PARAMMODULECLASSSUFFIX">
+				</field>
+				<field name="menu_item_id" type="ebmenuitems"
+					   label="Menu Item"
+					   required="true"
+					   description="Select menu item which is linked to the view you want to display"
+					   default="0">
+				</field>
+			</fieldset>
+		</fields>	
+	</config>
+</extension>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+	<fields name="params">
+		<fieldset
+			name="video" 
+			label="COM_JSN_VIDEO_FIELDSET_LABEL"
+		>
+
+			<field
+				name="video_defaultvalue"
+				label="COM_JSN_GENERAL_DEFAULTVALUE"
+				description ="COM_JSN_GENERAL_DEFAULTVALUE_DESC"
+				type="text"
+			/>
+			
+			<field
+				name="video_placeholder"
+				label="COM_JSN_GENERAL_PLACEHOLDER"
+				description ="COM_JSN_GENERAL_PLACEHOLDER_DESC"
+				type="text"
+			/>
+			
+			<field
+				name="video_maxlength"
+				label="COM_JSN_TEXT_MAXLENGTH"
+				description ="COM_JSN_TEXT_MAXLENGTH_DESC"
+				type="text"
+				filter="int"
+				default="255"
+			/>
+
+		</fieldset>
+	</fields>
+</form>

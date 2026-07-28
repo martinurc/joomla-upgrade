@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="module" version="3.9.0" client="site" method="upgrade">
+    <name>Events Booking - Upcoming Events</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>Aug 2010</creationDate>
+    <copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+    <license>Commercial</license>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <version>4.9.4</version>
+    <description>This module is used to display up-coming events in Events Booking</description>
+    <media destination="mod_eb_events">
+        <folder>css</folder>
+    </media>
+    <files>
+        <filename module="mod_eb_events">mod_eb_events.php</filename>
+        <filename module="mod_eb_events">helper.php</filename>
+        <folder>tmpl</folder>
+    </files>
+    <config>
+        <fields name="params">
+            <fieldset name="basic" addfieldpath="/administrator/components/com_eventbooking/fields">
+                <field name="display_event_type" type="list" label="Display Event Type"
+                       description="Choose whether to show or hide location of events in the module"
+                       default="upcoming_events">
+                    <option value="upcoming_events">Upcoming Events</option>
+                    <option value="past_events">Past Events</option>
+                    <option value="all">All</option>
+                </field>
+                <field name="hide_past_events" showon="display_event_type:all" type="list" default="0"
+                       label="Hide Past Events">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </field>
+                <field name="category_ids" type="ebcategory" multiple="true"
+                       label="Categories"
+                       description="Select categories which you want to display events">
+                </field>
+                <field name="exclude_category_ids" type="ebcategory" multiple="true"
+                       label="Exclude Categories"
+                       description="Select categories which you want to exclude events from">
+                </field>
+                <field name="location_id" type="eblocation" size="3" multiple="true" label="Locations"
+                       description="Choose the locations which you want to display events">
+                </field>
+                <field name="speaker_ids" type="ebspeaker" multiple="true"
+                       label="Speakers"
+                       description="Select speakers which you want to display events from">
+                </field>
+                <field name="created_by" type="user" size="3" default="0" label="Created By"
+                       description="If you select a user here, the module will only display events created by the selected user">
+                </field>
+                <field name="duration_filter" type="list" default="" label="Duration Filter">
+                    <option value="">All Dates</option>
+                    <option value="today">Today</option>
+                    <option value="tomorrow">Tomorrow</option>
+                    <option value="this_week">This Week</option>
+                    <option value="next_week">Next Week</option>
+                    <option value="this_month">This Month</option>
+                    <option value="next_month">Next Month</option>
+                </field>
+                <field name="month" type="list" default="0" label="Month" description="If you only want to display events from certain month, choose the month here">
+                    <option value="0">All</option>
+                    <option value="1">January</option>
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </field>
+                <field name="show_children_events" type="list" label="Show Children Events"
+                       description="Choose whether to show or hide children events in the module" default="1">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </field>
+                <field name="only_show_featured_events" type="list" label="Only Show Featured Events"
+                       description="If set to Yes, only featured events will be shown on this module" default="0">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </field>
+                <field name="next_number_days" type="number" label="Show Events In Next Number Days" filter="integer"
+                       description="If entered here, events in next number entered days will be shown"
+                       showon="display_event_type:upcoming_events"/>
+                <field name="order_by" type="list" default="a.event_date" label="Order By"
+                       description="Choose how to sort/order events for this menu item">
+                    <option value="a.title">Event Title</option>
+                    <option value="a.event_date">Event Date</option>
+                    <option value="a.cut_off_date">Cut Off Date</option>
+                    <option value="a.ordering">Ordering</option>
+                </field>
+                <field name="order_direction" type="list" default="ASC" label="Order Direction"
+                       description="Choose how to sort/order events for this menu item">
+                    <option value="ASC">ASC</option>
+                    <option value="DESC">DESC</option>
+                </field>
+                <field name="number_events" type="text"
+                       label="Number Events" description="Number of events to be showed on the module" default="6">
+                </field>
+                <field name="item_id" type="ebitemid" label="Menu Item ID" description="Menu Item ID"/>
+                <field type="editor" name="pre_text" filter="raw" label="Pre Text"
+                       description="If entered, the text will be displayed at the top of the module"/>
+                <field type="editor" name="post_text" filter="raw" label="Post Text"
+                       description="If entered, the text will be displayed at the bottom of the module"/>
+            </fieldset>
+            <fieldset name="display_options" label="Display Options">
+                <field
+                        name="layout"
+                        type="modulelayout"
+                        class="form-select"
+                        label="JFIELD_ALT_LAYOUT_LABEL"
+                        description="JFIELD_ALT_MODULE_LAYOUT_DESC"
+                />
+                <field
+                        name="moduleclass_sfx"
+                        type="textarea"
+                        label="COM_MODULES_FIELD_MODULECLASS_SFX_LABEL"
+                        description="COM_MODULES_FIELD_MODULECLASS_SFX_DESC"
+                        rows="3"
+                />
+                <field name="event_per_row" showon="layout:_:horizontal,_:grid" type="text" size="3" default="2"
+                       label="Number Events Per Row">
+                </field>
+                <field name="show_short_description" showon="layout:_:horizontal,_:grid" type="list"
+                       label="Show Short Description"
+                       description="Choose to show or hide short description in the horizontal layout" default="1">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </field>
+                <field name="show_category" type="list" label="Show Category"
+                       description="Choose whether to show or hide category name in the module" default="1">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </field>
+                <field name="show_location" type="list" label="Show Location"
+                       description="Choose whether to show or hide location of events in the module" default="1">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </field>
+                <field name="show_thumb" type="list" label="Show Thumbnail"
+                       description="Choose whether to show or hide thumbnail of events in the module" default="0">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </field>
+                <field name="show_price" type="list" label="Show Price"
+                       description="Set to Yes will show price of the event" default="0">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </field>
+                <field name="title_linkable" type="list" label="Title Linkable"
+                       description="If set to No, title of the event displayed in the module won't be linked to event details page"
+                       default="1">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </field>
+                <field name="link_event_to_registration_form" type="list" default="0"
+                       label="Link Event To Registration Form"
+                       description="If set to Yes, click on title of event will redirect users to registration form of the event instead of showing event details page.">
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+                </field>
+                <field name="event_item_layout" type="list" label="Event Item Layout" default="default"
+                       showon="layout:_:grid">
+                    <option value="default">Default</option>
+                </field>
+                <field name="category_bg_color" type="color" label="Category Background Color"
+                       description="Leave it empty to use default background color"
+                       showon="layout:_:grid[AND]event_item_layout:default"/>
+                <field name="event_datetime_color" type="color" label="Event Datetime Color"
+                       description="Leave it empty to use default background color"
+                       showon="layout:_:grid[AND]event_item_layout:default"/>
+                <field name="short_description_limit" default="0" label="Short Description Length Limit"
+                       showon="layout:_:grid[AND]show_short_description:1"/>
+                <field name="show_register_buttons" type="list" label="Show Register Buttons" default="1"
+                       showon="layout:_:grid">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </field>
+                <field name="show_details_buttons" type="list" label="Show Details Button" default="0"
+                       showon="layout:_:grid">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </field>
+            </fieldset>
+            <fieldset name="advanced">
+                <field
+                        name="cache"
+                        type="list"
+                        label="COM_MODULES_FIELD_CACHING_LABEL"
+                        default="1"
+                        filter="integer"
+                        validate="options"
+                >
+                    <option value="1">JGLOBAL_USE_GLOBAL</option>
+                    <option value="0">COM_MODULES_FIELD_VALUE_NOCACHING</option>
+                </field>
+
+                <field
+                        name="cache_time"
+                        type="number"
+                        label="COM_MODULES_FIELD_CACHE_TIME_LABEL"
+                        default="900"
+                        filter="integer"
+                />
+
+                <field
+                        name="cachemode"
+                        type="hidden"
+                        default="static"
+                >
+                    <option value="static"></option>
+                </field>
+                <field type="text" name="show_on_pages" label="Show On Pages"
+                       description="Using syntax like com_eventbooking:category, event; com_content: article,categories to show module only on some views of the components you want. Leave it empty and it will always be shown"/>
+            </fieldset>
+        </fields>
+    </config>
+</extension>

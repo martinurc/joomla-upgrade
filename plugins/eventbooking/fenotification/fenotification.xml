@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="eventbooking" method="upgrade">
+    <name>Events Booking - Full Event Notification</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>July 2022</creationDate>
+    <copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <version>4.9.4</version>
+    <description>This plugin is used to send notification to administrator when event is full.
+    </description>
+    <files>
+        <filename plugin="fenotification">fenotification.php</filename>
+    </files>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field name="notification_emails" type="text" label="Notification Emails" description="Enter emails you want to receive notification, comma separated. For example email1@domain.com,email2@domain.com" />
+                <field name="subject" type="text" label="Subject" description="Subject Of The Email" />
+                <field name="message" label="Message" type="editor" description="Body Of The Email" filter="raw" />
+            </fieldset>
+        </fields>
+    </config>
+</extension>

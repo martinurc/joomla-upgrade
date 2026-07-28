@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+	<fields name="params">
+		<fieldset
+			name="gmap" 
+			label="COM_JSN_GMAP_FIELDSET_LABEL"
+		>
+			<field
+				name="gmap_positionsearchmode"
+				label="COM_JSN_GMAP_SEARCHMODE"
+				description ="COM_JSN_GMAP_SEARCHMODE"
+				class="btn-group"
+				type="radio"
+				default="0"
+			>
+				<option value="0">COM_JSN_GMAP_SEARCHMODE_GOOGLESEARCH</option>
+				<option value="1">COM_JSN_GMAP_SEARCHMODE_FIELDSEARCH</option>
+			</field>
+
+			<field
+				name="gmap_positionsearchmode_fields"
+				label="COM_JSN_GMAP_SEARCHMODE_FIELDS"
+				description="COM_JSN_GMAP_SEARCHMODE_FIELDS_DESC"
+				type="parent"
+				level="2"
+				table="jsn_fields"
+				where="a.type IN ('text','selectlist') AND a.alias NOT IN ('firstname','secondname','lastname')"
+				field_id="alias"
+				multiple="true"
+				>
+			</field>
+
+			<field
+				name="gmap_types"
+				label="COM_JSN_GMAP_ALLOWTYPE"
+				description ="COM_JSN_GMAP_ALLOWTYPE_DESC"
+				type="list"
+				default="geocode"
+			>
+				<option value="geocode">Geocode</option>
+				<option value="address">Address</option>
+				<option value="(regions)">Regions</option>
+				<option value="(cities)">Cities</option>
+			</field>
+
+
+			<field
+				name="gmap_placeholder"
+				label="COM_JSN_GENERAL_PLACEHOLDER"
+				description ="COM_JSN_GENERAL_PLACEHOLDER_DESC"
+				type="text"
+			/>
+			
+			
+			<field
+				name="gmap_showmap"
+				label="COM_JSN_GMAP_SHOWMAP"
+				description ="COM_JSN_GMAP_SHOWMAP_DESC"
+				class="btn-group"
+				type="radio"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+
+			<field
+				name="gmap_route"
+				label="COM_JSN_GMAP_SHOWGETDIRECTIONS"
+				description ="COM_JSN_GMAP_SHOWGETDIRECTIONS_DESC"
+				class="btn-group"
+				type="radio"
+				default="0"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+
+			<field
+				name="gmap_geocodelocation"
+				label="COM_JSN_GMAP_GEOCODELOCATION"
+				description ="COM_JSN_GMAP_GEOCODELOCATION_DESC"
+				class="btn-group"
+				type="radio"
+				default="0"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+
+			<field
+				name="gmap_draggable"
+				label="COM_JSN_GMAP_DRAGGABLE"
+				description ="COM_JSN_GMAP_DRAGGABLE_DESC"
+				class="btn-group"
+				type="radio"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+
+			<field
+				name="gmap_zoom"
+				label="COM_JSN_GMAP_ZOOM"
+				description ="COM_JSN_GMAP_ZOOM_DESC"
+				type="text"
+				filter="int"
+				default="15"
+			/>
+
+			<field name="gmap_mapstyle" type="list"
+						default=""
+						description="COM_JSN_MAPMODULE_STYLE_DESC"
+						label="COM_JSN_MAPMODULE_STYLE">
+						<option value="">JDEFAULT</option>
+						<option value="light">Light</option>
+						<option value="dark">Dark</option>
+						<option value="custom" show="gmap_mapstyle_custom">COM_JSN_MAPMODULE_STYLE_CUSTOM</option>
+				</field>
+
+			<field name="gmap_mapstyle_custom" showon="gmap_mapstyle:custom" type="text" filter="raw" default="" hint="JSON CODE" description="COM_JSN_MAPMODULE_STYLEJSON_DESC" label="COM_JSN_MAPMODULE_STYLEJSON"/>
+			
+			<field
+				name="gmap_radius"
+				label="COM_JSN_GMAP_RADIUS"
+				description ="COM_JSN_GMAP_RADIUS_DESC"
+				type="list"
+				filter="int"
+				default="10"
+			>
+				<option value="1">1</option>
+				<option value="5">5</option>
+				<option value="10">10</option>
+				<option value="20">20</option>
+				<option value="30">30</option>
+				<option value="50">50</option>
+				<option value="100">100</option>
+				<option value="200">200</option>
+				<option value="300">300</option>
+				<option value="500">500</option>
+			</field>
+			<field
+				name="gmap_unit"
+				label="COM_JSN_GMAP_UNIT"
+				description ="COM_JSN_GMAP_UNIT"
+				class="btn-group"
+				type="list"
+				default="Km"
+			>
+				<option value="Km">Km</option>
+				<option value="Miles">Miles</option>
+			</field>
+			
+			<!-- <field
+				name="text_filter"
+				label="COM_JSN_TEXT_FILTER"
+				description ="COM_JSN_TEXT_FILTER_DESC"
+				type="list"
+				default="text"
+			>
+				<option value="string">COM_JSN_TEXT_FILTER_TEXT</option>
+				<option value="email">COM_JSN_TEXT_FILTER_EMAIL</option>
+				<option value="tel">COM_JSN_TEXT_FILTER_PHONE</option>
+				<option value="int">COM_JSN_TEXT_FILTER_INT</option>
+			</field> -->
+
+		</fieldset>
+	</fields>
+</form>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="actionlog" method="upgrade">
+	<name>Action Log - Events Booking</name>
+	<author>Tuan Pham Ngoc</author>
+    <creationDate>October 2012</creationDate>
+	<copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <version>4.9.4</version>
+    <description>Automatically log user actions performed on Events Booking component inside Joomla! User Actions Log</description>
+	<files>
+		<filename plugin="eventbooking">eventbooking.php</filename>
+	</files>
+	<languages folder="language">
+		<language tag="en-GB">en-GB/en-GB.plg_actionlog_eventbooking.ini</language>
+	</languages>
+</extension>

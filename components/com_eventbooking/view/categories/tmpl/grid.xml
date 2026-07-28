@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+	<layout title="Categories - Grid Layout">
+		<message>
+			Displays a list of categories in Grid layout
+		</message>
+	</layout>
+	<fields name="request">
+		<fieldset name="request"
+			addfieldpath="/administrator/components/com_eventbooking/fields">
+			<field name="id" type="ebcategory" size="3" default="0" label="Category" description="Choose the category which you want to list it's sub categories" />
+		</fieldset>
+	</fields>
+	<fields name="params">
+		<fieldset name="basic">
+			<field name="category_ids" type="ebcategory" multiple="true" label="Categories" description="If you select some categories here, only these selected categories will be displayed" />
+			<field name="exclude_category_ids" type="ebcategory" multiple="true" label="Exclude Categories" description="If you don't want certain categories being displayed on this menu item, select these categories here" />
+			<field name="image_lazy_loading" type="list" default="lazy" label="Image Lazy Loading">
+				<option value="0">Disable</option>
+				<option value="lazy">Lazy</option>
+			</field>
+			<field type="number" name="image_lazy_loading_start_index" default="0" label="Lazy Loading Start Index" showon="image_lazy_loading!:0" />
+			<field name="hide_children_categories" type="list" default="0" label="Hide Children Categories" description="Determine whether children categories will be displayed on category page when users access to a category from this menu item">
+				<option value="0">No</option>
+				<option value="1">Yes</option>
+			</field>
+			<field name="hide_children_events" type="list" default="0" label="Hide Children Events"
+				   description="Determine whether children events will be displayed on category page when users access to a category from this menu item">
+				<option value="0">No</option>
+				<option value="1">Yes</option>
+			</field>
+			<field type="editor" name="intro_text" buttons="yes" filter="raw" label="Intro Text" description="If you enter some text here, it will be displayed above list of categories" />
+		</fieldset>
+		<fieldset name="display" label="Display Options">
+			<field type="list" name="number_columns" label="Number Columns" default="3" description="Choose Number Columns which will be used to display categories">
+				<option value="1">1</option>
+				<option value="2">2</option>
+				<option value="3">3</option>
+				<option value="4">4</option>
+				<option value="6">6</option>
+			</field>
+			<field name="category_item_layout" type="list" label="Category Item Layout" default="default">
+				<option value="default">Default</option>
+				<option value="overlay">Overlay</option>
+				<option value="image_top">Image Top</option>
+				<option value="image_bottom">Image Bottom</option>
+			</field>
+			<field name="show_description" type="list" label="Show Category Description" default="1" showon="category_item_layout!:overlay">
+				<option value="1">Yes</option>
+				<option value="0">No</option>
+			</field>
+			<field name="category_description_limit" default="0" label="Description Length Limit" showon="category_item_layout!:overlay[AND]show_description:1"/>
+			<field name="enable_hover_effect" type="list" label="Enable Hover Effect" default="0" description="Set to Yes will apply a nice effect when users hover over a category." showon="category_item_layout!:overlay">
+				<option value="1">Yes</option>
+				<option value="0">No</option>
+			</field>
+			<field name="hover_bg_color" type="color" label="Hover Background Color" description="Leave it empty to use default color" showon="enable_hover_effect:1" />
+			<field name="hover_color" type="color" label="Hover Text Color" description="Leave it empty to use default color" showon="enable_hover_effect:1"/>
+		</fieldset>
+	</fields>
+</metadata>

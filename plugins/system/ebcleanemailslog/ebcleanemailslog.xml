@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="system" method="upgrade">
+    <name>System - Events Booking Clean Email Logs</name>
+    <author>Tuan Pham Ngoc</author>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <copyright>Copyright (C) 2012 - 2024 Ossolution Team</copyright>
+    <license>GNU General Public License version 3, or later</license>
+    <creationDate>Nov 2012</creationDate>
+    <version>4.9.4</version>
+    <description>This plugin deletes emails older than certain Number Days from Events Booking Emails Log
+    </description>
+    <files>
+        <filename plugin="ebcleanemailslog">ebcleanemailslog.php</filename>
+    </files>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field name="cache_time" label="Cache Time (Hours)" type="number" min="0" max="100" step="1"
+                       default="24"/>
+                <field name="last_run" label="Last Run Time" type="text" readonly="true" size="30"
+                       description="Store Last Run Time of the plugin"/>
+                <field name="number_days" label="Number Days" type="text" size="30" default="90"
+                       description="The system will delete the emails older than the configured Number Days here."/>
+            </fieldset>
+        </fields>
+    </config>
+</extension>

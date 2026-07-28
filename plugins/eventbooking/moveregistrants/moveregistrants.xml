@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="eventbooking" method="upgrade">
+	<name>Events Booking - Move Registrants</name>
+	<author>Tuan Pham Ngoc</author>
+	<creationDate>Aug 2010</creationDate>
+	<copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+	<license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+	<authorEmail>tuanpn@joomdonation.com</authorEmail>
+	<authorUrl>https://joomdonation.com</authorUrl>
+	<version>4.9.4</version>
+	<description>This plugin is to move users from waiting list into EB registrants. Only works for free events (as paid events need to be paid before users can become registrants)</description>
+	<files>
+		<filename plugin="moveregistrants">moveregistrants.php</filename>
+		<folder>tmpl</folder>
+	</files>
+	<config>
+		<fields name="params">
+			<fieldset name="basic">
+				<field
+						name="show_on_frontend"
+						type="radio"
+						label="Show On Frontend"
+						description="If set to Yes, this plugin will be available on frontend event submission form"
+						class="btn-group btn-group-yesno"
+						default="0"
+				>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field
+						name="move_registrant_status"
+						type="list"
+						label="Move Registrant Status"
+						description="Choose status of the registrant when they are being moved from Waiting List to Registrants"
+						default="1"
+				>
+					<option value="1">Paid</option>
+					<option value="0">Pending</option>
+				</field>
+			</fieldset>
+		</fields>
+	</config>
+</extension>

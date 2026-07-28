@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="eventbooking" method="upgrade">
+	<name>Events Booking - Webhook</name>
+	<author>Tuan Pham Ngoc</author>
+	<authorEmail>tuanpn@joomdonation.com</authorEmail>
+	<authorUrl>http://www.joomdonation.com</authorUrl>
+	<copyright>Copyright (C) 2012 - 2024 Ossolution Team</copyright>
+	<license>GNU General Public License version 3, or later</license>
+	<creationDate>December 2023</creationDate>
+	<version>4.9.4</version>
+	<description>This plugin will make a POST request to configured URL when a registration record is Paid/Active. This allows you to transfer registrants data to external system</description>
+	<files>
+		<filename plugin="http">http.php</filename>
+		<folder>tmpl</folder>
+	</files>
+	<config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field name="url" type="url" default="" label="Default URL" description="The URL which will receive POST request from Events Booking. You can override this URL inside each event" />
+				<field name="content_type" type="list" label="Content Type" default="application/json">
+					<option value="application/json">application/json</option>
+					<option value="application/x-www-form-urlencoded">application/x-www-form-urlencoded</option>
+				</field>
+				<field
+						name="show_on_frontend"
+						type="radio"
+						label="Show On Frontend"
+						description="If set to Yes, this plugin will be available on frontend event submission form"
+						class="btn-group btn-group-yesno"
+						default="0"
+				>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+            </fieldset>
+			<fieldset name="headers" label="HTTP Headers" description="HTTP headers (beside Content-Type header which is sent by default) you want to send in the request">
+				<field
+						name="headers"
+						hiddenLabel="true"
+						type="subform"
+						layout="joomla.form.field.subform.repeatable-table"
+						icon="list"
+						multiple="true"
+				>
+					<form hidden="true" name="list_headers" repeat="true">
+						<field
+								name="name"
+								type="text"
+								label="Name"
+						/>
+						<field
+								name="value"
+								type="text"
+								label="Value"
+						/>
+					</form>
+				</field>
+			</fieldset>
+			<fieldset name="fields_mapping" label="Fields Mapping" description="If the external system which you want to pass data to expects to receive difference field with the field passed by the plugin, define the field mapping here (kind of field name alias). For example, the plugin pass first_name by default, but your system expect to receive firstname, you can add a mapping first_name => firstname">
+				<field
+						name="fields_mapping"
+						hiddenLabel="true"
+						type="subform"
+						layout="joomla.form.field.subform.repeatable-table"
+						icon="list"
+						multiple="true"
+				>
+					<form hidden="true" name="fields_mapping" repeat="true">
+						<field
+								name="original_field_name"
+								type="text"
+								label="Original Field Name"
+						/>
+						<field
+								name="new_field_name"
+								type="text"
+								label="New Field Name"
+						/>
+					</form>
+				</field>
+			</fieldset>
+			<fieldset name="additional_data" label="Additional Data" description="If you want to pass additional data (for example, api_key with it's value), add the extra data here">
+				<field
+						name="additional_data"
+						hiddenLabel="true"
+						type="subform"
+						layout="joomla.form.field.subform.repeatable-table"
+						icon="list"
+						multiple="true"
+				>
+					<form hidden="true" name="additional_data" repeat="true">
+						<field
+								name="additional_data_field_name"
+								type="text"
+								label="Field Name"
+						/>
+						<field
+								name="additional_data_field_value"
+								type="text"
+								label="Field Value"
+						/>
+					</form>
+				</field>
+			</fieldset>
+        </fields>
+    </config>	
+</extension>

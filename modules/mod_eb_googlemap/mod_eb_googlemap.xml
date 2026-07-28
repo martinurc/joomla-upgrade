@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="module" version="3.9.0" client="site" method="upgrade">
+    <name>Events Booking - Map</name>
+    <author>Tuan Pham Ngoc</author>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <version>4.9.4</version>
+    <creationDate>Feb 2014</creationDate>
+    <copyright>Copyright (C) 2010 - 2024 Ossolution Team</copyright>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <description>This module displays locations and it's events on a map</description>
+    <media destination="mod_eb_googlemap">
+        <folder>asset</folder>
+    </media>
+    <files>
+        <filename module="mod_eb_googlemap">mod_eb_googlemap.php</filename>
+        <filename>helper.php</filename>
+        <folder>tmpl</folder>
+    </files>
+    <config>
+        <fields name="params">
+            <fieldset name="basic" addfieldpath="/administrator/components/com_eventbooking/fields">
+                <field
+                        name="category_ids"
+                        type="ebcategory"
+                        multiple="true"
+                        default=""
+                        label="Categories"
+                        description="Select categories you want to get events from to display"
+                />
+                <field
+                        name="exclude_category_ids"
+                        type="ebcategory"
+                        multiple="true"
+                        default=""
+                        label="Exclude Categories"
+                        description="Select categories which you want to exclude events from"
+                />
+                <field
+                        name="location_ids"
+                        type="eblocation"
+                        multiple="true"
+                        label="Locations"
+                />
+                <field
+                        name="hide_past_events"
+                        type="radio"
+                        default="1"
+                        class="btn-group btn-group-yesno"
+                        label="Hide past events"
+                        description="">
+                    <option value="1">JYES</option>
+                    <option value="0">JNO</option>
+                </field>
+                <field name="duration_filter" type="list" default="" label="Duration Filter">
+                    <option value="">All Dates</option>
+                    <option value="today">Today</option>
+                    <option value="tomorrow">Tomorrow</option>
+                    <option value="this_week">This Week</option>
+                    <option value="next_week">Next Week</option>
+                    <option value="this_month">This Month</option>
+                    <option value="next_month">Next Month</option>
+                </field>
+                <field
+                        name="number_events"
+                        type="text"
+                        default="15"
+                        label="Max number events per location"
+                        description=""/>
+                <field name="Itemid" type="ebitemid" label="Menu Item ID" description="Menu Item ID" default=""/>
+                <field type="editor" name="pre_text" filter="raw" label="Pre Text"
+                       description="If entered, the text will be displayed at the top of the module"/>
+                <field type="editor" name="post_text" filter="raw" label="Post Text"
+                       description="If entered, the text will be displayed at the bottom of the module"/>
+            </fieldset>
+            <fieldset name="display_options" label="Display Options">
+                <field name="moduleclass_sfx" type="text"
+                       label="Module Class Suffix" description="PARAMMODULECLASSSUFFIX"/>
+                <field
+                        name="center_coordinates"
+                        type="text"
+                        default=""
+                        label="Center Coordinates"
+                        description="Center Coordinates of the map, for example 37.09024,-95.712891. Default to the coordinates of the location of first event"
+                />
+                <field
+                        name="width"
+                        type="text"
+                        default="100"
+                        label="Width"
+                        description="Map with (in %)"
+                />
+                <field
+                        name="height"
+                        type="text"
+                        default="400"
+                        label="Height"
+                        description="Map height (in px)"
+                />
+                <field
+                        name="zoom_level"
+                        type="text"
+                        default="14"
+                        label="Zoom level"
+                />
+            </fieldset>
+            <fieldset name="advanced">
+                <field
+                        name="cache"
+                        type="list"
+                        label="COM_MODULES_FIELD_CACHING_LABEL"
+                        default="1"
+                        filter="integer"
+                        validate="options"
+                >
+                    <option value="1">JGLOBAL_USE_GLOBAL</option>
+                    <option value="0">COM_MODULES_FIELD_VALUE_NOCACHING</option>
+                </field>
+
+                <field
+                        name="cache_time"
+                        type="number"
+                        label="COM_MODULES_FIELD_CACHE_TIME_LABEL"
+                        default="900"
+                        filter="integer"
+                />
+
+                <field
+                        name="cachemode"
+                        type="hidden"
+                        default="static"
+                >
+                    <option value="static"></option>
+                </field>
+                <field type="text" name="show_on_pages" label="Show On Pages" description="Using syntax like com_eventbooking:category, event; com_content: article,categories to show module only on some views of the components you want. Leave it empty and it will always be shown" />
+            </fieldset>
+        </fields>
+    </config>
+</extension>

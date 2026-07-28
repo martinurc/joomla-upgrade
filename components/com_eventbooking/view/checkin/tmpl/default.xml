@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+	<layout title="QRCODE Scanner">
+		<message>
+			Scanning QRCODE to checkin registrants
+		</message>
+	</layout>
+	<fields name="params">
+		<fieldset name="basic">
+			<field name="checkin_interval" type="number" step="1" label="Checkin Interval" description="Time (in seconds) between two checkin." default="15" />
+		</fieldset>
+	</fields>
+</metadata>

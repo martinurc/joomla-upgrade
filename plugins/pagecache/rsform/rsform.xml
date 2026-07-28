@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.0" type="plugin" group="pagecache" method="upgrade">
+	<name>Page Cache - RSForm! Pro</name>
+	<author>RSJoomla!</author>
+	<creationDate>September 2023</creationDate>
+	<copyright>(C) 2007-2023 www.rsjoomla.com</copyright>
+	<license>GNU General Public License</license>
+	<authorEmail>support@rsjoomla.com</authorEmail>
+	<authorUrl>www.rsjoomla.com</authorUrl>
+	<version>1.0.0</version>
+	<description>PLG_PAGECACHE_RSFORM_DESC</description>
+	
+	<files>
+		<filename plugin="rsform">rsform.php</filename>
+		<filename>index.html</filename>
+	</files>
+	<languages folder="language/en-GB">
+		<language tag="en-GB">en-GB.plg_pagecache_rsform.ini</language>
+		<language tag="en-GB">en-GB.plg_pagecache_rsform.sys.ini</language>
+	</languages>
+</extension>

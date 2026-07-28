@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+    <layout title="Full Calendar">
+        <message>
+            Display full calendar
+        </message>
+    </layout>
+    <fields name="request">
+        <fieldset name="request"
+                  addfieldpath="/administrator/components/com_eventbooking/fields">
+            <field name="id" type="ebcategory" size="3" default="0" label="Category"
+                   description="Choose the category which you want to display events"/>
+        </fieldset>
+    </fields>
+    <fields name="params">
+        <fieldset name="basic" addfieldpath="/administrator/components/com_eventbooking/fields">
+            <field name="category_ids" type="ebcategory" multiple="true" label="Categories" description="Select categories which you want to display events from. If no categories selected, events from all categories will be displayed" />
+            <field name="exclude_category_ids" type="ebcategory" multiple="true" label="Exclude Categories" description="Select categories which you want to exclude events from" />
+            <field name="location_id" type="eblocation" size="3" default="0" label="Location" description="Choose the Location which you want to display events" />
+            <field name="created_by" type="user" label="Created By"
+                   description="If you select a user here, only events created by that user will be displayed when users access to this menu item"/>
+            <field name="speaker_ids" type="ebspeaker" multiple="true"
+                   label="Speakers"
+                   description="Select speakers which you want to display events from">
+            </field>
+            <field name="city" type="text" label="City"
+                   description="Enter a City here and only events from that City will be shown"/>
+            <field name="default_month" type="list" default="" label="Default Month"
+                   description="Choose the month you want to display events from. If you don't choose any month, the current month will be used">
+                <option value="">Current Month</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+            </field>
+            <field name="default_year" type="text" label="Default Year" size="5"
+                   description="Enter the year you want to display events from. If you leave this empty, the current year will be used" />
+            <field name="hide_past_events" type="list" default="2" label="Hide Past Events"
+                   description="Choose to show/hide past events for this menu item">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+                <option value="2">Use Configuration</option>
+            </field>
+            <field name="hide_children_events" type="list" default="0" label="Hide Children Events"
+                   description="Choose to show/hide children events for this menu item">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+            </field>
+            <field name="link_event_to_registration_form" type="list" default="0" label="Link Event To Registration Form"
+                   description="If set to Yes, click on title of event will redirect users to registration form of the event instead of showing event details page.">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+            </field>
+            <field name="hide_full_events" type="list" default="0" label="Hide Full Events"
+                   description="If set to Yes, full events won't be displayed in the calendar.">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+            </field>
+            <field name="menu_item_id" type="ebitemid"
+                   label="Override Menu Item ID"
+                   description="If you want the system to use different menu item to generate links from this page, enter ID of that menu item here. In most case, leave it empty"
+                   default="">
+            </field>
+            <field type="editor" name="intro_text" buttons="yes" filter="raw" label="Intro Text" description="If you enter some text here, it will be displayed above the calendar" />
+        </fieldset>
+
+        <fieldset name="calendar_display_options" label="Calendar Display Options">
+            <field
+                    name="show_today_button"
+                    type="radio"
+                    label="Show Today Button"
+                    class="btn-group btn-group-yesno"
+                    default="1"
+            >
+                <option value="1">JYES</option>
+                <option value="0">JNO</option>
+            </field>
+            <field
+                    name="show_month_button"
+                    type="radio"
+                    label="Show Month Button"
+                    description="If set to Yes, Month button will be shown to allow users to view events in Monthly Layout"
+                    class="btn-group btn-group-yesno"
+                    default="1"
+            >
+                <option value="1">JYES</option>
+                <option value="0">JNO</option>
+            </field>
+            <field
+                    name="show_week_button"
+                    type="radio"
+                    label="Show Week Button"
+                    description="If set to Yes, Week button will be shown to allow users to view events in Weekly Layout"
+                    class="btn-group btn-group-yesno"
+                    default="1"
+            >
+                <option value="1">JYES</option>
+                <option value="0">JNO</option>
+            </field>
+            <field
+                    name="show_day_button"
+                    type="radio"
+                    label="Show Day Button"
+                    description="If set to Yes, Day button will be shown to allow users to view events in Daily Layout"
+                    class="btn-group btn-group-yesno"
+                    default="1"
+            >
+                <option value="1">JYES</option>
+                <option value="0">JNO</option>
+            </field>
+            <field name="default_view" type="list" default="Month" label="Default View">
+                <option value="dayGridMonth">Month</option>
+                <option value="timeGridWeek">Week</option>
+                <option value="timeGridDay">Day</option>
+            </field>
+            <field
+                    name="show_weekend"
+                    type="radio"
+                    label="Show Weekends"
+                    description="Whether to include Saturday/Sunday columns in any of the calendar views"
+                    class="btn-group btn-group-yesno"
+                    default="1"
+            >
+                <option value="1">JYES</option>
+                <option value="0">JNO</option>
+            </field>
+
+            <field
+                    name="hidden_days"
+                    type="list"
+                    multiple="true"
+                    label="Hidden Days"
+                    description="Choose the days which will be hidden in the calendar"
+            >
+                <option value="0">Sunday</option>
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+            </field>
+
+            <field
+                    name="show_non_current_dates"
+                    type="radio"
+                    label="Show None Current Dates"
+                    description="Whether to include events from previous/next month in the current month view"
+                    class="btn-group btn-group-yesno"
+                    default="1"
+            >
+                <option value="1">JYES</option>
+                <option value="0">JNO</option>
+            </field>
+            <field
+                    name="show_all_day_slot"
+                    type="radio"
+                    label="Show All Day Slot"
+                    description="Determines if the all-day slot is displayed at the top of the calendar"
+                    class="btn-group btn-group-yesno"
+                    default="0"
+            >
+                <option value="1">JYES</option>
+                <option value="0">JNO</option>
+            </field>
+            <field name="event_time_format" type="text" label="Event Time Format" size="5" default="HH:mm"
+                   description="Determine the format of event time (if it is being displayed)" />
+            <field name="slot_min_time" type="text" label="Slot Min Time" size="5" default="00:00:00"
+                   description="Determines the first time slot that will be displayed for each day" />
+            <field name="slot_max_time" type="text" label="Slot Max Time" size="5" default="24:00:00"
+                   description="Determines the last time slot that will be displayed for each day" />
+            <field name="title_format_month" type="text" label="Title Format Month" size="5" default="MMMM YYYY"
+                   description="Format of the date displayed in title selection in Month view" />
+            <field name="title_format_week" type="text" label="Title Format Week" size="5" default="MMM D YYYY"
+                   description="Format of the date displayed in title selection in Week view" />
+            <field name="day_header_format_week" type="text" label="Day Header Format Week" size="5" default="ddd M/D"
+                   description="Determines the text that will be displayed on the calendar’s column headings in Week view" />
+            <field name="title_format_day" type="text" label="Title Format Day" size="5" default="MMMM D YYYY"
+                   description="Format of the date displayed in title selection in Day view" />
+            <field name="slot_label_format" type="text" label="Slot Label Format" size="5" default="h(:mm)a"
+                   description="Determines the time-text that will be displayed on the vertical axis of the agenda views" />
+        </fieldset>
+    </fields>
+</metadata>

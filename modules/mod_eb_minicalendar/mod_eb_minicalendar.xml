@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="module" version="3.9.0" client="site" method="upgrade">
+	<name>Events Booking - Mini Calendar</name>
+	<creationDate>July 2011</creationDate>
+	<author>Tuan Pham Ngoc</author>
+	<authorEmail>tuanpn@joomdonation.com</authorEmail>
+	<authorUrl>https://joomdonation.com</authorUrl>
+	<copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+	<license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+	<version>4.9.4</version>
+	<description>Shows event in one monthly calendar for Ebooking component</description>
+	<files>
+		<filename module="mod_eb_minicalendar">mod_eb_minicalendar.php</filename>		
+		<folder>tmpl</folder>		
+	</files>
+	<config>
+		<fields name="params">
+			<fieldset name="basic" addfieldpath="/administrator/components/com_eventbooking/fields">
+				<field name="moduleclass_sfx" type="text"
+					label="Module Class Suffix" description="PARAMMODULECLASSSUFFIX">
+				</field>	
+				<field name="default_month" type="list" default="0" label="Default Month" description="Choose the month you want to display events from. If you don't choose any month, the current month will be used">
+						<option value="0">Current Month</option>
+						<option value="1">January</option>
+						<option value="2">February</option>
+						<option value="3">March</option>
+						<option value="4">April</option>
+						<option value="5">May</option>
+						<option value="6">June</option>
+						<option value="7">July</option>
+						<option value="8">August</option>
+						<option value="9">September</option>
+						<option value="10">October</option>
+						<option value="11">November</option>
+						<option value="12">December</option>
+				</field>
+				<field name="default_year" type="text" default="" label="Default Year" />
+				<field name="id" type="ebcategory" size="3" default="0" label="Select Category"
+					   description="Choose the category which you want to display events from"/>
+				<field name="item_id" type="ebitemid" label="Itemid" description="Itemid" />
+				<field type="editor" name="pre_text" filter="raw" label="Pre Text" description="If entered, the text will be displayed at the top of the module" />
+				<field type="editor" name="post_text" filter="raw" label="Post Text" description="If entered, the text will be displayed at the bottom of the module" />
+			</fieldset>
+			<fieldset name="advanced">
+				<field
+						name="cache"
+						type="list"
+						label="COM_MODULES_FIELD_CACHING_LABEL"
+						default="1"
+						filter="integer"
+						validate="options"
+				>
+					<option value="1">JGLOBAL_USE_GLOBAL</option>
+					<option value="0">COM_MODULES_FIELD_VALUE_NOCACHING</option>
+				</field>
+
+				<field
+						name="cache_time"
+						type="number"
+						label="COM_MODULES_FIELD_CACHE_TIME_LABEL"
+						default="900"
+						filter="integer"
+				/>
+
+				<field
+						name="cachemode"
+						type="hidden"
+						default="static"
+				>
+					<option value="static"></option>
+				</field>
+				<field type="text" name="show_on_pages" label="Show On Pages" description="Using syntax like com_eventbooking:category, event; com_content: article,categories to show module only on some views of the components you want. Leave it empty and it will always be shown" />
+			</fieldset>
+		</fields>
+	</config>		
+</extension>

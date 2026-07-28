@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+	<layout title="Mass Mail">
+		<message>
+			Display form to allow sending email to all registrants of a selected event
+		</message>
+	</layout>
+</metadata>

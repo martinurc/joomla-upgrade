@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3" type="plugin" group="system" method="upgrade">
+	<name>Cookies CK</name>
+	<author>Cédric KEIFLIN</author>
+	<creationDate>February 2015</creationDate>
+	<copyright>Cédric KEIFLIN</copyright>
+	<license>http://www.gnu.org/licenses/gpl.html</license>
+	<authorEmail>ced1870@gmail.com</authorEmail>
+	<authorUrl>http://www.joomlack.fr</authorUrl>
+	<version>3.7.4</version>
+	<description>COOKIESCK_PLUG_DESC</description>
+	<files>
+		<filename plugin="cookiesck">cookiesck.php</filename>
+		<folder>assets</folder>
+		<folder>elements</folder>
+		<folder>language</folder>
+		<folder>params</folder>
+	</files>
+	<languages folder="language">
+		<language tag="en-GB">en-GB/en-GB.plg_system_cookiesck.ini</language>
+		<language tag="en-GB">en-GB/en-GB.plg_system_cookiesck.sys.ini</language>
+		<language tag="fr-FR">fr-FR/fr-FR.plg_system_cookiesck.ini</language>
+		<language tag="fr-FR">fr-FR/fr-FR.plg_system_cookiesck.sys.ini</language>
+	</languages>
+	<updateservers>
+		<server type="extension" priority="1" name="Cookies CK Update">https://update.joomlack.fr/plg_cookiesck_update.xml</server>
+	</updateservers>
+	<config>
+		<fields name="params">
+			<fieldset name="basic" addfieldpath="/plugins/system/cookiesck/elements">
+				<field name="ckcheckparams" type="ckcheckparams" />
+				<field name="votejed" type="cookiesckspacer" icon="" label="COOKIESCK_VOTE_JED" />
+				<field name="joomlacklink" type="cookiesckspacer" icon="" label="COOKIESCK_GO_JOOMLACK" />
+				<field 
+					name="general_spacer" 
+					type="cookiesckspacer" 
+					style="title"
+					label="COOKIESCK_GENERAL" 
+				/>
+				<field name="position" type="list" default="absolute" label="COOKIESCK_POSITION" description="" >
+					<option value="absolute">COOKIESCK_TOP_OVER_PAGE</option>
+					<option value="fixed">COOKIESCK_TOP_FIXED</option>
+					<option value="bottom">COOKIESCK_BOTTOM_PAGE</option>
+				</field>
+				<field 
+					name="background_color" 
+					type="color" 
+					default="#000000" 
+					label="COOKIESCK_BACKGROUND_COLOR" 
+					description="" 
+					showon="ckcheckparams:0"
+				/>
+				<field 
+					name="background_opacity" 
+					type="text" 
+					default="0.5" 
+					label="COOKIESCK_BACKGROUND_OPACITY" 
+					description="" 
+					max="1"
+					min="0"
+					step="0.1"
+					showon="ckcheckparams:0"
+				/>
+				<field 
+					name="text_color" 
+					type="color" 
+					default="#ffffff" 
+					label="COOKIESCK_TEXT_COLOR" 
+					description=""
+					showon="ckcheckparams:0"
+				/>
+				<field name="lifetime" type="text" default="365" label="COOKIESCK_LIFETIME" description="COOKIESCK_LIFETIME_DESC" />
+				<field name="blockingpolicy" type="list" default="0" label="COOKIESCK_BLOCK_POLICY" desc="COOKIESCK_BLOCK_POLICY_DESC">
+					<option value="1">JDEFAULT</option>
+					<option value="2">COOKIESCK_BLOCK_ALL</option>
+				</field>
+				<field name="reloadafteraccept" type="radio" default="0" label="COOKIESCK_RELOAD_AFTER_ACCEPT" description="COOKIESCK_RELOAD_AFTER_ACCEPT_DESC" class="btn-group">
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field 
+					name="buttontype" 
+					type="list" 
+					default="button" 
+					label="COOKIESCK_BUTTON_TYPE" 
+					>
+					<option value="button">COOKIESCK_BUTTON</option>
+					<option value="switcher">COOKIESCK_SWITCHER</option>
+				</field>
+				<field name="debug" type="radio" default="0" label="COOKIESCK_DEBUG" class="btn-group">
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field name="ckstyleswizard" type="ckstyleswizard" />
+				
+
+				<field 
+					name="readmore_spacer" 
+					type="cookiesckspacer" 
+					style="title"
+					label="COOKIESCK_READMORE" 
+				/>
+				<field name="enable_readmore" 
+					   type="radio" 
+					   default="1" 
+					   label="COOKIESCK_ENABLE_READMORE" 
+					   class="btn-group">
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field name="linktype" type="list" default="article" label="COOKIESCK_LINK_TYPE" 
+					   description=""
+					   showon="enable_readmore:1"
+				>
+					<option value="article">COOKIESCK_ARTICLE</option>
+					<option value="url">COOKIESCK_URL</option>
+					<option value="menuitem">COOKIESCK_MENUITEM</option>
+				</field>
+				<field name="article_readmore" 
+					   type="text" 
+					   default="" 
+					   label="COOKIESCK_READMORE_ARTICLE_ID" 
+					   showon="linktype:article[AND]enable_readmore:1"
+					   description="" 
+				/>
+				<field name="link_readmore" 
+					   type="text" 
+					   default="" 
+					   label="COOKIESCK_READMORE_LINK_URL" 
+					   showon="linktype:url[AND]enable_readmore:1"
+					   description="" 
+				/>
+				<field name="menuitem_readmore" 
+						type="menuitem" 
+						default="" 
+						label="COOKIESCK_READMORE_MENUITEM" 
+						showon="linktype:menuitem[AND]enable_readmore:1"
+						description="" 
+				/>
+
+				
+				<field name="link_target" type="list" default="same" label="COOKIESCK_LINK_TARGET" description="" >
+					<option value="same">COOKIESCK_SAME_PAGE</option>
+					<option value="new">COOKIESCK_NEW_PAGE</option>
+				</field>
+				<field name="link_anchor" type="text" default="" label="COOKIESCK_LINK_ANCHOR" description="COOKIESCK_LINK_ANCHOR_DESC" />
+				<field name="link_rel" type="text" default="" label="COOKIESCK_LINK_REL" description="COOKIESCK_LINK_REL_DESC" />
+				
+				<field 
+					name="cookie_button_spacer" 
+					type="cookiesckspacer" 
+					style="title"
+					label="COOKIESCK_COOKIE_BUTTON" 
+				/>
+				<field 
+					name="cookie_button_width" 
+					type="text" 
+					default="" 
+					label="COOKIESCK_WIDTH" 
+				/>
+				<field 
+					name="cookie_button_height" 
+					type="text" 
+					default="" 
+					label="COOKIESCK_HEIGHT" 
+				/>
+				<field 
+					name="cookie_button_background_color" 
+					type="color" 
+					default="" 
+					label="COOKIESCK_BACKGROUND_COLOR" 
+					description="" 
+				/>
+				<field 
+					name="cookie_button_background_image" 
+					type="media" 
+					default="" 
+					label="COOKIESCK_BACKGROUND_IMAGE" 
+					description="" 
+				/>
+				<field 
+					name="cookie_button_background_opacity" 
+					type="text" 
+					default="1" 
+					label="COOKIESCK_BACKGROUND_OPACITY" 
+					description="" 
+					max="1"
+					min="0"
+					step="0.1"
+				/>
+			</fieldset>
+			<fieldset name="cookiesiframes" label="COOKIESCK_IFRAMES_FIELDSET">
+				<field name="blockiframes" type="radio" default="0" label="COOKIESCK_BLOCK_IFRAMES" description="COOKIESCK_BLOCK_IFRAMES_DESC" class="btn-group">
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field name="blockiframes_textimage" type="list" default="image" label="COOKIESCK_BLOCK_IFRAMES_TEXT_IMAGE" description="COOKIESCK_BLOCK_IFRAMES_TEXT_IMAGE_DESC" 
+				showon="blockiframes:1"
+				>
+					<option value="text">COOKIESCK_TEXT</option>
+					<option value="image">COOKIESCK_IMAGE</option>
+				</field>
+				<field name="blockiframes_text" type="text" default="COOKIESCK_IFRAME_TEXT" label="COOKIESCK_BLOCK_IFRAME_TEXT" description="COOKIESCK_BLOCK_IFRAME_TEXT_DESC" 
+					showon="blockiframes:1[AND]blockiframes_textimage:text"
+				/>
+				<field 
+					name="blockiframes_image" 
+					type="media" 
+					default="" 
+					label="COOKIESCK_IFRAME_IMAGE" 
+					description="COOKIESCK_IFRAME_IMAGE_DESC" 
+					showon="blockiframes:1[AND]blockiframes_textimage:image"
+				/>
+			</fieldset>
+			<fieldset name="cookiesedition" label="COOKIESCK_EDITION_FIELDSET">
+				<field name="ckcookieswizard" type="ckcookieswizard" />
+			</fieldset>
+			<fieldset name="googleconsent" label="COOKIESCK_GOOGLE_CONSENT_FIELDSET">
+				<field name="enable_google_consent" type="radio" default="0" label="COOKIESCK_ENABLE_GOOGLE_CONSENT" class="btn-group">
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				
+				<field name="google_consent_ad" 
+						type="list" 
+						default="denied" 
+						label="COOKIESCK_GOOGLE_AD_DEFAULT" 
+						showon="enable_google_consent:1"
+				>
+					<option value="granted">COOKIESCK_LEGAL_1</option>
+					<option value="denied">COOKIESCK_DENIED</option>
+					<option value="disabled">COOKIESCK_DO_NOT_USE</option>
+				</field>
+				<field 
+					name="google_consent_analytics" 
+					type="list" 
+					default="denied" 
+					label="COOKIESCK_GOOGLE_ANALYTICS_DEFAULT" 
+					class="btn-group"
+					showon="enable_google_consent:1"
+				>
+					<option value="granted">COOKIESCK_LEGAL_1</option>
+					<option value="denied">COOKIESCK_DENIED</option>
+					<option value="disabled">COOKIESCK_DO_NOT_USE</option>
+				</field>
+				<field 
+					name="enable_google_analytics" 
+					type="radio" 
+					default="0" 
+					label="COOKIESCK_ADD_GOOGLE_ANALYTICS" 
+					class="btn-group"
+					showon="enable_google_consent:1">
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field 
+					name="google_analytics_id" type="text" 
+					default="G-..." 
+					label="COOKIESCK_GOOGLE_ANALYTICS_ID" 
+					showon="enable_google_consent:1[AND]enable_google_analytics:1"
+				/>
+			</fieldset>
+			<fieldset name="cookieslogs" label="COOKIESCK_LOGS_FIELDSET">
+				<field name="ckcookieslogs" type="ckcookieslogs" />
+			</fieldset>
+			
+		</fields>
+	</config>
+</extension>

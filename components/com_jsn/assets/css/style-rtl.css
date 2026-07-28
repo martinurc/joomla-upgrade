@@ -1,0 +1,50 @@
+/* Author */
+img.avatar.author_avatar{margin-left:0px;margin-right:5px;}
+
+/* Privacy */
+.control-group.privacy .privacy_btn,.form-group.privacy .privacy_btn{right:auto;padding-left:0px;left:8px;padding-right:5px;}
+.control-group.privacy ul,.form-group.privacy ul{text-align:right;margin-right:0px;margin-left:4px;right:auto}
+
+/* Maps */
+input.jsn_map_search{float:right;}
+select.gmap_radius_select{float:right;margin-left:0%;margin-right:2%;}
+
+/* Search */
+.numericsearch,div.jsn_search .bsdatesearch{float:right;}
+.numericsearch + .numericsearch,div.jsn_search .bsdatesearch + .bsdatesearch{margin-left:0%;margin-right:2%;}
+
+/* Registration - Edit Profile */
+.jsn_registration_controls{margin-right:0px !important;}
+
+/* Radio & Checkbox */
+label.checkbox,label.radio{padding-left:0px;padding-right:20px;}
+label.radio.inline + label.radio.inline,label.checkbox.inline + label.checkbox.inline {margin-left: 0px;margin-right:10px;}
+
+/* Profile & Lists */
+.jsn-p-opt{text-align: left;}
+.jsn-p-date-reg{margin-right:0px;margin-left:10px;}
+.jsn-p-top-a .jsn-p-title,.jsn-p-top-a .jsn-p-before-fields{margin-left:0px;margin-right:120px;}
+.jsn-p-top-a .status.label,.jsn-l-top-a .status.label{left:auto;right:-5px;}
+.jsn-p-avatar,.jsn-l-avatar{float:right;}
+@media (max-width: 767px){
+    .jsn-p-top-a .jsn-p-title,
+    .jsn-p-top-a .jsn-p-before-fields {clear:both;margin-right:0px;}
+    .jsn-p-top-a .status.label{right:50%;margin-left:0px;margin-right:-55px;}
+    .jsn-p-avatar{float:none;}
+}
+.jsn-l-top-a .jsn-l-title,.jsn-l-top-a .jsn-l-fields{margin-left:0px;margin-right:60px;}
+.jsn-l-map{padding:5px 5px 0 0px;}
+
+/* Field List */
+.jsn-p-fields dl dt,.jsn-p-fields dl dd{text-align:right;}
+@media(min-width:767px){
+	.jsn-p-fields dl dt{float:right;text-align:left;}
+	.jsn-p-fields dl dd{margin-left:0px;margin-right:180px;}
+}
+
+/* Date Field */
+.jsndatepicker:before {right: 6px;left:auto;}
+.jsndatepicker:after {right: 7px;left:auto;}
+
+/* Tabs */
+#jsn-form.horizontal>ul>li {float: right;}

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+	<fields name="params">
+		<fieldset
+			name="date" 
+			label="COM_JSN_DATE_FIELDSET_LABEL"
+		>
+		
+			<field
+				name="date_default"
+				label="COM_JSN_GENERAL_DEFAULTVALUE"
+				description ="COM_JSN_GENERAL_DEFAULTVALUE_DESC"
+				type="calendar"
+			/>
+			
+			<field
+				name="date_placeholder"
+				label="COM_JSN_GENERAL_PLACEHOLDER"
+				description ="COM_JSN_GENERAL_PLACEHOLDER_DESC"
+				type="text"
+			/>
+
+			<field
+				name="date_format"
+				label="COM_JSN_DATE_FORMAT"
+				description ="COM_JSN_DATE_FORMAT_DESC"
+				type="text"
+				default="j F Y"
+			/>
+
+			<field
+				name="date_formformat"
+				label="COM_JSN_DATE_FORMFORMAT"
+				description ="COM_JSN_DATE_FORMFORMAT_DESC"
+				type="list"
+				default="d MM yyyy"
+			>
+				<option value="d MM yyyy">31 December 2010 (d mmmm yyyy)</option>
+				<option value="dd/mm/yyyy">31/12/2010 (dd/mm/yyyy)</option>
+				<option value="mm/dd/yyyy">12/31/2010 (mm/dd/yyyy)</option>
+				<option value="yyyy/mm/dd">2010/12/31 (yyyy/mm/dd)</option>
+				<option value="dd-mm-yyyy">31-12-2010 (dd-mm-yyyy)</option>
+				<option value="mm-dd-yyyy">12-31-2010 (mm-dd-yyyy)</option>
+				<option value="yyyy-mm-dd">2010-12-31 (yyyy-mm-dd)</option>
+				<option value="dd.mm.yyyy">31.12.2010 (dd.mm.yyyy)</option>
+				<option value="mm.dd.yyyy">12.31.2010 (mm.dd.yyyy)</option>
+				<option value="yyyy.mm.dd">2010.12.31 (yyyy.mm.dd)</option>
+			</field>
+
+			<field
+				name="date_type"
+				label="COM_JSN_DATE_TYPE"
+				description ="COM_JSN_DATE_TYPE_DESC"
+				type="list"
+				filter="int"
+				default="0"
+			>
+				<option value="0">COM_JSN_DATE_DATE</option>
+				<option value="1">COM_JSN_DATE_AGE</option>
+				<option value="2">COM_JSN_DATE_YEARSAGO</option>
+			</field>
+			
+			<field
+				name="date_viewmode"
+				label="COM_JSN_DATE_VIEWMODE"
+				description ="COM_JSN_DATE_VIEWMODE_DESC"
+				type="list"
+				filter="string"
+				default="days"
+			>
+				<option value="days">COM_JSN_DATE_VIEWMODE_DAY</option>
+				<option value="months">COM_JSN_DATE_VIEWMODE_MONTH</option>
+				<option value="years">COM_JSN_DATE_VIEWMODE_YEAR</option>
+			</field>
+			
+			<field
+				name="date_span"
+				label="COM_JSN_DATE_SPAN"
+				description ="COM_JSN_DATE_SPAN_DESC"
+				type="list"
+				filter="int"
+				default="0"
+			>
+				<option value="0">COM_JSN_DATE_ALLDATE</option>
+				<option value="1">COM_JSN_DATE_PAST</option>
+				<option value="2">COM_JSN_DATE_FUTURE</option>
+			</field>
+			
+			<field
+				name="date_span_year"
+				label="COM_JSN_DATE_SPAN_YEAR"
+				description ="COM_JSN_DATE_SPAN_YEAR_DESC"
+				type="text"
+				filter="int"
+				default="0"
+			/>
+			
+			<field
+				name="date_span_month"
+				label="COM_JSN_DATE_SPAN_MONTH"
+				description ="COM_JSN_DATE_SPAN_MONTH_DESC"
+				type="text"
+				filter="int"
+				default="0"
+			/>
+			
+			<field
+				name="date_span_day"
+				label="COM_JSN_DATE_SPAN_DAY"
+				description ="COM_JSN_DATE_SPAN_DAY_DESC"
+				type="text"
+				filter="int"
+				default="0"
+			/>
+			
+			<!-- <field
+				name="text_filter"
+				label="COM_JSN_TEXT_FILTER"
+				description ="COM_JSN_TEXT_FILTER_DESC"
+				type="list"
+				default="text"
+			>
+				<option value="string">COM_JSN_TEXT_FILTER_TEXT</option>
+				<option value="email">COM_JSN_TEXT_FILTER_EMAIL</option>
+				<option value="tel">COM_JSN_TEXT_FILTER_PHONE</option>
+				<option value="int">COM_JSN_TEXT_FILTER_INT</option>
+			</field> -->
+
+		</fieldset>
+	</fields>
+</form>

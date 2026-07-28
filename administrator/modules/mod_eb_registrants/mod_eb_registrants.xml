@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="module" client="administrator" method="upgrade" version="3.9.0" position="cpanel">
+<name>Events Booking - Latest Registrants</name>
+<author>Tuan Pham Ngoc</author>
+<creationDate>February 19 2019</creationDate>
+<copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+<authorEmail>tuanpn@joomdonation.com</authorEmail>
+<authorUrl>https://joomdonation.com</authorUrl>
+<version>4.9.4</version>
+<description>Display Latest Registrants from Events Booking.</description>
+<files>
+    <filename module="mod_eb_registrants">mod_eb_registrants.php</filename>
+    <folder>tmpl</folder>
+</files>
+<config>
+    <fields name="params">
+        <fieldset name="basic">
+            <field
+                    name="count"
+                    type="number"
+                    label="Number Registrants"
+                    description="Number Registrants which will be displayed in the module"
+                    default="5"
+                    filter="integer"
+            />
+        </fieldset>
+    </fields>
+</config>
+</extension>

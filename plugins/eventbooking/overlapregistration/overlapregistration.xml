@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="eventbooking" method="upgrade">
+    <name>Events Booking - Prevent Overlap Registration</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>Match 2018</creationDate>
+    <author>Tuan Pham Ngoc</author>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <copyright>Copyright (C) 2010 - 2024 Ossolution Team</copyright>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <version>4.9.4</version>
+    <description>This plugin is used to prevent users from registering for event which overlap time with the events which he registered before.</description>
+    <files>
+        <filename plugin="overlapregistration">overlapregistration.php</filename>
+    </files>
+</extension>

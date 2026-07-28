@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="content" method="upgrade">
+    <name>Content - Events Booking Category</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>Oct 2014</creationDate>
+    <copyright>Copyright (C) 2010 - 1014 Ossolution Team</copyright>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <version>4.9.4</version>
+    <description>This plugin is used to display all events from a category within an article. Using syntax {ebcategory
+        ID_OF_CATEGORY}.
+    </description>
+    <files>
+        <filename plugin="ebcategory">ebcategory.php</filename>        
+    </files>
+    <config>
+        <fields name="params" addfieldpath="/administrator/components/com_eventbooking/fields">
+            <fieldset name="basic">
+                <field name="menu_item_id" type="ebitemid"
+                       label="Default Menu Item"
+                       default="">
+                </field>
+            </fieldset>
+        </fields>
+    </config>
+</extension>

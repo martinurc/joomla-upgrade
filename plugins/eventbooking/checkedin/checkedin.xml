@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="eventbooking" method="upgrade">
+    <name>Events Booking - Assign Checked In Registrants To User Groups</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>Apirl 2012</creationDate>
+    <copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <version>4.9.4</version>
+    <description>This plugin is used to assign users to Joomla Groups when they subscribe to a Event in Event Booking
+    </description>
+    <files>
+        <filename plugin="checkedin">checkedin.php</filename>
+        <folder>tmpl</folder>
+    </files>
+    <languages>
+        <language tag="en-GB">language/en-GB.plg_eventbooking_checkedin.ini</language>
+    </languages>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field
+                        name="default_user_groups"
+                        type="usergrouplist"
+                        label="Default User Groups"
+                        multiple="true"
+                        description="If you select default user groups here, registrants will be assigned to these default user groups if user groups is not setup for that event"
+                />
+                <field
+                        name="show_on_frontend"
+                        type="radio"
+                        label="Show On Frontend"
+                        description="If set to Yes, this plugin will be available on frontend event submission form"
+                        class="btn-group btn-group-yesno"
+                        default="0"
+                >
+                    <option value="1">JYES</option>
+                    <option value="0">JNO</option>
+                </field>
+            </fieldset>
+        </fields>
+    </config>
+</extension>

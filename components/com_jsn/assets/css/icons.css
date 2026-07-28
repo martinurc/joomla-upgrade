@@ -1,0 +1,111 @@
+@font-face {
+    font-family: 'jsn-icons';
+    src:    url('../fonts/jsn-icons.eot?eca0j6');
+    src:    url('../fonts/jsn-icons.eot?eca0j6#iefix') format('embedded-opentype'),
+        url('../fonts/jsn-icons.ttf?eca0j6') format('truetype'),
+        url('../fonts/jsn-icons.woff?eca0j6') format('woff'),
+        url('../fonts/jsn-icons.svg?eca0j6#jsn-icons') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.jsn-icon {
+    /* use !important to prevent issues with browser extensions that change fonts */
+    font-family: 'jsn-icons' !important;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.jsn-icon.jsn-icon-user:before {
+    content: "\f007";
+}
+.jsn-icon.jsn-icon-close:before {
+    content: "\f00d";
+}
+.jsn-icon.jsn-icon-remove:before {
+    content: "\f00d";
+}
+.jsn-icon.jsn-icon-times:before {
+    content: "\f00d";
+}
+.jsn-icon.jsn-icon-cog:before {
+    content: "\f013";
+}
+.jsn-icon.jsn-icon-gear:before {
+    content: "\f013";
+}
+.jsn-icon.jsn-icon-clock-o:before {
+    content: "\f017";
+}
+.jsn-icon.jsn-icon-pencil:before {
+    content: "\f040";
+}
+.jsn-icon.jsn-icon-map-marker:before {
+    content: "\f041";
+}
+.jsn-icon.jsn-icon-check-circle-o:before {
+    content: "\f05d";
+}
+.jsn-icon.jsn-icon-mail-forward:before {
+  content: "\f064";
+}
+.jsn-icon.jsn-icon-share:before {
+  content: "\f064";
+}
+.jsn-icon.jsn-icon-eye:before {
+    content: "\f06e";
+}
+.jsn-icon.jsn-icon-eye-slash:before {
+    content: "\f070";
+}
+.jsn-icon.jsn-icon-calendar:before {
+    content: "\f073";
+}
+.jsn-icon.jsn-icon-twitter:before {
+    content: "\f099";
+}
+.jsn-icon.jsn-icon-facebook:before {
+    content: "\f09a";
+}
+.jsn-icon.jsn-icon-facebook-f:before {
+    content: "\f09a";
+}
+.jsn-icon-globe:before {
+  content: "\f0ac";
+}
+.jsn-icon.jsn-icon-group:before {
+    content: "\f0c0";
+}
+.jsn-icon.jsn-icon-users:before {
+    content: "\f0c0";
+}
+.jsn-icon.jsn-icon-google-plus:before {
+    content: "\f0d5";
+}
+.jsn-icon.jsn-icon-linkedin:before {
+    content: "\f0e1";
+}
+.jsn-icon.jsn-icon-shield:before {
+    content: "\f132";
+}
+.jsn-icon-instagram:before {
+  content: "\f16d";
+}
+.jsn-icon.jsn-icon-paper-plane:before {
+    content: "\f1d8";
+}
+.jsn-icon.jsn-icon-send:before {
+    content: "\f1d8";
+}
+.jsn-icon.jsn-icon-user-secret:before {
+    content: "\f21b";
+}
+

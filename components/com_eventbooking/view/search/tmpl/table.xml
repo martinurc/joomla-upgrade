@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+	<layout title="Search Events Result - Table Layout">
+		<message>
+            -Display search result based on the search critical which users entered on search module in table layout
+		</message>
+	</layout>
+	<fields name="params" addfieldpath="/administrator/components/com_eventbooking/fields">
+		<fieldset name="basic">
+			<field name="hide_children_events" type="list" default="0" label="Hide Children Events"
+				   description="Choose to show/hide children events for this menu item">
+				<option value="0">No</option>
+				<option value="1">Yes</option>
+			</field>
+			<field name="display_events_type" type="ebeventstype" label="Display Events Type"
+				   description="Select the events type which you want to be displayed from this menu item."/>
+		</fieldset>
+	</fields>
+</metadata>

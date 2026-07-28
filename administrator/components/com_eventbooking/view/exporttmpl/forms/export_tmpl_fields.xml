@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form addfieldpath="/administrator/components/com_eventbooking/fields">
+    <field
+            name="export_tmpl_fields"
+            type="subform"
+            label="Fields"
+            description="The fields for this export template"
+            layout="joomla.form.field.subform.repeatable-table"
+            icon="list"
+            multiple="true"
+    >
+        <form hidden="true" name="list_export_tmpl_fields" repeat="true">
+            <field
+                    name="field"
+                    type="ebexportfield"
+                    label="EB_FIELD"
+            />
+        </form>
+    </field>
+</form>

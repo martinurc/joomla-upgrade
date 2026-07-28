@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="eventbooking" method="upgrade">
+    <name>Events Booking - Group Member Account</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>Apirl 2012</creationDate>
+    <copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <version>4.9.4</version>
+    <description>This plugin is used to create user account for group members when they are being registered for an
+        event in Events Booking
+    </description>
+    <files>
+        <filename plugin="groupmemberaccount">groupmemberaccount.php</filename>
+    </files>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field name="password" label="Password Data" description="Determine who password is used for the user account" type="list" default="random" >
+                    <option value="manually">Manually</option>
+                    <option value="random">Random</option>
+                    <option value="username">Username</option>
+                    <option value="username">Email</option>
+                </field>
+            </fieldset>
+        </fields>
+    </config>
+</extension>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="editors-xtd" method="upgrade">
+	<name>Button - Event</name>
+	<author>Tuan Pham Ngoc</author>
+	<creationDate>December 2013</creationDate>
+	<copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+	<authorEmail>tuanpn@joomdonation.com</authorEmail>
+	<authorUrl>https://joomdonation.com</authorUrl>
+	<version>4.9.4</version>
+	<description>Display a button to make it possible to insert detail information of an event into an article.</description>
+	<files>
+		<filename plugin="ebevent">ebevent.php</filename>		
+	</files>
+</extension>

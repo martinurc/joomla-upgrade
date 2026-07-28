@@ -1,0 +1,276 @@
+#cookiesck_interface {
+	display: none;
+	position: fixed;
+	z-index: 1000000;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	background: #fff;
+	border: 2px solid #ccc;
+	margin: 10px;
+	box-sizing: border-box;
+}
+
+#cookiesck_interface * {
+	box-sizing: border-box;
+}
+
+.cookiesck-main {
+	max-height: 100%;
+	overflow: auto;
+}
+
+.cookiesck-main-title {
+	font-size: 28px;
+	text-align: center;
+	padding: 20px;
+}
+
+.cookiesck-main-desc {
+	padding: 10px 40px;
+	font-size: 14px;
+}
+
+.cookiesck-category {
+	padding: 20px;
+	color: #333;
+}
+
+.cookiesck-category-name {
+	font-size: 24px;
+	color: #111;
+	line-height: 24px;
+}
+
+.cookiesck-category-desc {
+	margin: 3px 0;
+	color: #666;
+}
+
+.cookiesck-platform {
+	padding: 10px;
+	margin: 15px 0;
+	color: #111;
+	background: #f2f2f2;
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+}
+
+.cookiesck-platform-name {
+	font-size: 18px;
+	color: #111;
+	line-height: 24px;
+}
+
+.cookiesck-main .cookiesck_button,
+.cookiesck-main-buttons .cookiesck-button {
+	background: #e5e5e5;
+	border: 2px solid #ddd;
+	color: #666;
+	padding: 10px 20px;
+	margin: 2px 5px;
+	border-radius: 3px;
+	text-decoration: none;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.cookiesck-platform .cookiesck-accept {
+	margin-left: auto;
+}
+
+.cookiesck-main .cookiesck-accept:hover,
+.cookiesck-main .cookiesck-accept.cookiesck-active {
+	background: none;
+	border: 2px solid green;
+	color: green;
+}
+
+.cookiesck-main .cookiesck-decline:hover,
+.cookiesck-main .cookiesck-decline.cookiesck-active {
+	background: none;
+	border: 2px solid orange;
+	color: orange;
+}
+
+#cookiesck_readmore:hover {
+	border: 2px solid #666;
+	color: #222;
+}
+
+.cookiesck-main-buttons {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.cookiesck-main-close {
+	position: absolute;
+	right: 0;
+	top: 0;
+	z-index: 10;
+	padding: 20px;
+	font-size: 20px;
+	cursor: pointer;
+	background: #e2e2e2;
+	color: #666;
+}
+
+.cookiesck-main-close:hover {
+	color: #000;
+}
+
+iframe[data-cookiesck-src] {
+	background: #ddd url(cookies-icon.svg) center center no-repeat;
+	border: #ddd 3px solid;
+	background-size: 20vmin auto;
+	pointer-events: none;
+	transition: all 0.2s;
+}
+
+.cookiesck-iframe-wrap {
+	display: inline-block;
+	cursor: pointer;
+	position: relative;
+}
+
+.pagebuilderck .videock .cookiesck-iframe-wrap,
+.pagebuilderck .iframeck .cookiesck-iframe-wrap {
+	display: inline-block;
+	cursor: pointer;
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+}
+
+.cookiesck-iframe-wrap:hover iframe {
+	background-color: #eee;
+}
+
+.cookiesck-iframe-wrap:after {
+	position: absolute;
+	left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	content: "";
+	display: block;
+	border: transparent 3px solid;
+	transition: all 0.2s;
+}
+
+.cookiesck-iframe-wrap:hover:after {
+	border: #bbb 3px solid;
+}
+
+.cookiesck-iframe-wrap-allowed {
+	display: inline-block;
+}
+
+#cookiesckwizard input {
+	padding: 5px;
+	width: 70%;
+	height: auto;
+	margin: 2px 0;
+}
+
+.cookiesck-platform-desc {
+	margin: 0 10px;
+	color: #666;
+	font-style: italic;
+}
+
+@media screen and (max-width: 640px) {
+	.cookiesck-main-buttons, .cookiesck-platform {
+		flex-direction: column;
+	}
+	
+	.cookiesck-platform .cookiesck_button {
+		margin: 3px auto;
+	}
+
+	.cookiesck-main-close {
+		position: relative;
+		text-align: center;
+	}
+}
+
+/** for switchers **/
+
+
+
+.cookiesck_button_switch {
+	background: #ddd;
+	height: 34px;
+	width: 70px;
+	border: none;
+	position: relative;
+	border-radius: 17px;
+	cursor: pointer;
+	margin-left: auto;
+}
+
+.cookiesck_button_switch input {
+	display: none;
+}
+
+.cookiesck_button_switcher {
+	content: "";
+	display: block;
+	height: 30px;
+	width: 30px;
+	background: white;
+	border: none;
+	position: absolute;
+	top: 2px;
+	left: 1px;
+	border-radius: 15px;
+	box-sizing: border-box;
+	transition: all 0.2s ease;
+	z-index: 10;
+}
+
+input[id^="cookiesck-switch"]:checked + .cookiesck_button_switch .cookiesck_button_switcher {
+	left: calc(100% - 32px);
+}
+
+input[id^="cookiesck-switch"]:checked + .cookiesck_button_switch {
+	background: green;
+}
+
+
+.cookiesck_button_switch:before {
+	content: "";
+	display: block;
+	height: 20px;
+	width: 20px;
+	background: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%%22%20height%3D%22100%%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20%3E%20%3Cpath%20d%3D%22M5%2012l5%205l10%20-10%22%20%2F%3E%20%3C%2Fsvg%3E%20");
+	background-repeat: none;
+	position: absolute;
+	left: 8px;
+	top: 6px;
+	transition: all 0.2s ease;
+	z-index: 0;
+}
+
+.cookiesck_button_switch:after {
+	content: "";
+	display: block;
+	height: 20px;
+	width: 20px;
+	background: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%%22%20height%3D%22100%%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22darkgrey%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20%3E%20%3Cpath%20d%3D%22M18%206l-12%2012%22%20%2F%3E%20%3Cpath%20d%3D%22M6%206l12%2012%22%20%2F%3E%20%3C%2Fsvg%3E%20");
+	background-repeat: none;
+	position: absolute;
+	right: 8px;
+	top: 6px;
+	transition: all 0.2s ease;
+	z-index: 0;
+}
+
+.cookiesck-iframe-wrap-allowed .cookiesck-iframe-wrap-text {
+	display: none;
+}

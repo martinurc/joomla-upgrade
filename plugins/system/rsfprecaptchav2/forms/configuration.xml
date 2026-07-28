@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+	<fieldset name="params">
+		<field name="recaptchav2.site.key" type="text" label="RSFP_RECAPTCHAV2_SITE_KEY" size="100" />
+		<field name="recaptchav2.secret.key" type="text" label="RSFP_RECAPTCHAV2_SECRET_KEY" size="100" />
+		<field name="recaptchav2.language" type="list" label="RSFP_RECAPTCHAV2_LANGUAGE">
+			<option value="auto">RSFP_RECAPTCHAV2_LANGUAGE_AUTO</option>
+			<option value="site">RSFP_RECAPTCHAV2_LANGUAGE_SITE</option>
+		</field>
+		<field name="recaptchav2.noscript" type="radio" class="btn-group btn-group-yesno" label="RSFP_RECAPTCHAV2_NOSCRIPT" description="RSFP_RECAPTCHAV2_NOSCRIPT_DESC">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="recaptchav2.asyncdefer" type="radio" class="btn-group btn-group-yesno" label="RSFP_RECAPTCHAV2_ASYNC_DEFER" description="RSFP_RECAPTCHAV2_ASYNC_DEFER_DESC">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="recaptchav2.domain" type="list" label="PLG_SYSTEM_RSFPRECAPTCHAV2_DOMAIN" description="PLG_SYSTEM_RSFPRECAPTCHAV2_DOMAIN_DESC">
+			<option value="google.com">google.com</option>
+			<option value="recaptcha.net">recaptcha.net</option>
+		</field>
+	</fieldset>
+</form>

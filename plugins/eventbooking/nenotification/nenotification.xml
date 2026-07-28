@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="eventbooking" method="upgrade">
+    <name>Events Booking - New Event Notification</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>March 2022</creationDate>
+    <copyright>Ossolution Team</copyright>
+    <license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <version>4.9.4</version>
+    <description>This plugin sends notification to users from selected groups.</description>
+    <files>
+        <filename plugin="nenotification">nenotification.php</filename>
+    </files>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field name="user_groups" type="UserGroupList" multiple="true" label="User Groups" description="Select the user groups which will receive notification when event is submitted" />
+                <field name="app" type="list" default="both" label="For Events Created From">
+                    <option value="site">Frontend</option>
+                    <option value="administrator">Backend</option>
+                    <option value="both">Both</option>
+                </field>
+                <field name="subject" type="text" label="Subject" description="Subject Of The Email" />
+                <field name="message" label="Message" type="editor" description="Body Of The Email" filter="raw" />
+            </fieldset>
+        </fields>
+    </config>
+</extension>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="eventbooking" method="upgrade">
+	<name>Events Booking - Fields Assignment</name>
+	<author>Tuan Pham Ngoc</author>
+	<creationDate>July 2018</creationDate>
+	<copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+	<license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+	<authorEmail>tuanpn@joomdonation.com</authorEmail>
+	<authorUrl>https://joomdonation.com</authorUrl>
+	<version>4.9.4</version>
+	<description>This plugin allows assigning registration custom fields to events.</description>
+	<files>
+		<filename plugin="fields">fields.php</filename>
+		<folder>tmpl</folder>
+	</files>
+	<config>
+		<fields name="params">
+			<fieldset name="basic">				
+				<field
+						name="show_on_frontend"
+						type="radio"
+						label="Show On Frontend"
+						description="If set to Yes, this plugin will be available on frontend event submission form"
+						class="btn-group btn-group-yesno"
+						default="0"
+				>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+			</fieldset>
+		</fields>
+	</config>
+</extension>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+	<layout title="Submit Event - Simple Layout">
+		<message>
+			Display form which allow users to submit event using Simple layout
+		</message>
+	</layout>
+	<fields name="params" addfieldpath="/administrator/components/com_eventbooking/fields">
+		<fieldset name="basic">
+			<field name="default_category_id" type="ebcategory" label="Default Category" />
+			<field name="category_ids" type="ebcategory" multiple="true" label="Categories" description="Select categories which you want to allow users to submit events to from this menu item. If no categories selected, all categories which users have permission to submit events to will be displayed" />
+			<field type="editor" name="intro_text" buttons="yes" filter="raw" label="Intro Text" description="Enter the text you want to be displayed at the top of submit event form" />
+		</fieldset>
+	</fields>
+</metadata>

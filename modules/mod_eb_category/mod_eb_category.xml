@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="module" version="3.9.0" client="site" method="upgrade">
+    <name>Events Booking - Event Categories</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>Aug 2010</creationDate>
+    <copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+    <license>GPL</license>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <version>4.9.4</version>
+    <description>This module is used to display categories in Event Booking Extension</description>
+    <files>
+        <filename module="mod_eb_category">mod_eb_category.php</filename>
+        <folder>tmpl</folder>
+    </files>
+    <config>
+        <fields name="params" addfieldpath="/administrator/components/com_eventbooking/fields">
+            <fieldset name="basic">
+                <field name="moduleclass_sfx" type="text"
+                       label="Module Class Suffix" description="PARAMMODULECLASSSUFFIX">
+                </field>
+                <field name="parent_id" type="ebcategory" label="Parent Category" default="0"/>
+                <field name="category_ids" type="ebcategory" multiple="true" label="Categories"
+                       description="If you want to display only certain categories, please select these categories here"/>
+                <field name="exclude_category_ids" type="ebcategory" multiple="true" label="Exclude Categories"
+                       description="If you want to exclude certain categories from being displayed, select it here"/>
+                <field name="number_categories" type="text"
+                       label="Number Categories" description="Number of Categories to be showed on the module"
+                       default="0">
+                </field>
+				<field
+						name="layout"
+						type="list"
+						label="Layout"
+						default="default"
+				>
+					<option value="default">Default</option>
+					<option value="grid">Grid</option>
+				</field>
+				<field type="list" name="number_columns" default="2" description="Choose number columns which will be used to display events when users access to the category from this module" showon="layout:grid">
+					<option value="2">2</option>
+					<option value="3">3</option>
+					<option value="4">4</option>
+					<option value="6">6</option>
+				</field>
+                <field name="category_item_layout" type="list" label="Category Item Layout" default="default" showon="layout:grid">
+                    <option value="default">Default</option>
+                    <option value="overlay">Overlay</option>
+                    <option value="image_top">Image Top</option>
+                    <option value="image_bottom">Image Bottom</option>
+                </field>
+                <field name="enable_hover_effect" type="list" label="Enable Hover Effect" default="0" description="Set to Yes will apply a nice effect when users hover over a category." showon="layout:grid[AND]category_item_layout!:overlay">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </field>
+                <field name="hover_bg_color" type="color" label="Hover Background Color" description="Leave it empty to use default color" showon="enable_hover_effect:1" />
+                <field name="hover_color" type="color" label="Hover Text Color" description="Leave it empty to use default color" showon="enable_hover_effect:1"/>
+                <field name="item_id" type="ebitemid" label="Item ID" description="Menu Item ID"/>
+            </fieldset>
+            <fieldset name="advanced">
+                <field
+                        name="cache"
+                        type="list"
+                        label="COM_MODULES_FIELD_CACHING_LABEL"
+                        default="1"
+                        filter="integer"
+                        validate="options"
+                >
+                    <option value="1">JGLOBAL_USE_GLOBAL</option>
+                    <option value="0">COM_MODULES_FIELD_VALUE_NOCACHING</option>
+                </field>
+
+                <field
+                        name="cache_time"
+                        type="number"
+                        label="COM_MODULES_FIELD_CACHE_TIME_LABEL"
+                        default="900"
+                        filter="integer"
+                />
+
+                <field
+                        name="cachemode"
+                        type="hidden"
+                        default="static"
+                >
+                    <option value="static"></option>
+                </field>
+                <field type="text" name="show_on_pages" label="Show On Pages" description="Using syntax like com_eventbooking:category, event; com_content: article,categories to show module only on some views of the components you want. Leave it empty and it will always be shown" />
+            </fieldset>
+        </fields>
+    </config>
+</extension>

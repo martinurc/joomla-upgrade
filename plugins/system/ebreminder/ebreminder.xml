@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="system" method="upgrade">
+	<name>System - Events Booking Reminder</name>
+	<author>Tuan Pham Ngoc</author>
+	<creationDate>Feb 2012</creationDate>
+	<copyright>Copyright (C) 2010 - 2024 Ossolution Team. All rights reserved.</copyright>
+	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+	<authorEmail>tuanpn@joomdonation.com</authorEmail>
+	<authorUrl>https://joomdonation.com</authorUrl>
+	<version>4.9.4</version>
+	<description>This plugin is used to send reminder emails to registrants of your events</description>
+	<files>
+		<filename plugin="ebreminder">ebreminder.php</filename>		
+	</files>	
+	<config>
+		<fields name="params">
+			<fieldset name="basic">
+				<field name="last_run" label="Last Run Time" type="hidden" readonly="true" size="30" description="Store Last Run Time of the plugin" />
+				<field name="cache_time" label="Cache Time (Minutes)" type="number" min="0" step="1" default="20"/>
+				<field name="time_ranges" label="Time Ranges" type="text" size="30" default="" description="If you want to send reminder emails to registrants within certain time ranges, use this parameter. For example, set it to 5,14 will make the system only send email reminder from 5am to 2pm. Set it to 8,10;14:18 will allow sending  reminders between 8 to 10 am and 2pm to 6pm." />
+				<field name="number_registrants" label="Number Registrants" type="text" size="30" default="15" description="Number of registrants which we will send reminder each time the plugin run" />
+				<field
+						name="send_to_group_billing"
+						type="radio"
+						label="Send To Group Billing"
+						description="If set to Yes, the group billing person of group registration will receive reminder emails"
+						class="btn-group btn-group-yesno"
+						default="1"
+				>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field
+						name="send_to_group_members"
+						type="radio"
+						label="Send To Group Members"
+						description="If set to Yes, group members of a group registration will receive reminder emails"
+						class="btn-group btn-group-yesno"
+						default="1"
+				>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field
+						name="send_to_unpublished_events"
+						type="radio"
+						label="Send To Unpublished Events"
+						description="If set to Yes, reminder emails will be sent to registrants of unpublish events"
+						class="btn-group btn-group-yesno"
+						default="0"
+				>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field
+						name="only_send_to_paid_registrants"
+						type="radio"
+						label="Only Send To Paid Registrants"
+						description="If set to Yes, reminder emails will only be sent to registrants with Registration Status Paid. Registrants with Pending Status (don't make payment) won't receive reminder emails"
+						class="btn-group btn-group-yesno"
+						default="0"
+				>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field
+						name="only_send_to_checked_in_registrants"
+						type="radio"
+						label="Only Send To Checked-in Registrants"
+						description="If set to Yes, reminder emails will only be sent to checked in registrants. In this case, none checked-in registrants won't receive reminder email"
+						class="btn-group btn-group-yesno"
+						default="0"
+				>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field
+						name="send_certificate_in_first_reminder"
+						type="radio"
+						label="Send Certificate In First Reminder"
+						description="If set to Yes, and first reminder is configured to be sent after event started, certificate will be sent to first reminder email"
+						class="btn-group btn-group-yesno"
+						default="0"
+				>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field
+						name="send_certificate_in_second_reminder"
+						type="radio"
+						label="Send Certificate In Second Reminder"
+						description="If set to Yes, and second reminder is configured to be sent after event started, certificate will be sent to second reminder email"
+						class="btn-group btn-group-yesno"
+						default="0"
+				>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field
+						name="send_certificate_in_third_reminder"
+						type="radio"
+						label="Send Certificate In Third Reminder"
+						description="If set to Yes, and third reminder is configured to be sent after event started, certificate will be sent to third reminder email"
+						class="btn-group btn-group-yesno"
+						default="0"
+				>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+                <field name="bcc_email" label="BCC Email" type="text" size="30" default="" description="If you want to receive a copy of reminder email so that you can keep track of reminder, enter the email you want here" />
+				<field name="trigger_reminder_code" label="Trigger Reminder Code (Leave empty unless you are using cron job to send reminder)" type="text" size="30" default="" description="Enter a secret string here if you want to use cron job to trigger sending reminder. Refer to our documentation for more details" />
+			</fieldset>
+		</fields>
+	</config>	
+</extension>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+	<layout title="Categories - Columns Layout">
+		<message>
+			Displays a list of categories in columns layout
+		</message>
+	</layout>
+	<fields name="request">
+		<fieldset name="request"
+			addfieldpath="/administrator/components/com_eventbooking/fields">
+			<field name="id" type="ebcategory" size="3" default="0" label="Category" description="Choose the category which you want to list it's sub categories" />
+		</fieldset>
+	</fields>
+	<fields name="params">
+		<fieldset name="basic">
+			<field name="category_ids" type="ebcategory" multiple="true" label="Categories" description="If you select some categories here, only these selected categories will be displayed" />
+			<field name="exclude_category_ids" type="ebcategory" multiple="true" label="Exclude Categories" description="If you don't want certain categories being displayed on this menu item, select these categories here" />
+			<field name="image_lazy_loading" type="list" default="lazy" label="Image Lazy Loading">
+				<option value="0">Disable</option>
+				<option value="lazy">Lazy</option>
+			</field>
+			<field type="number" name="image_lazy_loading_start_index" default="0" label="Lazy Loading Start Index" showon="image_lazy_loading!:0" />
+			<field type="list" name="number_columns" default="3" label="Number Columns" description="Choose Number Columns which will be used to display categories">
+				<option value="1">1</option>
+				<option value="2">2</option>
+				<option value="3">3</option>
+				<option value="4">4</option>
+				<option value="6">6</option>
+			</field>
+			<field name="hide_children_categories" type="list" default="0" label="Hide Children Categories" description="Determine whether children categories will be displayed on category page when users access to a category from this menu item">
+				<option value="0">No</option>
+				<option value="1">Yes</option>
+			</field>
+			<field name="hide_children_events" type="list" default="0" label="Hide Children Events"
+				   description="Determine whether children events will be displayed on category page when users access to a category from this menu item">
+				<option value="0">No</option>
+				<option value="1">Yes</option>
+			</field>
+			<field type="editor" name="intro_text" buttons="yes" filter="raw" label="Intro Text" description="If you enter some text here, it will be displayed above list of categories" />
+		</fieldset>
+	</fields>
+</metadata>

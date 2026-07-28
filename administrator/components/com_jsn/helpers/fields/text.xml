@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+	<fields name="params">
+		<fieldset
+			name="text" 
+			label="COM_JSN_TEXT_FIELDSET_LABEL"
+		>
+
+			<field
+				name="text_defaultvalue"
+				label="COM_JSN_GENERAL_DEFAULTVALUE"
+				description ="COM_JSN_GENERAL_DEFAULTVALUE_DESC"
+				type="text"
+			/>
+			
+			<field
+				name="text_placeholder"
+				label="COM_JSN_GENERAL_PLACEHOLDER"
+				description ="COM_JSN_GENERAL_PLACEHOLDER_DESC"
+				type="text"
+			/>
+			
+			<field
+				name="text_maxlength"
+				label="COM_JSN_TEXT_MAXLENGTH"
+				description ="COM_JSN_TEXT_MAXLENGTH_DESC"
+				type="text"
+				filter="int"
+				default="255"
+			/>
+			
+			<field
+				name="text_regex"
+				label="COM_JSN_TEXT_REGEX"
+				description ="COM_JSN_TEXT_REGEX_DESC"
+				type="list"
+			>
+				<option value="">JNO</option>
+				<option value="[0-9]+">COM_JSN_TEXT_REGEX_INTEGER</option>
+				<option value="[0-9]{5}">COM_JSN_TEXT_REGEX_ZIPCODE</option>
+				<option value="[0-9]+[,]*[0-9]*">COM_JSN_TEXT_REGEX_DECIMAL</option>
+				<option value="custom">COM_JSN_TEXT_REGEX_CUSTOM</option>
+			</field>
+			
+			<field
+				name="text_customregex"
+				label="COM_JSN_TEXT_CUSTOMREGEX"
+				description ="COM_JSN_TEXT_CUSTOMREGEX_DESC"
+				type="text"
+				filter="raw"
+				default=""
+			/>
+
+			<field
+				name="text_messageregex"
+				label="COM_JSN_TEXT_MESSAGEREGEX"
+				description ="COM_JSN_TEXT_MESSAGEREGEX_DESC"
+				type="text"
+				filter="raw"
+				default="Error"
+			/>
+
+			<field
+				name="text_searchmode"
+				label="COM_JSN_TEXT_SEARCHMODE"
+				description ="COM_JSN_TEXT_SEARCHMODE_DESC"
+				type="list"
+				default="like"
+			>
+				<option value="like">COM_JSN_TEXT_SEARCHMODE_LIKE</option>
+				<option value="equal">COM_JSN_TEXT_SEARCHMODE_EQUAL</option>
+			</field>
+
+		</fieldset>
+	</fields>
+</form>

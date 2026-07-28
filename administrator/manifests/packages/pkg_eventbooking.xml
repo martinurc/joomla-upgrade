@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<extension type="package" version="2.5" method="upgrade">
+    <name>Events Booking Package</name>
+    <packagename>eventbooking</packagename>
+    <creationDate>21 August 2010</creationDate>
+    <author>Tuan Pham Ngoc</author>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <copyright>Copyright (C) 2010 - 2024 Ossolution Team</copyright>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <version>4.9.4</version>
+    <description>Event Booking is a simple, secure, extendable, intuitive event registration extension for Joomla 3.9.0+, Joomla 4.x and Joomla 5.x
+    </description>
+    <scriptfile>script.php</scriptfile>
+    <files folder="packages">
+        <file type="module" id="mod_eb_advslider" client="site">mod_eb_advslider.zip</file>
+        <file type="module" id="mod_eb_cart" client="site">mod_eb_cart.zip</file>
+        <file type="module" id="mod_eb_category" client="site">mod_eb_categories.zip</file>
+        <file type="module" id="mod_eb_categories_slider" client="site">mod_eb_categories_slider.zip</file>
+        <file type="module" id="mod_eb_cities" client="site">mod_eb_cities.zip</file>
+        <file type="module" id="mod_eb_easyview" client="site">mod_eb_easyview.zip</file>
+        <file type="module" id="mod_eb_events" client="site">mod_eb_events.zip</file>
+        <file type="module" id="mod_eb_googlemap" client="site">mod_eb_googlemap.zip</file>
+        <file type="module" id="mod_eb_locations" client="site">mod_eb_locations.zip</file>
+        <file type="module" id="mod_eb_minicalendar" client="site">mod_eb_minicalendar.zip</file>
+        <file type="module" id="mod_eb_registrants" client="administrator">mod_eb_registrants.zip</file>
+        <file type="module" id="mod_eb_search" client="site">mod_eb_search.zip</file>
+		<file type="module" id="mod_eb_states" client="site">mod_eb_states.zip</file>
+        <file type="plugin" id="eventbooking" group="actionlog">plug_actionlog_eventbooking.zip</file>
+        <file type="plugin" id="eb_registrationhistory" group="community">plug_js_regisrationhisory.zip</file>
+        <file type="plugin" id="ebcategory" group="content">plug_content_ebcategory.zip</file>
+        <file type="plugin" id="ebevent" group="content">plug_content_ebevent.zip</file>
+        <file type="plugin" id="ebregister" group="content">plug_content_ebregister.zip</file>
+        <file type="plugin" id="ebrestriction" group="content">plug_content_ebrestriction.zip</file>
+        <file type="plugin" id="ebspeakers" group="content">plug_content_ebspeakers.zip</file>
+        <file type="plugin" id="ebstipeasyimage" group="content">plug_content_ebstipeasyimage.zip</file>
+        <file type="plugin" id="ebevent" group="editors-xtd">plug_editors_xtd_ebevent.zip</file>
+        <file type="plugin" id="ebregister" group="editors-xtd">plug_editors_xtd_ebregister.zip</file>
+        <file type="plugin" id="acym" group="eventbooking">plug_eventbooking_acym.zip</file>
+        <file type="plugin" id="agendas" group="eventbooking">plug_eventbooking_agendas.zip</file>
+        <file type="plugin" id="attachments" group="eventbooking">plug_eventbooking_attachments.zip</file>
+        <file type="plugin" id="autocoupon" group="eventbooking">plug_eventbooking_autocoupon.zip</file>
+        <file type="plugin" id="autoeventdata" group="eventbooking">plug_eventbooking_autoeventdata.zip</file>
+        <file type="plugin" id="autogroupmembers" group="eventbooking">plug_eventbooking_autogroupmembers.zip</file>
+        <file type="plugin" id="automembership" group="eventbooking">plug_eventbooking_automembership.zip</file>
+        <file type="plugin" id="autoregister" group="eventbooking">plug_eventbooking_autoregister.zip</file>
+        <file type="plugin" id="cb" group="eventbooking">plug_eventbooking_cb.zip</file>
+        <file type="plugin" id="checkedin" group="eventbooking">plug_eventbooking_checkedin.zip</file>
+        <file type="plugin" id="checkedinnotification" group="eventbooking">plug_eventbooking_checkedinnotification.zip</file>
+        <file type="plugin" id="contactenhanced" group="eventbooking">plug_eventbooking_contactenhanced.zip</file>
+        <file type="plugin" id="dates" group="eventbooking">plug_eventbooking_dates.zip</file>
+        <file type="plugin" id="dependencies" group="eventbooking">plug_eventbooking_dependencies.zip</file>
+        <file type="plugin" id="easyprofile" group="eventbooking">plug_eventbooking_easyprofile.zip</file>
+        <file type="plugin" id="easysocial" group="eventbooking">plug_eventbooking_easysocial.zip</file>
+        <file type="plugin" id="failurepaymentnotification" group="eventbooking">plug_eventbooking_failurepaymentnotification.zip</file>
+        <file type="plugin" id="fenotification" group="eventbooking">plug_eventbooking_fenotification.zip</file>
+        <file type="plugin" id="field" group="eventbooking">plug_eventbooking_field.zip</file>
+        <file type="plugin" id="fields" group="eventbooking">plug_eventbooking_fields.zip</file>
+        <file type="plugin" id="gallery" group="eventbooking">plug_eventbooking_gallery.zip</file>
+        <file type="plugin" id="groupmemberaccount" group="eventbooking">plug_eventbooking_groupmemberaccount.zip</file>
+        <file type="plugin" id="gsdata" group="eventbooking">plug_eventbooking_gsdata.zip</file>
+        <file type="plugin" id="http" group="eventbooking">plug_eventbooking_http.zip</file>
+        <file type="plugin" id="jcomments" group="eventbooking">plug_eventbooking_jcomments.zip</file>
+        <file type="plugin" id="jomsocial" group="eventbooking">plug_eventbooking_jomsocial.zip</file>
+        <file type="plugin" id="joomlagroups" group="eventbooking">plug_eventbooking_joomlagroups.zip</file>
+        <file type="plugin" id="mailchimp" group="eventbooking">plug_eventbooking_mailchimp.zip</file>
+        <file type="plugin" id="map" group="eventbooking">plug_eventbooking_map.zip</file>
+        <file type="plugin" id="membershippro" group="eventbooking">plug_eventbooking_membershippro.zip</file>
+        <file type="plugin" id="moveregistrants" group="eventbooking">plug_eventbooking_moveregistrants.zip</file>
+        <file type="plugin" id="nenotification" group="eventbooking">plug_eventbooking_nenotification.zip</file>
+        <file type="plugin" id="overlapregistration" group="eventbooking">plug_eventbooking_overlapregistration.zip</file>
+        <file type="plugin" id="registrantlist" group="eventbooking">plug_eventbooking_registrantlist.zip</file>
+        <file type="plugin" id="relatedevents" group="eventbooking">plug_eventbooking_relatedevents.zip</file>
+        <file type="plugin" id="speakers" group="eventbooking">plug_eventbooking_speakers.zip</file>
+        <file type="plugin" id="sponsors" group="eventbooking">plug_eventbooking_sponsors.zip</file>
+        <file type="plugin" id="system" group="eventbooking">plug_eventbooking_system.zip</file>
+        <file type="plugin" id="tickettypes" group="eventbooking">plug_eventbooking_tickettypes.zip</file>
+        <file type="plugin" id="userprofile" group="eventbooking">plug_eventbooking_userprofile.zip</file>
+		<file type="plugin" id="waitinglist" group="eventbooking">plug_eventbooking_waitinglist.zip</file>
+		<file type="plugin" id="zoomapp" group="eventbooking">plug_eventbooking_zoomapp.zip</file>
+		<file type="plugin" id="clickatell" group="eventbookingsms">plug_eventbookingsms_clickatell.zip</file>
+        <file type="plugin" id="clockwork" group="eventbookingsms">plug_eventbookingsms_clockwork.zip</file>
+		<file type="plugin" id="textlocal" group="eventbookingsms">plug_eventbookingsms_textlocal.zip</file>
+        <file type="plugin" id="eventbooking" group="finder">plug_finder_eventbooking.zip</file>
+        <file type="plugin" id="eventbooking" group="installer">plug_installer_eventbooking.zip</file>
+        <file type="plugin" id="eventbooking" group="search">plug_search_eventbooking.zip</file>
+        <file type="plugin" id="ebcleanemailslog" group="system">plug_system_ebcleanemailslog.zip</file>
+        <file type="plugin" id="ebdepositreminder" group="system">plug_system_ebdepositreminder.zip</file>
+        <file type="plugin" id="ebofflinepaymenthandle" group="system">plug_system_ebofflinepaymenthandle.zip</file>
+        <file type="plugin" id="ebregistrants" group="system">plug_system_ebregistrants.zip</file>
+        <file type="plugin" id="ebreminder" group="system">plug_system_ebreminder.zip</file>
+		<file type="plugin" id="eventbookingsms" group="system">plug_system_eventbookingsms.zip</file>
+        <file type="plugin" id="icprnotify" group="system">plug_system_icprnotify.zip</file>
+        <file type="plugin" id="eventbooking" group="user">plug_user_eventbooking.zip</file>
+        <file type="library" id="omnipay3">lib_omnipay.tar.gz</file>
+        <file type="component" id="com_eventbooking">com_eventbooking.zip</file>
+    </files>
+	<updateservers>	
+		<server type="extension" priority="1" name="Events Booking Extension">https://joomdonation.com/updates/eventsbooking.xml</server>
+	</updateservers>
+</extension>

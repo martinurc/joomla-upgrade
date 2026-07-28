@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="eventbooking" method="upgrade">
+    <name>Events Booking - Auto Event Data</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>April 2024</creationDate>
+    <author>Tuan Pham Ngoc</author>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <copyright>Copyright (C) 2010 - 2024 Ossolution Team</copyright>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <version>4.9.4</version>
+    <description>This plugin set data (currently, only cancel before date) for events automatically when the event is
+        saved so that you do not have to enter data for these fields manually.
+    </description>
+    <files>
+        <filename plugin="autoeventdata">autoeventdata.php</filename>
+    </files>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field
+                        name="number_days_for_cancel_before_date"
+                        type="number"
+                        label="Number Days For Cancel Before Date"
+                        description="Cancel Before Date for events will be calculated base on event date minus for number of days entered into this parameter"
+                        default="0"/>
+                <field
+                        name="only_set_if_empty"
+                        type="radio"
+                        label="Only Set If Empty"
+                        description="If set to Yes, the plugin will only set cancel before date for the event if it was not set (empty) before"
+                        class="btn-group btn-group-yesno"
+                        default="0"
+                >
+                    <option value="1">JYES</option>
+                    <option value="0">JNO</option>
+                </field>
+            </fieldset>
+        </fields>
+    </config>
+</extension>

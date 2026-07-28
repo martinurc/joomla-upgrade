@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+	<layout title="Categories - Default Layout">
+		<message>
+			Displays a list of categories in default layout
+		</message>
+	</layout>
+	<fields name="request">
+		<fieldset name="request"
+			addfieldpath="/administrator/components/com_eventbooking/fields">
+			<field name="id" type="ebcategory" size="3" default="0" label="Category" description="Choose the category which you want to list it's sub categories" />
+		</fieldset>
+	</fields>
+	<fields name="params">
+		<fieldset name="basic">
+			<field name="category_ids" type="ebcategory" multiple="true" label="Categories" description="If you select some categories here, only these selected categories will be displayed" />
+			<field name="exclude_category_ids" type="ebcategory" multiple="true" label="Exclude Categories" description="If you don't want certain categories being displayed on this menu item, select these categories here" />
+			<field name="image_lazy_loading" type="list" default="lazy" label="Image Lazy Loading">
+				<option value="0">Disable</option>
+				<option value="lazy">Lazy</option>
+			</field>
+			<field type="number" name="image_lazy_loading_start_index" default="0" label="Lazy Loading Start Index" showon="image_lazy_loading!:0" />
+			<field name="hide_children_categories" type="list" default="0" label="Hide Children Categories" description="Determine whether children categories will be displayed on category page when users access to a category from this menu item">
+				<option value="0">No</option>
+				<option value="1">Yes</option>
+			</field>
+			<field name="hide_children_events" type="list" default="0" label="Hide Children Events"
+				   description="Determine whether children events will be displayed on category page when users access to a category from this menu item">
+				<option value="0">No</option>
+				<option value="1">Yes</option>
+			</field>
+			<field name="show_sub_categories_text" type="list" default="0" label="Show Subcategories Text">
+				<option value="0">No</option>
+				<option value="1">Yes</option>
+			</field>
+			<field type="editor" name="intro_text" buttons="yes" filter="raw" label="Intro Text" description="If you enter some text here, it will be displayed above list of categories" />
+		</fieldset>
+	</fields>
+</metadata>

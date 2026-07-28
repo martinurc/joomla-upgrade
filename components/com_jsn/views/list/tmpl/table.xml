@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+	<layout title="COM_JSN_USERLIST_TABLE">
+		<message>
+			<![CDATA[COM_JSN_USERLIST_DESC_TABLE]]>
+		</message>
+	</layout>
+	<fields name="params">
+		<fieldset name="basic" label="COM_JSN_SEARCH" addfieldpath="/administrator/components/com_jsn/models/fields">
+			<field name="search_enabled" type="list"
+				description="COM_JSN_SEARCHENABLED_DESC"
+				label="COM_JSN_SEARCHENABLED"
+				default="0"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="search_fields"
+				showon="search_enabled:1"
+				label="COM_JSN_SEARCHFIELDS"
+				description="COM_JSN_SEARCHFIELDS_DESC"
+				type="parent"
+				level="2"
+				table="jsn_fields"
+				where="a.search=1 AND a.type NOT LIKE 'password' AND a.type NOT LIKE 'delimeter'"
+				field="id"
+				multiple="true"
+				>
+				<option value="id">ID</option>
+				<option value="formatname">COM_JSN_FORMATNAME</option>
+				<option value="status">COM_JSN_STATUS</option>
+			</field>
+			<field name="search_hideform" type="list"
+				showon="search_enabled:1"
+				description="COM_JSN_SEARCHHIDEFORM_DESC"
+				label="COM_JSN_SEARCHHIDEFORM"
+				default="0"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field name="search_noempty" type="list"
+				description="COM_JSN_NOEMPTYSEARCH_DESC"
+				label="COM_JSN_NOEMPTYSEARCH"
+				default="0"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field name="search_showuser" type="list"
+				description="COM_JSN_SEARCHSHOWUSER_DESC"
+				label="COM_JSN_SEARCHSHOWUSER"
+				default="0"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			
+		</fieldset>
+	<fieldset name="advanced" label="COM_JSN_TABLE_LAYOUT_OPTIONS">
+		<field
+				name="profile_menuid"
+				label="COM_JSN_PROFILEMENUID"
+				description="COM_JSN_PROFILEMENUID_DESC"
+				type="parent"
+				table="menu"
+				enableoptions="1"
+				where="a.client_id=0 AND a.link LIKE 'index.php?option=com_jsn&amp;view=profile' AND a.published=1"
+				field="id"
+				multiple="false"
+				default=""
+				>
+				<option value="">JDEFAULT</option>
+			</field>
+		<field name="profile_back" type="list"
+			description="COM_JSN_PROFILE_BACK_DESC"
+			label="COM_JSN_PROFILE_BACK"
+			default="1"
+		>	
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="ajax_feature" type="list"
+			description="COM_JSN_AJAX_FEATURE_DESC"
+			label="COM_JSN_AJAX_FEATURE"
+			default="0"
+		>	
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="show_total" type="list"
+			description="COM_JSN_SHOWTOTAL_DESC"
+			label="COM_JSN_SHOWTOTAL"
+			default="1"
+		>	
+			<option value="0">JHIDE</option>
+			<option value="1">JSHOW</option>
+		</field>
+		<field name="show_pagination" type="list"
+			description="JGLOBAL_PAGINATION_DESC"
+			label="JGLOBAL_PAGINATION_LABEL"
+			default="1"
+		>
+			<option value="0">JHIDE</option>
+			<option value="1">COM_JSN_SHOW_BOTTOM</option>
+			<option value="2">COM_JSN_SHOW_TOP</option>
+			<option value="3">COM_JSN_SHOW_BOTH</option>
+		</field>
+		<field name="show_pagination_results" type="list"
+			label="JGLOBAL_PAGINATION_RESULTS_LABEL"
+			default="1"
+			description="JGLOBAL_PAGINATION_RESULTS_DESC">
+
+			
+			<option value="0">JHIDE</option>
+			<option value="1">JSHOW</option>
+		</field>
+		<field name="display_num" type="list"
+				default="10"
+				description="JGLOBAL_NUMBER_ITEMS_LIST_DESC"
+				label="JGLOBAL_NUMBER_ITEMS_LIST_LABEL">
+				<option value="1">1</option>
+				<option value="2">2</option>
+				<option value="3">3</option>
+				<option value="4">4</option>
+				<option value="5">5</option>
+				<option value="6">6</option>
+				<option value="7">7</option>
+				<option value="8">8</option>
+				<option value="9">9</option>
+				<option value="10">10</option>
+				<option value="11">11</option>
+				<option value="12">12</option>
+				<option value="13">13</option>
+				<option value="14">14</option>
+				<option value="15">15</option>
+				<option value="16">16</option>
+				<option value="17">17</option>
+				<option value="18">18</option>
+				<option value="19">19</option>
+				<option value="20">20</option>
+				<option value="21">21</option>
+				<option value="22">22</option>
+				<option value="23">23</option>
+				<option value="24">24</option>
+				<option value="25">25</option>
+				<option value="26">26</option>
+				<option value="27">27</option>
+				<option value="28">28</option>
+				<option value="29">29</option>
+				<option value="30">30</option>
+				<option value="50">50</option>
+				<option value="100">100</option>
+				<option value="0">JALL</option>
+		</field>
+		<field name="orderCol"
+			description="COM_JSN_ORDERCOL_DESC"
+			label="COM_JSN_ORDERCOL"
+			default="name"
+			type="parent"
+			level="2"
+			table="jsn_fields"
+			where="a.type NOT LIKE 'password' AND a.type NOT LIKE 'delimeter'"
+			field_id="alias"
+			>
+			<option value="name">COM_JSN_FORMATNAME</option>
+			<option value="random">Random</option>
+		</field>
+		<field name="orderDir" type="list"
+			label="COM_JSN_ORDERDIR"
+			default="ASC"
+			description="COM_JSN_ORDERDIR_DESC">
+			<option value="ASC">COM_JSN_ORDERDIR_ASC</option>
+			<option value="DESC">COM_JSN_ORDERDIR_DESC</option>
+		</field>
+		<field name="orderCol1"
+			description="COM_JSN_ORDERCOL1_DESC"
+			label="COM_JSN_ORDERCOL1"
+			default=""
+			type="parent"
+			level="2"
+			table="jsn_fields"
+			where="a.type NOT LIKE 'password' AND a.type NOT LIKE 'delimeter'"
+			field_id="alias"
+			>
+			<option value="">JGLOBAL_SELECT_AN_OPTION</option>
+			<option value="name">COM_JSN_FORMATNAME</option>
+		</field>
+		<field name="orderDir1" type="list"
+			label="COM_JSN_ORDERDIR1"
+			default="ASC"
+			description="COM_JSN_ORDERDIR1_DESC">
+			<option value="ASC">COM_JSN_ORDERDIR_ASC</option>
+			<option value="DESC">COM_JSN_ORDERDIR_DESC</option>
+		</field>
+		<field name="orderCol2"
+			description="COM_JSN_ORDERCOL2_DESC"
+			label="COM_JSN_ORDERCOL2"
+			default=""
+			type="parent"
+			level="2"
+			table="jsn_fields"
+			where="a.type NOT LIKE 'password' AND a.type NOT LIKE 'delimeter'"
+			field_id="alias"
+			>
+			<option value="">JGLOBAL_SELECT_AN_OPTION</option>
+			<option value="name">COM_JSN_FORMATNAME</option>
+		</field>
+		<field name="orderDir2" type="list"
+			label="COM_JSN_ORDERDIR2"
+			default="ASC"
+			description="COM_JSN_ORDERDIR2_DESC">
+			<option value="ASC">COM_JSN_ORDERDIR_ASC</option>
+			<option value="DESC">COM_JSN_ORDERDIR_DESC</option>
+		</field>
+		<field name="where" type="text"
+			description="COM_JSN_SQLWHERE_DESC"
+			label="COM_JSN_SQLWHERE"
+			filter="raw"
+			default=""
+		/>
+		<field name="where" type="text"
+			description="COM_JSN_SQLWHERE_DESC"
+			label="COM_JSN_SQLWHERE"
+			filter="raw"
+			default=""
+		/>
+		
+		
+		<field name="spacer_table1" hr="true" type="spacer"/>
+		
+		
+		<field name="col1_enable" type="radio" class="btn-group"
+			description="COM_JSN_TABLECOL1_ENABLE_DESC"
+			label="COM_JSN_TABLECOL1_ENABLE"
+			default="1"
+		>	
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="col1_header" type="text"
+			description="COM_JSN_TABLECOL1_HEADER_DESC"
+			label="COM_JSN_TABLECOL1_HEADER"
+			default="AVATAR"
+		/>
+		<field name="col1_fields"
+			description="COM_JSN_TABLECOL1_FIELDS_DESC"
+			label="COM_JSN_TABLECOL1_FIELDS"
+			default="avatar_mini"
+			type="parent"
+			level="2"
+			table="jsn_fields"
+			where="a.type NOT LIKE 'password'"
+			field_id="alias"
+			multiple="true"
+			mini_img="1"
+			>
+			<option value="formatname">COM_JSN_FORMATNAME</option>
+			<option value="status">COM_JSN_STATUS</option>
+		</field>
+		
+		
+		
+		
+		<field name="spacer_table2" hr="true" type="spacer"/>
+		
+		
+		<field name="col2_enable" type="radio" class="btn-group"
+			description="COM_JSN_TABLECOL2_ENABLE_DESC"
+			label="COM_JSN_TABLECOL2_ENABLE"
+			default="1"
+		>	
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="col2_header" type="text"
+			description="COM_JSN_TABLECOL2_HEADER_DESC"
+			label="COM_JSN_TABLECOL2_HEADER"
+			default="NAME"
+		/>
+		<field name="col2_fields"
+			description="COM_JSN_TABLECOL2_FIELDS_DESC"
+			label="COM_JSN_TABLECOL2_FIELDS"
+			default="formatname"
+			type="parent"
+			level="2"
+			table="jsn_fields"
+			where="a.type NOT LIKE 'password'"
+			field_id="alias"
+			multiple="true"
+			mini_img="1"
+			>
+			<option value="formatname">COM_JSN_FORMATNAME</option>
+			<option value="status">COM_JSN_STATUS</option>
+		</field>
+		
+		
+		
+		<field name="spacer_table3" hr="true" type="spacer"/>
+		
+		
+		<field name="col3_enable" type="radio" class="btn-group"
+			description="COM_JSN_TABLECOL3_ENABLE_DESC"
+			label="COM_JSN_TABLECOL3_ENABLE"
+			default="1"
+		>	
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="col3_header" type="text"
+			description="COM_JSN_TABLECOL3_HEADER_DESC"
+			label="COM_JSN_TABLECOL3_HEADER"
+			default="STATUS"
+		/>
+		<field name="col3_fields"
+			description="COM_JSN_TABLECOL3_FIELDS_DESC"
+			label="COM_JSN_TABLECOL3_FIELDS"
+			default="status"
+			type="parent"
+			level="2"
+			table="jsn_fields"
+			where="a.type NOT LIKE 'password'"
+			field_id="alias"
+			multiple="true"
+			mini_img="1"
+			>
+			<option value="formatname">COM_JSN_FORMATNAME</option>
+			<option value="status">COM_JSN_STATUS</option>
+		</field>
+		
+		
+		
+		<field name="spacer_table4" hr="true" type="spacer"/>
+		
+		
+		<field name="col4_enable" type="radio" class="btn-group"
+			description="COM_JSN_TABLECOL4_ENABLE_DESC"
+			label="COM_JSN_TABLECOL4_ENABLE"
+			default="0"
+		>	
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="col4_header" type="text"
+			description="COM_JSN_TABLECOL4_HEADER_DESC"
+			label="COM_JSN_TABLECOL4_HEADER"
+			default=""
+		/>
+		<field name="col4_fields"
+			description="COM_JSN_TABLECOL4_FIELDS_DESC"
+			label="COM_JSN_TABLECOL4_FIELDS"
+			default=""
+			type="parent"
+			level="2"
+			table="jsn_fields"
+			where="a.type NOT LIKE 'password'"
+			field_id="alias"
+			multiple="true"
+			mini_img="1"
+			>
+			<option value="formatname">COM_JSN_FORMATNAME</option>
+			<option value="status">COM_JSN_STATUS</option>
+		</field>
+		
+		<field name="spacer_table5" hr="true" type="spacer"/>
+		
+		
+		<field name="col5_enable" type="radio" class="btn-group"
+			description="COM_JSN_TABLECOL5_ENABLE_DESC"
+			label="COM_JSN_TABLECOL5_ENABLE"
+			default="0"
+		>	
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="col5_header" type="text"
+			description="COM_JSN_TABLECOL5_HEADER_DESC"
+			label="COM_JSN_TABLECOL5_HEADER"
+			default=""
+		/>
+		<field name="col5_fields"
+			description="COM_JSN_TABLECOL5_FIELDS_DESC"
+			label="COM_JSN_TABLECOL5_FIELDS"
+			default=""
+			type="parent"
+			level="2"
+			table="jsn_fields"
+			where="a.type NOT LIKE 'password'"
+			field_id="alias"
+			multiple="true"
+			mini_img="1"
+			>
+			<option value="formatname">COM_JSN_FORMATNAME</option>
+			<option value="status">COM_JSN_STATUS</option>
+		</field>
+		
+		<field name="spacer_table6" hr="true" type="spacer"/>
+		
+		
+		<field name="col6_enable" type="radio" class="btn-group"
+			description="COM_JSN_TABLECOL6_ENABLE_DESC"
+			label="COM_JSN_TABLECOL6_ENABLE"
+			default="0"
+		>	
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="col6_header" type="text"
+			description="COM_JSN_TABLECOL6_HEADER_DESC"
+			label="COM_JSN_TABLECOL6_HEADER"
+			default=""
+		/>
+		<field name="col6_fields"
+			description="COM_JSN_TABLECOL6_FIELDS_DESC"
+			label="COM_JSN_TABLECOL6_FIELDS"
+			default=""
+			type="parent"
+			level="2"
+			table="jsn_fields"
+			where="a.type NOT LIKE 'password'"
+			field_id="alias"
+			multiple="true"
+			mini_img="1"
+			>
+			<option value="formatname">COM_JSN_FORMATNAME</option>
+			<option value="status">COM_JSN_STATUS</option>
+		</field>
+			
+	</fieldset>
+
+	<fieldset name="export_options" label="COM_JSN_LIST_EXPORT_OPTIONS">
+		<field name="export" type="list"
+			description="COM_JSN_EXPORT_FEATURE_DESC"
+			label="COM_JSN_EXPORT_FEATURE"
+			default="0"
+		>	
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="export_list_fields"
+			description="COM_JSN_EXPORT_FIELDS_DESC"
+			label="COM_JSN_EXPORT_FIELDS"
+			default=""
+			type="parent"
+			level="2"
+			table="jsn_fields"
+			multiple="true"
+			where="a.type NOT LIKE 'delimeter'"
+			field_id="alias"
+			>
+			<option value="name">COM_JSN_FORMATNAME</option>
+			<option value="groups">JLIB_RULES_GROUPS</option>
+		</field>
+		<field name="export_separator" type="text"
+			description="COM_JSN_EXPORT_SEPARATOR_DESC"
+			label="COM_JSN_EXPORT_SEPARATOR"
+			filter="raw"
+			default=";"
+		/>
+		<field name="export_type"
+			description="COM_JSN_EXPORT_TYPE_DESC"
+			label="COM_JSN_EXPORT_TYPE"
+			default="0"
+			type="list"
+			>
+			<option value="0">COM_JSN_EXPORT_TYPE_IMPORTABLE</option>
+			<option value="1">COM_JSN_EXPORT_TYPE_READABLE</option>
+		</field>
+	</fieldset>
+
+	</fields>
+</metadata>

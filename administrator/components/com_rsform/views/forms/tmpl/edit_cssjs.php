@@ -1,0 +1,33 @@
+<?php
+/**
+* @package RSForm! Pro
+* @copyright (C) 2007-2019 www.rsjoomla.com
+* @license GPL, http://www.gnu.org/copyleft/gpl.html
+*/
+
+defined('_JEXEC') or die;
+
+use Joomla\CMS\Language\Text;
+?>
+<div class="<?php echo RSFormProAdapterGrid::row(); ?>">
+	<div class="<?php echo RSFormProAdapterGrid::column(12); ?>">
+		<fieldset>
+			<?php
+			foreach ($this->jform->getFieldset('cssjs') as $field)
+			{
+				?>
+				<legend class="rsfp-legend"><?php echo $field->title; ?></legend>
+				<div class="alert alert-info"><?php echo Text::_($field->description); ?></div>
+				<?php
+				if ($this->hasHttpHeadersPlugin)
+				{
+					?>
+					<div class="alert alert-warning"><?php echo Text::_('COM_RSFORM_ADD_NONCE_INSTRUCTIONS'); ?></div>
+					<?php
+				}
+				echo $field->input;
+			}
+			?>
+		</fieldset>
+	</div>
+</div>

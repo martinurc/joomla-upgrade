@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+	<fields name="params">
+		<fieldset
+			name="filetype" 
+			label="COM_JSN_FILETYPE_FIELDSET_LABEL"
+		>
+
+			<field
+				label="COM_JSN_FILETYPE_EXT"
+				description="COM_JSN_FILETYPE_EXT_DESC"
+				name="filetype_ext"
+				type="text"
+				filter="string"
+				default="pdf|zip|doc|docx"
+			/>
+			
+			<field
+				label="COM_JSN_FILETYPE_LABEL"
+				description="COM_JSN_FILETYPE_LABEL_DESC"
+				name="filetype_label"
+				type="text"
+				filter="string"
+				default=""
+			/>
+			
+			<field
+				label="COM_JSN_UPLOADPATH"
+				description="COM_JSN_UPLOADPATH_DESC"
+				name="filetype_path"
+				type="text"
+				filter="string"
+				default="images/profiler/"
+				hint="images/profiler/"
+			/>
+
+		</fieldset>
+	</fields>
+</form>

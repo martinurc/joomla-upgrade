@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="1.0" type="plugin" group="eventbooking" method="upgrade">
+    <name>Events Booking - Zoom</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>May 2020</creationDate>
+    <copyright>Copyright 2010 - 2023 Ossolution Team</copyright>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <version>4.4.5</version>
+    <description>This plugin is used to automatically register attendees for a Zoom Webibar or Zoom Meetings via Zooms
+        API via JWT Token. See https://marketplace.zoom.us/docs/guides/build/jwt-app
+    </description>
+    <files>
+        <filename plugin="zoom">zoom.php</filename>
+        <folder>tmpl</folder>
+    </files>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field
+                        name="zoom_jwt"
+                        type="text"
+                        class="input-xxlarge"
+                        label="Zoom JWT ID"
+                        description="Enter your Zoom JWT ID from the zoom app store"
+                />
+                <field
+                        name="show_on_frontend"
+                        type="radio"
+                        label="Show On Frontend"
+                        description="If set to Yes, this plugin will be available on frontend event submission form"
+                        class="btn-group btn-group-yesno"
+                        default="0"
+                >
+                    <option value="1">JYES</option>
+                    <option value="0">JNO</option>
+                </field>
+            </fieldset>
+        </fields>
+    </config>
+</extension>

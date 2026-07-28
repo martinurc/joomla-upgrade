@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+	<fields name="params">
+		<fieldset
+			name="link" 
+			label="COM_JSN_LINK_FIELDSET_LABEL"
+		>
+
+			<field
+				name="link_defaultvalue"
+				label="COM_JSN_GENERAL_DEFAULTVALUE"
+				description ="COM_JSN_GENERAL_DEFAULTVALUE_DESC"
+				type="text"
+			/>
+			
+			<field
+				name="link_placeholder"
+				label="COM_JSN_GENERAL_PLACEHOLDER"
+				description ="COM_JSN_GENERAL_PLACEHOLDER_DESC"
+				type="text"
+			/>
+			
+			<field
+				name="link_maxlength"
+				label="COM_JSN_TEXT_MAXLENGTH"
+				description ="COM_JSN_TEXT_MAXLENGTH_DESC"
+				type="text"
+				filter="int"
+				default="255"
+			/>
+			<field name="link_robots"
+			type="list"
+			label="JFIELD_METADATA_ROBOTS_LABEL"
+			description="JFIELD_METADATA_ROBOTS_DESC"
+		>
+			<option value="">JNONE</option>
+			<option value="index, follow">JGLOBAL_INDEX_FOLLOW</option>
+			<option value="noindex, follow">JGLOBAL_NOINDEX_FOLLOW</option>
+			<option value="index, nofollow">JGLOBAL_INDEX_NOFOLLOW</option>
+			<option value="noindex, nofollow">JGLOBAL_NOINDEX_NOFOLLOW</option>
+		</field>
+
+		</fieldset>
+	</fields>
+</form>

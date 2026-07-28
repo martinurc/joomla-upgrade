@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="component" version="3.0" method="upgrade">
+	<name>com_jsn</name>
+	<author>JSN Project</author>
+	<creationDate>December 2013</creationDate>
+	<copyright>(C) 2005 - 2013 Open Source Matters. All rights reserved.</copyright>
+	<license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+	<authorEmail>fiorino.desanto@gmail.com</authorEmail>
+	<authorUrl>www.joomla.org</authorUrl>
+	<version>2.10.1</version>
+	<description>COM_JSN_XML_DESCRIPTION</description>
+	
+	<scriptfile>install.jsn.php</scriptfile>
+
+	<install> <!-- Runs on install -->
+		<sql>
+			<file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+		</sql>
+	</install>
+	<uninstall> <!-- Runs on uninstall -->
+		<sql>
+			<file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+		</sql>
+	</uninstall>
+	<update>
+		<schemas>
+			<schemapath type="mysql">sql/updates</schemapath>
+		</schemas>
+	</update>
+
+	<files folder="site">
+		<filename>jsn.php</filename>
+		<filename>router.php</filename>
+		<filename>controller.php</filename>
+		<folder>helpers</folder>
+		<folder>models</folder>
+		<folder>views</folder>
+		<folder>assets</folder>
+	</files>
+	<languages>
+		<language tag="it-IT">languages/site/it-IT/it-IT.com_jsn.ini</language>
+		<language tag="en-GB">languages/site/en-GB/en-GB.com_jsn.ini</language>
+		<language tag="de-DE">languages/site/de-DE/de-DE.com_jsn.ini</language>
+		<language tag="es-ES">languages/site/es-ES/es-ES.com_jsn.ini</language>
+	</languages>
+	
+	<administration>
+		<files folder="admin">
+			<filename>jsn.php</filename>
+			<filename>access.xml</filename>
+			<filename>config.xml</filename>
+			<!-- <filename>jsn.xml</filename> -->
+			<filename>controller.php</filename>
+			<filename>defines.php</filename>
+			<folder>controllers</folder>
+			<folder>helpers</folder>
+			<folder>models</folder>
+			<folder>views</folder>
+			<folder>sql</folder>
+			<folder>tables</folder>
+			<folder>assets</folder>
+		</files>
+		<languages>
+			<language tag="it-IT">languages/admin/it-IT/it-IT.com_jsn.ini</language>
+			<language tag="it-IT">languages/admin/it-IT/it-IT.com_jsn.sys.ini</language>
+			<language tag="en-GB">languages/admin/en-GB/en-GB.com_jsn.ini</language>
+			<language tag="en-GB">languages/admin/en-GB/en-GB.com_jsn.sys.ini</language>
+			<language tag="de-DE">languages/admin/de-DE/de-DE.com_jsn.ini</language>
+			<language tag="de-DE">languages/admin/de-DE/de-DE.com_jsn.sys.ini</language>
+			<language tag="es-ES">languages/admin/es-ES/es-ES.com_jsn.ini</language>
+			<language tag="es-ES">languages/admin/es-ES/es-ES.com_jsn.sys.ini</language>
+		</languages>
+		<menu link="option=com_jsn" img="class:fields">com_jsn</menu>
+
+	</administration>
+
+	<updateservers>
+        <server type="extension" priority="1" name="Easy Profile">https://www.easy-profile.com/update.php?p=easy-profile&amp;file=extension.xml</server>
+    </updateservers>
+	
+</extension>
+
+

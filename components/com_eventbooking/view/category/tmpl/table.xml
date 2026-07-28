@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+    <layout title="Category - Table Layout">
+        <message>
+            Displays a list of events from a category in the table layout
+        </message>
+    </layout>
+    <fields name="request">
+        <fieldset name="request"
+                  addfieldpath="/administrator/components/com_eventbooking/fields">
+            <field name="id" type="ebcategory" size="3" default="0" label="Category"
+                   description="Choose the category which you want to display events"/>
+        </fieldset>
+    </fields>
+    <fields name="params">
+        <fieldset name="basic">
+            <field name="display_events_type" type="ebeventstype" label="Display Events Type" description="Select the events type which you want to be displayed from this menu item." />
+            <field name="category_ids" type="ebcategory" multiple="true" label="Categories" description="Select categories which you want to display events from. If no categories selected, events from all categories will be displayed" />
+            <field name="exclude_category_ids" type="ebcategory" multiple="true" label="Exclude Categories" description="Select categories which you want to exclude events from" />
+            <field name="location_ids" type="eblocation" multiple="true" label="Locations" description="Select locations which you want to display events from. If no locations selected, events from all locations will be displayed" />
+            <field name="created_by" type="user" label="Created By" description="If you select a user here, only events created by that user will be displayed when users access to this menu item" />
+            <field name="speaker_ids" type="ebspeaker" multiple="true"
+                   label="Speakers"
+                   description="Select speakers which you want to display events from">
+            </field>
+            <field name="default_duration_filter" type="list" default="" label="Default Duration Filter"
+                   description="Choose the default duration filter">
+                <option value="">All Dates</option>
+                <option value="today">Today</option>
+                <option value="tomorrow">Tomorrow</option>
+                <option value="this_week">This Week</option>
+                <option value="next_week">Next Week</option>
+                <option value="this_month">This Month</option>
+                <option value="next_month">Next Month</option>
+            </field>
+            <field name="month" type="list" default="0" label="Month" description="If you only want to display events from certain month, choose the month here">
+                <option value="0">All</option>
+                <option value="1">January</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+            </field>
+            <field name="from_date" type="calendar" label="From Date" translateformat="true" showtime="true" filter="raw" />
+            <field name="to_date" type="calendar" label="To Date" translateformat="true" showtime="true" filter="raw" />
+            <field name="city" type="text" label="City" description="Enter a City here and only events from that City will be shown" />
+            <field name="hide_children_events" type="list" default="0" label="Hide Children Events"
+                   description="Choose to show/hide children events for this menu item">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+            </field>
+            <field name="only_show_featured_events" type="list" label="Only Show Featured Events"
+                   description="If set to Yes, only featured events will be shown on this module" default="0">
+                <option value="1">Yes</option>
+                <option value="0">No</option>
+            </field>
+            <field name="menu_filter_order" type="list" default="" label="Order By"
+                   description="Select how events displayed by this menu item will be ordered">
+                <option value="">Use Configuration</option>
+                <option value="tbl.title">Event Title</option>
+                <option value="tbl.event_date">Event Date</option>
+                <option value="tbl.cut_off_date">Cut Off Date</option>
+                <option value="tbl.ordering">Ordering</option>
+            </field>
+            <field name="menu_filter_order_dir" type="list" default="" label="Order Direction"
+                   description="Choose order direction for events displayed by this menu item.">
+                <option value="">Use Configuration</option>
+                <option value="ASC">ASC</option>
+                <option value="DESC">DESC</option>
+            </field>
+            <field name="display_num" type="text" default="10" label="Number Events" description="Number of events will be shown on the page" />
+            <field name="menu_item_id" type="ebitemid"
+                   label="Override Menu Item ID"
+                   description="If you want the system to use different menu item to generate links from this page, enter ID of that menu item here. In most case, leave it empty"
+                   default="">
+            </field>
+        </fieldset>
+        <fieldset name="display_options" label="Display Options">
+            <field name="image_lazy_loading" type="list" default="0" label="Image Lazy Loading">
+                <option value="0">Disable</option>
+                <option value="lazy">Lazy</option>
+            </field>
+            <field type="number" name="image_lazy_loading_start_index" default="0" label="Lazy Loading Start Index" showon="image_lazy_loading!:0" />
+            <field name="hide_children_categories" type="list" default="0" label="Hide Children Categories">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+            </field>
+            <field name="show_end_time" type="list" label="Show End Time"
+                   description="If set to Yes, the time of event end date will be displayed next to event date in case event date and event end date is on same date" default="0">
+                <option value="1">Yes</option>
+                <option value="0">No</option>
+            </field>
+            <field type="editor" name="intro_text" buttons="yes" filter="raw" label="Intro Text" description="If you enter some text here, it will be displayed above list of events" />
+        </fieldset>
+    </fields>
+</metadata>

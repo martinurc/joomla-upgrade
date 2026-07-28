@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="module" version="3.9" client="site" method="upgrade">
+    <name>Events Booking - Categories Slider</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>June 2023</creationDate>
+    <copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+    <license>GPL</license>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <version>4.9.4</version>
+    <description>This module is used to display categories in Event Booking Extension in a slider</description>
+    <files>
+        <filename module="mod_eb_categories_slider">mod_eb_categories_slider.php</filename>
+        <folder>tmpl</folder>
+    </files>
+    <config>
+        <fields name="params" addfieldpath="/administrator/components/com_eventbooking/fields">
+            <fieldset name="basic">
+                <field name="parent_id" type="ebcategory" label="Parent Category" default="0"/>
+                <field name="category_ids" type="ebcategory" multiple="true" label="Categories"
+                       description="Select categories which you want to display events from. If no categories selected, events from all categories will be displayed"/>
+                <field name="exclude_category_ids" type="ebcategory" multiple="true" label="Exclude Categories"
+                       description="Select categories which you want to exclude events from"/>
+                <field name="number_categories" type="text"
+                       label="Number Categories" description="Number of Categories to be showed on the module"
+                       default="0">
+                </field>
+            </fieldset>
+            <fieldset name="display_settings" label="Display Options">
+                <field name="moduleclass_sfx" type="text"
+                       label="Module Class Suffix" description="PARAMMODULECLASSSUFFIX">
+                </field>
+                <field name="category_item_layout" type="list" label="Category Item Layout" default="default">
+                    <option value="default">Default</option>
+                    <option value="overlay">Overlay</option>
+                    <option value="image_top">Image Top</option>
+                    <option value="image_bottom">Image Bottom</option>
+                </field>
+                <field name="enable_hover_effect" type="list" label="Enable Hover Effect" default="0"
+                       description="Set to Yes will apply a nice effect when users hover over a category."
+                       showon="category_item_layout!:overlay">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </field>
+                <field name="hover_bg_color" type="color" label="Hover Background Color"
+                       description="Leave it empty to use default color" showon="enable_hover_effect:1"/>
+                <field name="hover_color" type="color" label="Hover Text Color"
+                       description="Leave it empty to use default color" showon="enable_hover_effect:1"/>
+                <field name="item_id" type="ebitemid" label="Item ID" description="Menu ItemID"/>
+            </fieldset>
+            <fieldset name="slider_settings" label="Slider Options">
+                <field name="theme" type="list" label="Theme">
+                    <option value="splide-default.min.css">Default</option>
+                    <option value="splide-sea-green.min.css">Sea Green</option>
+                    <option value="splide-skyblue.min.css">Skye Blue</option>
+                </field>
+                <field name="arrows" type="list" label="Arrows" default="true"
+                       description="Determines whether to create arrows or not">
+                    <option value="1">True</option>
+                    <option value="0">False</option>
+                </field>
+                <field name="pagination" type="list" label="Pagination" default="true"
+                       description="Determines whether to create pagination or not">
+                    <option value="1">True</option>
+                    <option value="0">False</option>
+                </field>
+                <field name="number_items" type="text"
+                       label="Number Items" description="Number of slides being displayed in the viewport" default="3"/>
+                <field
+                        name="autoplay"
+                        type="radio"
+                        label="Auto Play"
+                        class="btn-group btn-group-yesno"
+                        default="1"
+                        filter="integer"
+                >
+                    <option value="1">JYES</option>
+                    <option value="0">JNO</option>
+                </field>
+                <field name="speed" type="text" label="Speed" default="300"/>
+                <field name="gap" type="text" label="Gap"
+                       description="The gap between slides. The CSS format is acceptable, such as 1em" default="1em"/>
+                <field type="editor" name="pre_text" filter="raw" label="Pre Text"
+                       description="If entered, the text will be displayed at the top of the module"/>
+                <field type="editor" name="post_text" filter="raw" label="Post Text"
+                       description="If entered, the text will be displayed at the bottom of the module"/>
+            </fieldset>
+            <fieldset name="responsive_settings" label="Responsive Settings">
+                <field name="number_items_xs" type="text"
+                       label="Number Items Extra Small Viewport (less than 576px)"
+                       description="Number of slides being displayed In Extra Small viewport (portrait phones, less than 576px)"
+                       default="0"/>
+                <field name="number_items_sm" type="text"
+                       label="Number Items Small Viewport (less than 768px)"
+                       description="Number of slides being displayed In Small viewport (landscape phones, less than 768px)"
+                       default="0"/>
+                <field name="number_items_md" type="text"
+                       label="Number Items Medium Viewport (less than 992px)"
+                       description="Number of slides being displayed In Medium viewport (tablets, less than 992px)"
+                       default="0"/>
+                <field name="number_items_lg" type="text"
+                       label="Number Items Large Viewport (less than 1200px)"
+                       description="Number of slides being displayed In Large viewport (desktops, less than 1200px)"
+                       default="0"/>
+            </fieldset>
+            <fieldset name="advanced">
+                <field
+                        name="cache"
+                        type="list"
+                        label="COM_MODULES_FIELD_CACHING_LABEL"
+                        default="1"
+                        filter="integer"
+                        validate="options"
+                >
+                    <option value="1">JGLOBAL_USE_GLOBAL</option>
+                    <option value="0">COM_MODULES_FIELD_VALUE_NOCACHING</option>
+                </field>
+
+                <field
+                        name="cache_time"
+                        type="number"
+                        label="COM_MODULES_FIELD_CACHE_TIME_LABEL"
+                        default="900"
+                        filter="integer"
+                />
+
+                <field
+                        name="cachemode"
+                        type="hidden"
+                        default="static"
+                >
+                    <option value="static"></option>
+                </field>
+                <field type="text" name="show_on_pages" label="Show On Pages"
+                       description="Using syntax like com_eventbooking:category, event; com_content: article,categories to show module only on some views of the components you want. Leave it empty and it will always be shown"/>
+            </fieldset>
+        </fields>
+    </config>
+</extension>

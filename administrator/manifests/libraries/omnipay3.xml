@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="library" version="3.0" method="upgrade">
+	<name>Omnipay3</name>
+	<libraryname>omnipay3</libraryname>
+	<description>Omnipay 3 - a framework agnostic, multi-gateway payment processing library for Joom Donation's extensions.</description>
+	<creationDate>18-09-2021</creationDate>
+	<author>Tuan Pham Ngoc</author>
+	<authorEmail>tuanpn@joomdonation.com</authorEmail>
+	<authorUrl>https://joomdonation.com</authorUrl>
+	<copyright>(C) 2021 Ossolution Team</copyright>
+	<license>GNU GPLv2 or later</license>
+	<version>1.1.0</version>
+	<files>
+		<folder>vendor</folder>		
+	</files>
+	<files target="administrator/manifests/libraries">
+		<file>omnipay3.xml</file>
+	</files>
+</extension>

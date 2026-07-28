@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="eventbooking" method="upgrade">
+	<name>Events Booking - Sponsors</name>
+	<author>Tuan Pham Ngoc</author>
+	<creationDate>July 2018</creationDate>
+	<copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+	<license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+	<authorEmail>tuanpn@joomdonation.com</authorEmail>
+	<authorUrl>https://joomdonation.com</authorUrl>
+	<version>4.9.4</version>
+	<description>This plugin allow adding and displaying sponsors for an event.</description>
+	<files>
+		<filename plugin="sponsors">sponsors.php</filename>
+		<folder>form</folder>
+	</files>
+	<config>
+		<fields name="params">
+			<fieldset name="basic">
+				<field name="output_position" type="list" label="Output Position"
+					   description="Choose output position for the plugin on event details page" default="before_register_buttons">
+					<option value="before_register_buttons">Before register buttons - displays in horizontal</option>
+					<option value="after_register_buttons">After register buttons - displays in tabs(</option>
+				</field>
+				<field
+						name="order_sponsors_by_name"
+						type="radio"
+						label="Order Sponsors By Name"
+						class="btn-group btn-group-yesno"
+						default="0"
+				>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field
+						name="subform_layout"
+						type="list"
+						label="Subform Layout"
+						description="Choose the form layout which will be displayed to allow adding sponsors for event"
+						class="btn-group btn-group-yesno"
+						default="0"
+				>
+					<option value="joomla.form.field.subform.repeatable-table">Repeatable Table</option>
+					<option value="joomla.form.field.subform.repeatable">Repeatable</option>
+				</field>
+				<field
+						name="show_on_frontend"
+						type="radio"
+						label="Show On Frontend"
+						description="If set to Yes, this plugin will be available on frontend event submission form"
+						class="btn-group btn-group-yesno"
+						default="0"
+				>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field name="layout" type="list" label="Sponsors Layout" description="Choose layout use to display sponsors" default="sponsors">
+					<option value="sponsors">Default</option>
+					<option value="sponsors_slider">Slider</option>
+				</field>
+			</fieldset>
+			<fieldset name="slider_settings" label="Slider Settings" description="The slider settings, only matter if you choose to display speakers using slider" showon="layout:speakers_slider">
+				<field name="theme" type="list" label="Theme">
+					<option value="splide-default.min.css">Default</option>
+					<option value="splide-sea-green.min.css">Sea Green</option>
+					<option value="splide-skyblue.min.css">Skye Blue</option>
+				</field>
+				<field name="arrows" type="list" label="Arrows" default="true"
+					   description="Determines whether to create arrows or not">
+					<option value="1">True</option>
+					<option value="0">False</option>
+				</field>
+				<field name="pagination" type="list" label="Pagination" default="true"
+					   description="Determines whether to create pagination or not">
+					<option value="1">True</option>
+					<option value="0">False</option>
+				</field>
+				<field name="number_items" type="text"
+					   label="Number Items" description="Number of slides being displayed in the viewport" default="3"/>
+				<field
+						name="autoplay"
+						type="radio"
+						label="Auto Play"
+						class="btn-group btn-group-yesno"
+						default="1"
+						filter="integer"
+				>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field name="speed" type="text" label="Speed" default="300"/>
+
+				<field name="gap" type="text" label="Gap"
+					   description="The gap between slides. The CSS format is acceptable, such as 1em" default="1em"/>
+				<field type="editor" name="pre_text" filter="raw" label="Pre Text"
+					   description="If entered, the text will be displayed at the top of the module"/>
+				<field type="editor" name="post_text" filter="raw" label="Post Text"
+					   description="If entered, the text will be displayed at the bottom of the module"/>
+			</fieldset>
+			<fieldset name="responsive_settings" label="Responsive Settings" showon="layout:speakers_slider">
+				<field name="number_items_xs" type="text"
+					   label="Number Items Extra Small Viewport (less than 576px)"
+					   description="Number of slides being displayed In Extra Small viewport (portrait phones, less than 576px)"
+					   default="0"/>
+				<field name="number_items_sm" type="text"
+					   label="Number Items Small Viewport (less than 768px)"
+					   description="Number of slides being displayed In Small viewport (landscape phones, less than 768px)"
+					   default="0"/>
+				<field name="number_items_md" type="text"
+					   label="Number Items Medium Viewport (less than 992px)"
+					   description="Number of slides being displayed In Medium viewport (tablets, less than 992px)"
+					   default="0"/>
+				<field name="number_items_lg" type="text"
+					   label="Number Items Large Viewport (less than 1200px)"
+					   description="Number of slides being displayed In Large viewport (desktops, less than 1200px)"
+					   default="0"/>
+			</fieldset>
+		</fields>
+	</config>
+</extension>

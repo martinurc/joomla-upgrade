@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="eventbooking" method="upgrade">
+    <name>Events Booking - AcyMailing</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>February 2019</creationDate>
+    <copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <version>4.9.4</version>
+    <description>This plugin is used to add registrants to AcyMailing when they register for an event.</description>
+    <files>
+        <filename plugin="acym">acym.php</filename>
+        <folder>tmpl</folder>
+    </files>
+    <config>
+        <fields name="params">
+            <fieldset name="basic" addfieldpath="/administrator/components/com_eventbooking/fields">
+                <field name="default_list_ids" type="text" size="60" default="" label="Default Lists" description="Enter IDs of the lists which will be selected by default when you add new event, comma separated like 1,2" />
+                <field name="subscribe_newsletter_field" type="ebfield" label="Subscribe Newsletter Field"
+                       description="Select the custom field which you allow registrants to choose to join newsletter. Should be a checkbox, select or radio field. If you don't select any field, registrants will always be subscribed to newsletter"
+                       default="" class="form-select" />
+                <field name="add_group_members_to_newsletter" type="list" label="Add Group Members To Newsletter?"
+                       default="0" description="If set to Yes, group members will be subscribed to newsletter, too">
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+                </field>
+                <field name="connect_subscriber_to_joomla_user_account" type="list" label="Connect ACYMailing Subscriber To Joomla User Account"
+                       default="0">
+                    <option value="0">Both Billing Person and Group Members</option>
+                    <option value="1">Billing Person Only</option>
+                </field>
+                <field
+                        name="remove_from_lists_when_registration_cancelled"
+                        type="radio"
+                        label="Remove From Lists When Registration Cancelled"
+                        class="btn-group btn-group-yesno"
+                        default="0"
+                >
+                    <option value="1">JYES</option>
+                    <option value="0">JNO</option>
+                </field>
+                <field
+                        name="show_on_frontend"
+                        type="radio"
+                        label="Show On Frontend"
+                        description="If set to Yes, this plugin will be available on frontend event submission form"
+                        class="btn-group btn-group-yesno"
+                        default="0"
+                >
+                    <option value="1">JYES</option>
+                    <option value="0">JNO</option>
+                </field>
+            </fieldset>
+        </fields>
+    </config>
+    <languages folder="language">
+        <language tag="en-GB">en-GB.plg_eventbooking_acym.ini</language>
+    </languages>
+    <params/>
+    <config/>
+</extension>

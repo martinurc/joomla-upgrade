@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+	<fields name="params">
+		<fieldset
+			name="image" 
+			label="COM_JSN_IMAGE_FIELDSET_LABEL"
+		>
+
+			<field
+				label="COM_JSN_IMAGE_PARAM_WIDTH"
+				name="image_width"
+				type="text"
+				filter="int"
+				default="200"
+				size="4"
+			/>
+			
+			<field
+				label="COM_JSN_IMAGE_PARAM_HEIGHT"
+				name="image_height"
+				type="text"
+				filter="int"
+				default="200"
+				size="4"
+			/>
+			
+			<field
+				label="COM_JSN_IMAGE_PARAM_THUMBWIDTH"
+				name="image_thumbwidth"
+				type="text"
+				filter="int"
+				default="75"
+				size="4"
+			/>
+			
+			<field
+				label="COM_JSN_IMAGE_PARAM_THUMBHEIGHT"
+				name="image_thumbheight"
+				type="text"
+				filter="int"
+				default="75"
+				size="4"
+			/>
+			
+			<field
+				name="image_defaultvalue"
+				label="COM_JSN_GENERAL_DEFAULTVALUE"
+				description ="COM_JSN_GENERAL_DEFAULTVALUE_DESC"
+				type="media"
+			/>
+			
+			<field
+				label="COM_JSN_IMAGE_PARAM_ALT"
+				name="image_alt"
+				type="text"
+				filter="string"
+				default=""
+			/>
+			
+			<field
+				label="COM_JSN_IMAGE_CLASS"
+				name="image_class"
+				type="text"
+				filter="string"
+				default=""
+			/>
+			
+			<field
+				name="image_cropwebcam"
+				label="COM_JSN_IMAGE_CROPWEBCAM"
+				description ="COM_JSN_IMAGE_CROPWEBCAM_DESC"
+				class="btn-group"
+				type="radio"
+				default="0"
+			>
+				<option value="0">COM_JSN_IMAGE_METHOD_INPUT</option>
+				<option value="1">COM_JSN_IMAGE_METHOD_CROPWEBCAM</option>
+				<option value="2">COM_JSN_IMAGE_METHOD_CROP</option>
+			</field>
+			
+			<field
+				label="COM_JSN_UPLOADPATH"
+				description="COM_JSN_UPLOADPATH_DESC"
+				name="image_path"
+				type="text"
+				filter="string"
+				default="images/profiler/"
+				hint="images/profiler/"
+			/>
+
+		</fieldset>
+	</fields>
+</form>

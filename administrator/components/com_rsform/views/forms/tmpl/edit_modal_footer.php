@@ -1,0 +1,13 @@
+<?php
+/**
+* @package RSForm! Pro
+* @copyright (C) 2007-2019 www.rsjoomla.com
+* @license GPL, http://www.gnu.org/copyleft/gpl.html
+*/
+
+defined('_JEXEC') or die;
+
+use Joomla\CMS\Language\Text;
+?>
+<button class="btn btn-success btn-primary" onclick="RSFormPro.editModal.save();" type="button"><?php echo Text::_('RSFP_SAVE'); ?></button>
+<button class="btn btn-secondary" onclick="RSFormPro.editModal.close();" type="button"><?php echo Text::_('RSFP_CLOSE'); ?></button>

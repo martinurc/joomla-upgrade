@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+	<fields name="params">
+		<fieldset
+			name="usermail" 
+			label="COM_JSN_USERMAIL_FIELDSET_LABEL"
+		>
+			
+			<field
+				name="usermail_placeholder"
+				label="COM_JSN_GENERAL_PLACEHOLDER"
+				description ="COM_JSN_GENERAL_PLACEHOLDER_DESC"
+				type="text"
+			/>
+			
+			<field
+				name="usermail_placeholder2"
+				label="COM_JSN_GENERAL_PLACEHOLDER2"
+				description ="COM_JSN_GENERAL_PLACEHOLDER_DESC2"
+				type="text"
+			/>
+			
+			
+
+		</fieldset>
+	</fields>
+</form>

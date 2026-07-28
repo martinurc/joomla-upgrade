@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="eventbooking" method="upgrade">
+    <name>Events Booking - Mailchimp</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>01-24-2014</creationDate>
+    <copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <version>4.9.4</version>
+    <description>This plugin is used to add registrants to Mailchimp when they register for an event in Events Booking
+        extension.
+    </description>
+    <files>
+        <filename plugin="mailchimp">mailchimp.php</filename>
+        <folder>api</folder>
+        <folder>tmpl</folder>
+    </files>
+    <languages>
+        <language tag="en-GB">en-GB.plg_eventbooking_mailchimp.ini</language>
+    </languages>
+    <config>
+        <fields name="params">
+            <fieldset name="basic" addfieldpath="/administrator/components/com_eventbooking/fields">
+                <field name="api_key" type="text" size="60" default="" label="API Key"
+                       description="Your Mailchimp API Key"/>
+                <field name="double_optin" type="list" label="Double opt-in"
+                       default="0">
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+                </field>
+                <field name="add_group_members_to_newsletter" type="list" label="Add Group Members To Newsletter?"
+                       default="0" description="If set to Yes, group members will be subscribed to newsletter, too">
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+                </field>
+                <field name="default_list_ids" type="text" size="60" default="" label="Default Lists" description="Enter IDs of the lists which will be selected by default when you add new event, comma separated" />
+                <field
+                        name="show_on_frontend"
+                        type="radio"
+                        label="Show On Frontend"
+                        description="If set to Yes, this plugin will be available on frontend event submission form"
+                        class="btn-group btn-group-yesno"
+                        default="0"
+                >
+                    <option value="1">JYES</option>
+                    <option value="0">JNO</option>
+                </field>
+            </fieldset>
+        </fields>
+    </config>
+</extension>

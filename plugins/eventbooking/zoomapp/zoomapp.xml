@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="1.0" type="plugin" group="eventbooking" method="upgrade">
+    <name>Events Booking - Zoom App</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>May 2023</creationDate>
+    <copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <version>4.9.4</version>
+    <description>This plugin is used to automatically register attendees for a Zoom Webibar or Zoom Meetings via Zooms
+        API using Server-To-Server OAuth. See https://developers.zoom.us/docs/internal-apps/s2s-oauth/
+    </description>
+    <files>
+        <filename plugin="zoomapp">zoomapp.php</filename>
+        <folder>tmpl</folder>
+    </files>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field
+                        name="account_id"
+                        type="text"
+                        class="input-xxlarge"
+                        label="Account ID"
+                        description="Enter your App Account ID"
+                />
+				<field
+                        name="client_id"
+                        type="text"
+                        class="input-xxlarge"
+                        label="Client ID"
+                        description="Enter your App Client ID"
+                />
+                <field
+                        name="client_secret"
+                        type="text"
+                        class="input-xxlarge"
+                        label="Client Secret"
+                        description="Enter your App Client Secret"
+                />
+                <field
+                        name="show_on_frontend"
+                        type="radio"
+                        label="Show On Frontend"
+                        description="If set to Yes, this plugin will be available on frontend event submission form"
+                        class="btn-group btn-group-yesno"
+                        default="0"
+                >
+                    <option value="1">JYES</option>
+                    <option value="0">JNO</option>
+                </field>
+            </fieldset>
+        </fields>
+    </config>
+</extension>

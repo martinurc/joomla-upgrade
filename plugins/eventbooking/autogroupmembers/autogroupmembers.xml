@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="eventbooking" method="upgrade">
+    <name>Events Booking - Auto Group Members Generator</name>
+    <author>Tuan Pham Ngoc</author>
+    <creationDate>Match 2018</creationDate>
+    <author>Tuan Pham Ngoc</author>
+    <authorEmail>tuanpn@joomdonation.com</authorEmail>
+    <authorUrl>https://joomdonation.com</authorUrl>
+    <copyright>Copyright (C) 2010 - 2024 Ossolution Team</copyright>
+    <license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <version>4.9.4</version>
+    <description>This plugin generate group members automatically for a group registration. It can be used in case you don't want to collect group members information but still want to generate different PDF tickets for that group registration</description>
+    <files>
+        <filename plugin="autogroupmembers">autogroupmembers.php</filename>
+        <folder>tmpl</folder>
+    </files>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field
+                        name="default_enable_auto_group_members"
+                        type="radio"
+                        label="Default Auto Generate Group Members Value"
+                        description="Set default value for Auto Generate Group Members for new event"
+                        class="btn-group btn-group-yesno"
+                        default="0"
+                >
+                    <option value="1">Enabled</option>
+                    <option value="0">Disabled</option>
+                </field>
+                <field
+                        name="show_on_frontend"
+                        type="radio"
+                        label="Show On Frontend"
+                        description="If set to Yes, this plugin will be available on frontend event submission form"
+                        class="btn-group btn-group-yesno"
+                        default="0"
+                >
+                    <option value="1">JYES</option>
+                    <option value="0">JNO</option>
+                </field>
+            </fieldset>
+        </fields>
+    </config>
+</extension>

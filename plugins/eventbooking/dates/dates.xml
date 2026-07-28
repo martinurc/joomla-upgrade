@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.9.0" type="plugin" group="eventbooking" method="upgrade">
+	<name>Events Booking - Additional Dates</name>
+	<author>Tuan Pham Ngoc</author>
+	<creationDate>May 2016</creationDate>
+	<copyright>Copyright 2010 - 2024 Ossolution Team</copyright>
+	<license>https://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+	<authorEmail>tuanpn@joomdonation.com</authorEmail>
+	<authorUrl>https://joomdonation.com</authorUrl>
+	<version>4.9.4</version>
+	<description>This plugin allow adding additional dates to an existing event.</description>
+	<files>
+		<filename plugin="dates">dates.php</filename>
+		<folder>field</folder>
+		<folder>form</folder>
+		<folder>tmpl</folder>
+	</files>		
+	<config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field name="max_number_dates" type="text" size="60" default="3" label="Max Number Dates" description="Enter max number of dates you can add to an event" />
+				<field
+					name="show_on_frontend"
+					type="radio"
+					label="Show On Frontend"
+					description="If set to Yes, this plugin will be available on frontend event submission form"
+					class="btn-group btn-group-yesno"
+					default="0"
+				>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+				<field
+						name="subform_layout"
+						type="list"
+						label="Subform Layout"
+						description="Choose the form layout which will be displayed to allow adding additional dates for event"
+						class="btn-group btn-group-yesno"
+						default="0"
+				>
+					<option value="joomla.form.field.subform.repeatable-table">Repeatable Table</option>
+					<option value="joomla.form.field.subform.repeatable">Repeatable</option>
+				</field>
+				<field
+						name="default_update_data_from_main_event_checkbox_status"
+						type="radio"
+						label="Default Update Data From Main Event Checkbox Status"
+						description=""
+						class="btn-group btn-group-yesno"
+						default="1"
+				>
+					<option value="1">Checked</option>
+					<option value="0">UnChecked</option>
+				</field>
+            </fieldset>
+        </fields>
+    </config>		
+</extension>

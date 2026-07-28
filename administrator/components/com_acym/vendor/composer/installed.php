@@ -1,0 +1,41 @@
+<?php return array(
+    'root' => array(
+        'name' => 'acyba/acymailing',
+        'pretty_version' => 'dev-develop',
+        'version' => 'dev-develop',
+        'reference' => '62084da4d8a6d78b96d5cdaefe0e88aec77feeb8',
+        'type' => 'library',
+        'install_path' => __DIR__ . '/../../',
+        'aliases' => array(),
+        'dev' => true,
+    ),
+    'versions' => array(
+        'acyba/acymailing' => array(
+            'pretty_version' => 'dev-develop',
+            'version' => 'dev-develop',
+            'reference' => '62084da4d8a6d78b96d5cdaefe0e88aec77feeb8',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'psr/container' => array(
+            'pretty_version' => '1.1.2',
+            'version' => '1.1.2.0',
+            'reference' => '513e0666f7216c7459170d56df27dfcefe1689ea',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../psr/container',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'rmccue/requests' => array(
+            'pretty_version' => 'v2.0.7',
+            'version' => '2.0.7.0',
+            'reference' => 'e14a6f4e7438d3f8da3f2657759e6367b906ee23',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../rmccue/requests',
+            'aliases' => array(),
+            'dev_requirement' => true,
+        ),
+    ),
+);

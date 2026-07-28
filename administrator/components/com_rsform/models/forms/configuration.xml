@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form addfieldpath="/administrator/components/com_rsform/models/fields">
+	<fieldset name="configuration" label="RSFP_CONFIG">
+		<field name="global.codemirror" type="radio" class="btn-group btn-group-yesno" description="RSFP_ENABLE_SYNTAX_HIGHLIGHTING_DESC" label="RSFP_ENABLE_SYNTAX_HIGHLIGHTING">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="global.date_mask" type="text" description="RSFP_GLOBAL_DATE_MASK_DESC" label="RSFP_GLOBAL_DATE_MASK" size="70" />
+		<field name="google.api_key" type="text" description="RSFP_GOOGLE_API_KEY_DESC" label="RSFP_GOOGLE_API_KEY" size="70" />
+		<field name="global.modal_width" type="list" description="COM_RSFORM_EDIT_MODAL_WIDTH_DESC" label="COM_RSFORM_EDIT_MODAL_WIDTH">
+			<option value="0">COM_RSFORM_DEFAULT_MODAL_WIDTH</option>
+			<option value="50">50%</option>
+			<option value="60">60%</option>
+			<option value="70">70%</option>
+			<option value="80">80%</option>
+			<option value="90">90%</option>
+		</field>
+		<field name="global.disable_multilanguage" type="radio" class="btn-group btn-group-yesno" description="COM_RSFORM_DISABLE_MULTILANGUAGE_DESC" label="COM_RSFORM_DISABLE_MULTILANGUAGE" default="0">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="global.default_language" type="lang" nodefault="1" description="COM_RSFORM_DEFAULT_LANGUAGE_DESC" label="COM_RSFORM_DEFAULT_LANGUAGE" default="en-GB" showon="global.disable_multilanguage:1">
+		</field>
+		<field name="logging" type="radio" class="btn-group btn-group-yesno" description="COM_RSFORM_ENABLE_LOGGING_DESC" label="COM_RSFORM_ENABLE_LOGGING" default="1">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="logging_verbose" type="radio" class="btn-group btn-group-yesno" description="COM_RSFORM_ENABLE_VERBOSE_LOGGING_DESC" label="COM_RSFORM_ENABLE_VERBOSE_LOGGING" default="0" showon="logging:1">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="log_mappings" type="radio" class="btn-group btn-group-yesno" description="COM_RSFORM_ENABLE_MAPPINGS_LOG_DESC" label="COM_RSFORM_ENABLE_MAPPINGS_LOG" default="1">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="log_silentpost" type="radio" class="btn-group btn-group-yesno" description="COM_RSFORM_ENABLE_SILENT_POST_LOG_DESC" label="COM_RSFORM_ENABLE_SILENT_POST_LOG" default="1">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="access_login" type="radio" class="btn-group btn-group-yesno" description="COM_RSFORM_ACCESS_LOGIN_DESC" label="COM_RSFORM_ACCESS_LOGIN" default="0">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+        <field name="multipart_mails" type="radio" class="btn-group btn-group-yesno" description="COM_RSFORM_MULTIPART_MAILS_DESC" label="COM_RSFORM_MULTIPART_MAILS" default="1">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+	</fieldset>
+	<fieldset name="grid" label="COM_RSFORM_GRID_SETTINGS">
+		<field name="global.grid_show_previews" type="radio" class="btn-group btn-group-yesno" description="COM_RSFORM_GRID_SHOW_PREVIEWS_DESC" label="COM_RSFORM_GRID_SHOW_PREVIEWS" default="1">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="global.grid_show_caption" type="radio" class="btn-group btn-group-yesno" description="COM_RSFORM_GRID_SHOW_CAPTION_DESC" label="COM_RSFORM_GRID_SHOW_CAPTION" default="0">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+	</fieldset>
+	<fieldset name="defaults" label="COM_RSFORM_DEFAULTS">
+		<field name="global.default_layout" type="formlayouts" default="responsive" description="COM_RSFORM_DEFAULT_LAYOUT_DESC" label="COM_RSFORM_DEFAULT_LAYOUT" />
+		<field name="global.default_load_layout_framework" type="radio" class="btn-group btn-group-yesno" description="COM_RSFORM_DEFAULT_LOAD_LAYOUT_FRAMEWORK_DESC" label="COM_RSFORM_DEFAULT_LOAD_LAYOUT_FRAMEWORK" default="1">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="global.default_pico_color" type="droplist" description="COM_RSFORM_DEFAULT_PICO_COLOR_DESC" label="COM_RSFORM_DEFAULT_PICO_COLOR" default="indigo">
+			<option value="amber">COM_RSFORM_PICO_COLOR_AMBER</option>
+			<option value="azure">COM_RSFORM_PICO_COLOR_AZURE</option>
+			<option value="blue">COM_RSFORM_PICO_COLOR_BLUE</option>
+			<option value="cyan">COM_RSFORM_PICO_COLOR_CYAN</option>
+			<option value="fuchsia">COM_RSFORM_PICO_COLOR_FUCHSIA</option>
+			<option value="green">COM_RSFORM_PICO_COLOR_GREEN</option>
+			<option value="grey">COM_RSFORM_PICO_COLOR_GREY</option>
+			<option value="indigo">COM_RSFORM_PICO_COLOR_INDIGO</option>
+			<option value="jade">COM_RSFORM_PICO_COLOR_JADE</option>
+			<option value="lime">COM_RSFORM_PICO_COLOR_LIME</option>
+			<option value="orange">COM_RSFORM_PICO_COLOR_ORANGE</option>
+			<option value="pink">COM_RSFORM_PICO_COLOR_PINK</option>
+			<option value="pumpkin">COM_RSFORM_PICO_COLOR_PUMPKIN</option>
+			<option value="purple">COM_RSFORM_PICO_COLOR_PURPLE</option>
+			<option value="red">COM_RSFORM_PICO_COLOR_RED</option>
+			<option value="sand">COM_RSFORM_PICO_COLOR_SAND</option>
+			<option value="slate">COM_RSFORM_PICO_COLOR_SLATE</option>
+			<option value="violet">COM_RSFORM_PICO_COLOR_VIOLET</option>
+			<option value="yellow">COM_RSFORM_PICO_COLOR_YELLOW</option>
+		</field>
+		<field name="export.mask" type="text" default="0" description="COM_RSFORM_EXPORT_MASK_DESC" label="COM_RSFORM_EXPORT_MASK" />
+		<field name="export.limit" type="text" default="500" description="COM_RSFORM_EXPORT_LIMIT_DESC" label="COM_RSFORM_EXPORT_LIMIT" />
+		<field name="global.preview_itemid" type="menuitem" description="COM_RSFORM_PREVIEW_ITEMID_DESC" label="COM_RSFORM_PREVIEW_ITEMID">
+			<option value="">COM_RSFORM_PREVIEW_ITEMID_DEFAULT</option>
+		</field>
+	</fieldset>
+	<fieldset name="security" label="RSFP_SECURITY">
+		<field name="global.filtering" type="list" description="RSFP_GLOBAL_XSS_FILTER_DESC" label="RSFP_GLOBAL_XSS_FILTER">
+			<option value="joomla">RSFP_XSS_USE_JOOMLA</option>
+			<option value="rsform">RSFP_XSS_USE_RSFORM</option>
+			<option value="none">RSFP_XSS_NO_FILTERING</option>
+		</field>
+		<field name="allow_unsafe" type="radio" class="btn-group btn-group-yesno" description="RSFP_ALLOW_UNSAFE_DESC" label="RSFP_ALLOW_UNSAFE" default="0">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="use_csrf" type="radio" class="btn-group btn-group-yesno" description="COM_RSFORM_USE_CSRF_DESC" label="COM_RSFORM_USE_CSRF" default="1">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field filter="raw" name="disposable_domains" type="textarea" label="COM_RSFORM_DISPOSABLE_EMAIL_ADDRESSES" description="COM_RSFORM_DISPOSABLE_EMAIL_ADDRESSES_DESC" cols="60" rows="7" />
+	</fieldset>
+	<fieldset name="backup" label="RSFP_BACKUP_SETTINGS">
+		<field name="request_timeout" type="text" default="0" description="RSFP_REQUEST_TIMEOUT_DESC" label="RSFP_REQUEST_TIMEOUT" />
+		<field name="backup.mask" type="text" default="0" description="RSFP_BACKUP_MASK_DESC" label="RSFP_BACKUP_MASK" />
+	</fieldset>
+	<fieldset name="calculations" label="RSFP_CALCULATIONS">
+		<field name="calculations.thousands" type="text" description="RSFP_THOUSANDS_SEPARATOR_DESC" label="RSFP_THOUSANDS_SEPARATOR" size="70" />
+		<field name="calculations.decimal" type="text" description="RSFP_DECIMAL_SEPARATOR_DESC" label="RSFP_DECIMAL_SEPARATOR" size="70" />
+		<field name="calculations.nodecimals" type="text" description="RSFP_DECIMALS_DESC" label="RSFP_DECIMALS" size="70" />
+	</fieldset>
+	<fieldset name="updates" label="RSFP_UPDATE">
+		<field name="global.register.code" type="text" description="RSFP_CODE_DESC" label="RSFP_CODE" size="70" />
+	</fieldset>
+</form>

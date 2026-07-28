@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension
+	type="module"
+	version="3.1"
+	client="site"
+	method="upgrade">
+	<name>Easy Profile - Search Module</name>
+	<author>JSN Project</author>
+	<creationDate>December 2013</creationDate>
+	<copyright>(C) 2005 - 2013 Open Source Matters. All rights reserved.</copyright>
+	<license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+	<authorEmail>fiorino.desanto@gmail.com</authorEmail>
+	<authorUrl>www.joomla.org</authorUrl>
+	<version>1.0.0</version>
+	<description>Display Search Module</description>
+	<files>
+		<filename module="mod_jsnsearch">mod_jsnsearch.php</filename>
+		<folder>tmpl</folder>
+		<filename>helper.php</filename>
+		<filename>mod_jsnsearch.xml</filename>
+	</files>
+	<config>
+		<fields name="params">
+			<fieldset name="basic" addfieldpath="/administrator/components/com_jsn/models/fields">
+
+				<field
+					name="menuitem"
+					label="COM_JSN_MENUITEM"
+					description="COM_JSN_MENUITEM_DESC"
+					type="parent"
+					table="menu"
+					where="a.published=1 AND a.link LIKE 'index.php?option=com_jsn&amp;view=list%'"
+					field="id"
+					multiple="false"
+					required="true"
+					>
+				</field>
+
+				<field
+					name="search_fields"
+					label="COM_JSN_SEARCHFIELDS"
+					description="COM_JSN_SEARCHFIELDS_DESC"
+					type="parent"
+					level="2"
+					table="jsn_fields"
+					where="a.search=1 AND a.type NOT LIKE 'password' AND a.type NOT LIKE 'delimeter' AND a.type NOT LIKE 'image' AND a.type NOT LIKE 'filetype'"
+					field="id"
+					multiple="true"
+					>
+					<option value="id">ID</option>
+					<option value="formatname">COM_JSN_FORMATNAME</option>
+					<option value="status">COM_JSN_STATUS</option>
+				</field>
+
+			</fieldset>
+
+			<fieldset
+				name="advanced">
+
+				<field
+					name="layout"
+					type="modulelayout"
+					label="JFIELD_ALT_LAYOUT_LABEL"
+					description="JFIELD_ALT_MODULE_LAYOUT_DESC" />
+
+				<field
+					name="moduleclass_sfx"
+					type="textarea" rows="3"
+					label="COM_MODULES_FIELD_MODULECLASS_SFX_LABEL"
+					description="COM_MODULES_FIELD_MODULECLASS_SFX_DESC" />
+
+				<field
+					name="cache"
+					type="list"
+					label="COM_MODULES_FIELD_CACHING_LABEL"
+					description="COM_MODULES_FIELD_CACHING_DESC"
+					default="0"
+					>
+					<option value="0">COM_MODULES_FIELD_VALUE_NOCACHING</option>
+				</field>
+
+				<field
+					name="cache_time"
+					type="text"
+					default="900"
+					label="COM_MODULES_FIELD_CACHE_TIME_LABEL"
+					description="COM_MODULES_FIELD_CACHE_TIME_DESC" />
+
+				<field
+					name="cachemode"
+					type="hidden"
+					default="static">
+					<option
+						value="static"></option>
+				</field>
+
+			</fieldset>
+		</fields>
+	</config>
+</extension>

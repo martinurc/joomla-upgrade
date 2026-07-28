@@ -1,0 +1,2287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+	
+
+	<field
+		name="id"
+		type="text"
+		class="readonly"
+		label="JGLOBAL_FIELD_ID_LABEL"
+		description ="JGLOBAL_FIELD_ID_DESC"
+		default="0"
+		readonly="true"
+	/>
+
+	<field
+		name="hits"
+		type="text"
+		class="readonly"
+		label="JGLOBAL_HITS"
+		description ="COM_JSN_FIELD_HITS_DESC"
+		default="0"
+		readonly="true"
+	/>
+
+	<field
+		name="parent_id"
+		type="parent"
+		class="span12"
+		label="COM_JSN_FIELD_PARENT_LABEL"
+		description="COM_JSN_FIELD_PARENT_DESC"
+		mode="nested"
+		table="jsn_fields"
+		level="1"
+		validate="notequals"
+		field="id"
+	>
+	</field>
+
+	<field
+		name="lft"
+		type="hidden"
+		filter="unset"
+	/>
+
+	<field
+		name="rgt"
+		type="hidden"
+		filter="unset"
+	/>
+
+	<field
+		name="level"
+		type="hidden"
+		filter="unset"
+	/>
+
+	<field
+		name="path"
+		type="text"
+		class="readonly"
+		label="CATEGORIES_PATH_LABEL"
+		description="CATEGORIES_PATH_DESC"
+		size="40"
+		readonly="true"
+	/>
+
+	<field
+		name="title"
+		type="text"
+		class="inputbox"
+		label="JGLOBAL_TITLE"
+		description="JFIELD_TITLE_DESC"
+		size="40"
+		required="true"
+	/>
+
+	<field
+		name="note"
+		type="text"
+		class="inputbox"
+		label="JFIELD_NOTE_LABEL"
+		description="JFIELD_NOTE_DESC"
+		size="40"
+	/>
+
+	<field
+		name="description"
+		type="editor"
+		class="inputbox"
+		label="JGLOBAL_DESCRIPTION"
+		description="COM_JSN_DESCRIPTION_DESC"
+		filter="JComponentHelper::filterText"
+		buttons="true"
+		hide="readmore,pagebreak"
+	/>
+
+	<field
+		name="published"
+		type="list"
+		class="span12 chzn-color-state"
+		label="JSTATUS"
+		description="JFIELD_PUBLISHED_DESC"
+		default="1"
+		size="1"
+	>
+		<option value="1">JPUBLISHED</option>
+		<option value="0">JUNPUBLISHED</option>
+		<option value="2">JARCHIVED</option>
+		<option value="-2">JTRASHED</option>
+	</field>
+	
+	<field
+		name="required"
+		type="list"
+		class="span12 chzn-color-state"
+		label="COM_JSN_REQUIRED"
+		description="COM_JSN_REQUIRED_DESC"
+		default="0"
+		size="1"
+	>
+		<option value="0">JNO</option>
+		<option value="1">COM_JSN_ONLYONFRONTEND</option>
+		<option value="2">JYES</option>
+	</field>
+	
+	<field
+		name="edit"
+		type="list"
+		class="span12 chzn-color-state"
+		label="COM_JSN_AVAIBLEINEDITPROFILE"
+		description="COM_JSN_AVAIBLEINEDITPROFILE_DESC"
+		default="1"
+		size="1"
+	>
+		<option value="0">JNO</option>
+		<option value="1">JYES</option>
+	</field>
+
+	<field
+		name="editbackend"
+		type="list"
+		class="span12 chzn-color-state"
+		label="COM_JSN_AVAIBLEINEDITPROFILEBACKEND"
+		description="COM_JSN_AVAIBLEINEDITPROFILEBACKEND_DESC"
+		default="1"
+		size="1"
+	>
+		<option value="0">JNO</option>
+		<option value="1">JYES</option>
+	</field>
+	
+	<field
+		name="search"
+		type="list"
+		class="span12 chzn-color-state"
+		label="COM_JSN_SEARCHABLE"
+		description="COM_JSN_SEARCHABLE_DESC"
+		default="0"
+		size="1"
+	>
+		<option value="0">JNO</option>
+		<option value="1">JYES</option>
+	</field>
+	
+	<field
+		name="type"
+		type="types"
+		label="COM_JSN_TYPE"
+		description="COM_JSN_TYPE_DESC"
+		default="text"
+	>
+	</field>
+	
+	<field
+		name="profile"
+		type="list"
+		class="span12 chzn-color-state"
+		label="COM_JSN_PROFILE"
+		description="COM_JSN_PROFILE_DESC"
+		default="0"
+		size="1"
+	>
+		<option value="0">JNO</option>
+		<option value="1">JYES</option>
+	</field>
+	
+	<field
+		name="register"
+		type="list"
+		class="span12 chzn-color-state"
+		label="COM_JSN_REGISTER"
+		description="COM_JSN_REGISTER_DESC"
+		default="0"
+		size="1"
+	>
+		<option value="0">JNO</option>
+		<option value="1">JYES</option>
+	</field>
+
+	<field
+		name="checked_out"
+		type="hidden"
+		filter="unset"
+	/>
+
+	<field
+		name="checked_out_time"
+		type="hidden"
+		filter="unset"
+	/>
+
+	<field
+		name="access"
+		type="accesslevel"
+		label="COM_JSN_ACCESS"
+		description="COM_JSN_ACCESS_DESC"
+		class="span12"
+	/>
+
+	<field
+		name="accessview"
+		type="accesslevel"
+		default="1"
+		label="COM_JSN_ACCESSVIEW"
+		description="COM_JSN_ACCESSVIEW_DESC"
+		class="span12"
+	/>
+	
+	<field
+		name="metadesc"
+		type="textarea"
+		label="JFIELD_META_DESCRIPTION_LABEL"
+		description="JFIELD_META_DESCRIPTION_DESC"
+		rows="3"
+		cols="40"
+	/>
+
+	<field
+		name="metakey"
+		type="textarea"
+		label="JFIELD_META_KEYWORDS_LABEL"
+		description="JFIELD_META_KEYWORDS_DESC"
+		rows="3"
+		cols="40"
+	/>
+
+	<field
+		name="alias"
+		type="text"
+		class="inputbox"
+		label="JFIELD_ALIAS_LABEL"
+		description="JFIELD_ALIAS_DESC"
+		size="40"
+	/>
+
+	<field
+		name="created_user_id"
+		type="user"
+		label="JGLOBAL_FIELD_CREATED_BY_LABEL"
+		desc="JGLOBAL_FIELD_CREATED_BY_DESC"
+	/>
+	
+	<field
+		name="created_by_alias"
+		type="text"
+		class="inputbox"
+		labelclass="control-label"
+		label="JGLOBAL_FIELD_CREATED_BY_ALIAS_LABEL"
+		description="JGLOBAL_FIELD_CREATED_BY_ALIAS_DESC"
+		size="20"
+	/>
+
+	<field
+		name="created_time"
+		type="calendar"
+		class="readonly"
+		label="JGLOBAL_CREATED_DATE"
+		filter="unset"
+		readonly="true"
+	/>
+
+	<field
+		name="modified_user_id"
+		type="user"
+		class="readonly"
+		label="JGLOBAL_FIELD_MODIFIED_BY_LABEL"
+		readonly="true"
+		filter="unset"
+	/>
+
+	<field
+		name="modified_time"
+		type="calendar"
+		class="readonly"
+		label="JGLOBAL_FIELD_MODIFIED_LABEL"
+		filter="unset"
+		readonly="true"
+	/>
+
+	<field
+		name="language"
+		type="contentlanguage"
+		class="span12 small"
+		label="JFIELD_LANGUAGE_LABEL"
+		description="COM_JSN_FIELD_LANGUAGE_DESC"
+	>
+		<option value="*">JALL</option>
+	</field>
+	<field
+			name="conditions"
+			label="COM_JSN_CONDITIONS"
+			description ="COM_JSN_CONDITIONS_DESC"
+			type="conditions"
+		/>
+	<field name="params" type="hidden">
+	</field>
+	<fields name="params">
+		<fieldset name="groups">
+			<field 
+				name="subtitle_profile" 
+				type="textarea"
+				label="COM_JSN_SUBTITLEPROFILE"
+				description="COM_JSN_SUBTITLEPROFILE_DESC"
+				default=""
+					/>
+			<field 
+				name="subtitle_registration" 
+				type="textarea"
+				label="COM_JSN_SUBTITLEREGISTRATION"
+				description="COM_JSN_SUBTITLEREGISTRATION_DESC"
+				default=""
+				/>
+			<field 
+				name="subtitle_editprofile" 
+				type="textarea"
+				label="COM_JSN_SUBTITLEEDITPROFILE"
+				description="COM_JSN_SUBTITLEEDITPROFILE_DESC"
+				default=""
+				/>
+		</fieldset>
+		<fieldset name="paramsbase" 
+		label="COM_JSN_PARAMETER">
+			<field name="spacer_general" label="COM_JSN_GENERAL_LABEL" type="spacer" />
+			<field 
+				name="titleprofile" 
+				type="text"
+				label="COM_JSN_TITLEPROFILE"
+				description="COM_JSN_TITLEPROFILE_DESC"
+				default=""
+			/>
+			<field 
+				name="titlesearch" 
+				type="text"
+				label="COM_JSN_TITLESEARCH"
+				description="COM_JSN_TITLESEARCH_DESC"
+				default=""
+			/>
+			<field 
+				name="hidetitle" 
+				type="radio" class="btn-group"
+				label="COM_JSN_HIDETITLEPROFILE"
+				description="COM_JSN_HIDETITLEPROFILE_DESC"
+				default="0"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field 
+				name="hidetitleedit" 
+				type="radio" class="btn-group"
+				label="COM_JSN_HIDETITLEFORM"
+				description="COM_JSN_HIDETITLEFORM_DESC"
+				default="0"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field 
+				name="field_readonly" 
+				type="radio" class="btn-group"
+				label="COM_JSN_TEXT_READONLY"
+				description="COM_JSN_TEXT_READONLY_DESC"
+				default="0"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+				<option value="2">COM_JSN_TEXT_READONLY_ONLYEDIT</option>
+			</field>
+
+			<field 
+				name="field_cssclass" 
+				type="text"
+				label="COM_JSN_CSSCLASS"
+				description="COM_JSN_CSSCLASS_DESC"
+				default=""
+			>
+			</field>
+		</fieldset>
+		<fieldset name="paramsbase" 
+		label="COM_JSN_PARAMETER">
+			<field name="spacer_privacy" label="COM_JSN_PRIVACY_LABEL" type="spacer" />
+			<field
+				name="privacy"
+				type="radio" class="btn-group"
+				label="COM_JSN_PRIVACY_ENABLE"
+				description="COM_JSN_PRIVACY_ENABLE_DESC"
+				default="0"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="privacy_default"
+				type="list"
+				label="COM_JSN_PRIVACY_DEFAULT"
+				description="COM_JSN_PRIVACY_DEFAULT_DESC"
+				default="0"
+				size="1"
+			>
+				<option value="0">COM_JSN_PUBLIC</option>
+				<option value="1">COM_JSN_REGISTERED</option>
+				<option value="99">COM_JSN_PRIVATE</option>
+			</field>
+		</fieldset>
+		<!-- <fieldset name="paramsbase" 
+		label="COM_JSN_PARAMETER">
+			<field name="spacer_conditions_tip" label="COM_JSN_CONDITION_TIP" type="spacer" />
+			<field name="spacer_conditions" label="COM_JSN_CONDITION_LABEL0" type="spacer" />
+			<field
+				name="condition_operator"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+
+			<field
+				name="condition_twoways"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+
+			<field
+				name="condition_hide"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			<field
+				name="condition_action"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+
+			<field
+				name="condition_ugaction"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			
+			<field name="spacer_conditions1" label="COM_JSN_CONDITION_LABEL1" type="spacer" />
+			<field
+				name="condition_operator1"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field1"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom1"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+
+			<field
+				name="condition_twoways1"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+
+
+			<field
+				name="condition_hide1"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action1"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups1"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+
+			<field
+				name="condition_ugaction1"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			
+			<field name="spacer_conditions2" label="COM_JSN_CONDITION_LABEL2" type="spacer" />
+			<field
+				name="condition_operator2"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field2"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom2"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways2"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide2"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action2"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups2"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction2"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			
+			<field name="spacer_conditions3" label="COM_JSN_CONDITION_LABEL3" type="spacer" />
+			<field
+				name="condition_operator3"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field3"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom3"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways3"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide3"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action3"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups3"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction3"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			
+			<field name="spacer_conditions4" label="COM_JSN_CONDITION_LABEL4" type="spacer" />
+			<field
+				name="condition_operator4"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field4"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom4"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways4"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide4"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action4"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups4"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction4"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			
+			<field name="spacer_conditions5" label="COM_JSN_CONDITION_LABEL5" type="spacer" />
+			<field
+				name="condition_operator5"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field5"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom5"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways5"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide5"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action5"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups5"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction5"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			
+			<field name="spacer_conditions6" label="COM_JSN_CONDITION_LABEL6" type="spacer" />
+			<field
+				name="condition_operator6"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field6"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom6"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways6"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide6"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action6"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups6"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction6"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			
+			<field name="spacer_conditions7" label="COM_JSN_CONDITION_LABEL7" type="spacer" />
+			<field
+				name="condition_operator7"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field7"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom7"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways7"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide7"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action7"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups7"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction7"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			
+			<field name="spacer_conditions8" label="COM_JSN_CONDITION_LABEL8" type="spacer" />
+			<field
+				name="condition_operator8"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field8"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom8"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways8"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide8"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action8"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups8"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction8"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			
+			<field name="spacer_conditions9" label="COM_JSN_CONDITION_LABEL9" type="spacer" />
+			<field
+				name="condition_operator9"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field9"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom9"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways9"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide9"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action9"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups9"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction9"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			
+			<field name="spacer_conditions10" label="COM_JSN_CONDITION_LABEL10" type="spacer" />
+			<field
+				name="condition_operator10"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field10"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom10"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways10"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide10"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action10"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups10"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction10"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			
+			<field name="spacer_conditions11" label="COM_JSN_CONDITION_LABEL11" type="spacer" />
+			<field
+				name="condition_operator11"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field11"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom11"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways11"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide11"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action11"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups11"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction11"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			
+			<field name="spacer_conditions12" label="COM_JSN_CONDITION_LABEL12" type="spacer" />
+			<field
+				name="condition_operator12"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field12"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom12"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways12"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide12"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action12"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups12"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction12"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			<field name="spacer_conditions13" label="COM_JSN_CONDITION_LABEL13" type="spacer" />
+			<field
+				name="condition_operator13"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field13"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom13"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways13"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide13"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action13"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups13"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction13"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			<field name="spacer_conditions14" label="COM_JSN_CONDITION_LABEL14" type="spacer" />
+			<field
+				name="condition_operator14"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field14"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom14"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways14"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide14"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action14"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups14"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction14"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			<field name="spacer_conditions15" label="COM_JSN_CONDITION_LABEL15" type="spacer" />
+			<field
+				name="condition_operator15"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field15"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom15"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways15"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide15"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action15"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups15"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction15"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			<field name="spacer_conditions16" label="COM_JSN_CONDITION_LABEL16" type="spacer" />
+			<field
+				name="condition_operator16"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field16"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom16"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways16"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide16"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action16"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups16"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction16"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			<field name="spacer_conditions17" label="COM_JSN_CONDITION_LABEL17" type="spacer" />
+			<field
+				name="condition_operator17"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field17"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom17"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways17"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide17"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action17"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups17"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction17"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			<field name="spacer_conditions18" label="COM_JSN_CONDITION_LABEL18" type="spacer" />
+			<field
+				name="condition_operator18"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field18"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom18"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways18"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide18"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action18"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups18"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction18"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			<field name="spacer_conditions19" label="COM_JSN_CONDITION_LABEL19" type="spacer" />
+			<field
+				name="condition_operator19"
+				label="COM_JSN_CONDITION_OPERATOR"
+				description ="COM_JSN_CONDITION_OPERATOR_DESC"
+				type="list"
+			>
+				<option value="0">COM_JSN_CONDITION_DISABLED</option>
+				<option value="1">COM_JSN_CONDITION_EQUAL</option>
+				<option value="2">COM_JSN_CONDITION_GREATER</option>
+				<option value="3">COM_JSN_CONDITION_LESS</option>
+				<option value="4">COM_JSN_CONDITION_CONTAINS</option>
+				<option value="5">COM_JSN_CONDITION_NOTEQUAL</option>
+				<option value="6">COM_JSN_CONDITION_NOTCONTAINS</option>
+			</field>
+			<field
+				name="condition_field19"
+				label="COM_JSN_CONDITION_TO"
+				description ="COM_JSN_CONDITION_TO_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				
+				field_id="alias"
+			
+			>
+				<option value="_custom">COM_JSN_CUSTOM_VALUE</option>
+			</field>
+			<field
+				name="condition_custom19"
+				label="COM_JSN_CONDITION_CUSTOMVALUE"
+				description ="COM_JSN_CONDITION_CUSTOMVALUE_DESC"
+				type="text"
+			/>
+			<field
+				name="condition_twoways19"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_TWOWAYS"
+				description="COM_JSN_CONDITION_TWOWAYS_DESC"
+				default="1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="condition_hide19"
+				label="COM_JSN_CONDITION_HIDE"
+				description ="COM_JSN_CONDITION_HIDE_DESC"
+				type="parent"
+				table="jsn_fields"
+				level="2"
+				where="a.core=0 OR a.alias='avatar'"
+				field_id="alias"
+				multiple="true"
+			/>
+			
+			<field
+				name="condition_action19"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_ACTION"
+				description="COM_JSN_CONDITION_ACTION_DESC"
+				default="hide"
+			>
+				<option value="hide">JHIDE</option>
+				<option value="show">JSHOW</option>
+			</field>
+			
+			<field
+				name="condition_usergroups19"
+				type="usergroup"
+				multiple="true"
+				label="COM_JSN_CONDITION_USERGROUPS"
+				description="COM_JSN_CONDITION_USERGROUPS_DESC"
+				default="0"
+			>
+			</field>
+			<field
+				name="condition_ugaction19"
+				type="radio" class="btn-group"
+				label="COM_JSN_CONDITION_UGACTION"
+				description="COM_JSN_CONDITION_UGACTION_DESC"
+				default="add"
+			>
+				<option value="add">COM_JSN_CONDITION_ADDTO</option>
+				<option value="remove">COM_JSN_CONDITION_REMOVEFROM</option>
+			</field>
+			
+			
+		</fieldset> -->
+	</fields>
+
+	<fields name="metadata">
+		<fieldset name="jmetadata" label="JGLOBAL_FIELDSET_METADATA_OPTIONS">
+
+			<field
+				name="author"
+				type="text"
+				label="JAUTHOR"
+				description="JFIELD_METADATA_AUTHOR_DESC"
+				size="30"
+			/>
+	
+			<field
+				name="robots"
+				type="list"
+				label="JFIELD_METADATA_ROBOTS_LABEL"
+				description="JFIELD_METADATA_ROBOTS_DESC"
+			>
+				<option value="">JGLOBAL_USE_GLOBAL</option>
+				<option value="index, follow">JGLOBAL_INDEX_FOLLOW</option>
+				<option value="noindex, follow">JGLOBAL_NOINDEX_FOLLOW</option>
+				<option value="index, nofollow">JGLOBAL_INDEX_NOFOLLOW</option>
+				<option value="noindex, nofollow">JGLOBAL_NOINDEX_NOFOLLOW</option>
+			</field>
+		</fieldset>
+		
+	</fields>
+
+	<fields name="images">
+		<field
+			name="image_intro"
+			type="media"
+			label="COM_JSN_FIELD_INTRO_LABEL"
+			labelclass="control-label"
+			description="COM_JSN_FIELD_INTRO_DESC"
+		/>
+
+		<field
+			name="float_intro"
+			type="list"
+			labelclass="control-label"
+			label="COM_JSN_FLOAT_LABEL"
+			description="COM_JSN_FLOAT_DESC"
+		>
+			<option value="">JGLOBAL_USE_GLOBAL</option>
+			<option value="right">COM_JSN_RIGHT</option>
+			<option value="left">COM_JSN_LEFT</option>
+			<option value="none">COM_JSN_NONE</option>
+		</field>
+
+		<field
+			name="image_intro_alt"
+			type="text"
+			class="inputbox"
+			labelclass="control-label"
+			label="COM_JSN_FIELD_IMAGE_ALT_LABEL"
+			description="COM_JSN_FIELD_IMAGE_ALT_DESC"
+			size="20"
+		/>
+
+		<field
+			name="image_intro_caption"
+			type="text"
+			class="inputbox"
+			labelclass="control-label"
+			label="COM_JSN_FIELD_IMAGE_CAPTION_LABEL"
+			description="COM_JSN_FIELD_IMAGE_CAPTION_DESC"
+			size="20"
+		/>
+
+		<field
+			name="spacer1"
+			type="spacer"
+			hr="true"
+		/>
+
+		<field
+			name="image_fulltext"
+			type="media"
+			label="COM_JSN_FIELD_FULL_LABEL"
+			labelclass="control-label"
+			description="COM_JSN_FIELD_FULL_DESC"
+		/>
+
+		<field
+			name="float_fulltext"
+			type="list"
+			labelclass="control-label"
+			label="COM_JSN_FLOAT_LABEL"
+			description="COM_JSN_FLOAT_DESC"
+		>
+			<option value="">JGLOBAL_USE_GLOBAL</option>
+			<option value="right">COM_JSN_RIGHT</option>
+			<option value="left">COM_JSN_LEFT</option>
+			<option value="none">COM_JSN_NONE</option>
+		</field>
+
+		<field
+			name="image_fulltext_alt"
+			type="text"
+			class="inputbox"
+			labelclass="control-label"
+			label="COM_JSN_FIELD_IMAGE_ALT_LABEL"
+			description="COM_JSN_FIELD_IMAGE_ALT_DESC"
+			size="20"
+		/>
+
+		<field
+			name="image_fulltext_caption"
+			type="text"
+			class="inputbox"
+			labelclass="control-label"
+			label="COM_JSN_FIELD_IMAGE_CAPTION_LABEL"
+			description="COM_JSN_FIELD_IMAGE_CAPTION_DESC"
+			size="20"
+		/>
+	</fields>
+</form>

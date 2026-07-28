@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension
+	type="module"
+	version="3.1"
+	client="site"
+	method="upgrade">
+	<name>Easy Profile - User Map</name>
+	<author>JSN Project</author>
+	<creationDate>December 2013</creationDate>
+	<copyright>(C) 2005 - 2013 Open Source Matters. All rights reserved.</copyright>
+	<license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+	<authorEmail>fiorino.desanto@gmail.com</authorEmail>
+	<authorUrl>www.joomla.org</authorUrl>
+	<version>1.0.0</version>
+	<description>Show list of users in Google map</description>
+	<files>
+		<filename module="mod_jsnmap">mod_jsnmap.php</filename>
+		<folder>tmpl</folder>
+		<filename>helper.php</filename>
+		<filename>mod_jsnmap.xml</filename>
+	</files>
+	<config>
+		<fields name="params">
+			<fieldset name="basic" addfieldpath="/administrator/components/com_jsn/models/fields">
+				<field name="mapfield"
+					description="COM_JSN_MAPFIELD_DESC"
+					label="COM_JSN_MAPFIELD"
+					default="name"
+					type="parent"
+					level="2"
+					table="jsn_fields"
+					where="a.type LIKE 'gmap'"
+					field_id="alias"
+					required="true"
+					multiple="true"
+					>
+				</field>
+				<field
+				name="profile_menuid"
+				label="COM_JSN_PROFILEMENUID"
+				description="COM_JSN_PROFILEMENUID_DESC"
+				type="parent"
+				table="menu"
+				enableoptions="1"
+				where="a.client_id=0 AND a.link LIKE 'index.php?option=com_jsn&amp;view=profile' AND a.published=1"
+				field="id"
+				multiple="false"
+				default=""
+				>
+				<option value="">JDEFAULT</option>
+			</field>
+
+				<field name="current_location"
+					type="list"
+						default="0"
+						description="COM_JSN_MAPCURRENTLOCATION_DESC"
+						label="COM_JSN_MAPCURRENTLOCATION">
+						<option value="0">JNO</option>
+						<option value="1">JYES</option>
+				</field>
+				
+				<field name="mapheight" type="text" filter="int" default="400" description="COM_JSN_MAPHEIGHT_DESC" label="COM_JSN_MAPHEIGHT"/>
+				
+				<field name="mapimage" type="list"
+						default="pin"
+						description="COM_JSN_MAPIMAGE_DESC"
+						label="COM_JSN_MAPIMAGE">
+						<option value="pin">Pin</option>
+						<option value="avatar">Avatar</option>
+				</field>
+
+				<field name="mapstyle" type="list"
+						default=""
+						description="COM_JSN_MAPMODULE_STYLE_DESC"
+						label="COM_JSN_MAPMODULE_STYLE">
+						<option value="">JDEFAULT</option>
+						<option value="light">Light</option>
+						<option value="dark">Dark</option>
+						<option value="custom">COM_JSN_MAPMODULE_STYLE_CUSTOM</option>
+				</field>
+
+				<field showon="mapstyle:custom" name="mapstyle_custom" type="text" filter="raw" default="" hint="JSON CODE" description="COM_JSN_MAPMODULE_STYLEJSON_DESC" label="COM_JSN_MAPMODULE_STYLEJSON"/>
+
+				<field name="mapdisablescroll" type="list"
+						default="0"
+						description="COM_JSN_MAPMODULE_DISABLESCROLL_DESC"
+						label="COM_JSN_MAPMODULE_DISABLESCROLL">
+						<option value="0">JNO</option>
+						<option value="1">JYES</option>
+				</field>
+				
+				<field name="mapimagewidth" type="text" filter="int" default="25" description="COM_JSN_MAPIMAGEWIDTH_DESC" label="COM_JSN_MAPIMAGEWIDTH"/>
+				
+				<field name="mapimageheight" type="text" filter="int" default="25" description="COM_JSN_MAPIMAGEHEIGHT_DESC" label="COM_JSN_MAPIMAGEHEIGHT"/>
+				
+				<field name="mapcluster" type="list"
+						default="0"
+						description="COM_JSN_MAPCLUSTER_DESC"
+						label="COM_JSN_MAPCLUSTER">
+						<option value="0">JNO</option>
+						<option value="1">JYES</option>
+				</field>
+				
+				<field name="display_num" type="list"
+						default="10"
+						description="JGLOBAL_NUMBER_ITEMS_LIST_DESC"
+						label="JGLOBAL_NUMBER_ITEMS_LIST_LABEL">
+						<option value="1">1</option>
+						<option value="2">2</option>
+						<option value="3">3</option>
+						<option value="4">4</option>
+						<option value="5">5</option>
+						<option value="6">6</option>
+						<option value="7">7</option>
+						<option value="8">8</option>
+						<option value="9">9</option>
+						<option value="10">10</option>
+						<option value="11">11</option>
+						<option value="12">12</option>
+						<option value="13">13</option>
+						<option value="14">14</option>
+						<option value="15">15</option>
+						<option value="16">16</option>
+						<option value="17">17</option>
+						<option value="18">18</option>
+						<option value="19">19</option>
+						<option value="20">20</option>
+						<option value="21">21</option>
+						<option value="22">22</option>
+						<option value="23">23</option>
+						<option value="24">24</option>
+						<option value="25">25</option>
+						<option value="26">26</option>
+						<option value="27">27</option>
+						<option value="28">28</option>
+						<option value="29">29</option>
+						<option value="30">30</option>
+						<option value="50">50</option>
+						<option value="100">100</option>
+						<option value="0">JALL</option>
+				</field>
+				<field name="orderCol"
+					description="COM_JSN_ORDERCOL_DESC"
+					label="COM_JSN_ORDERCOL"
+					default="name"
+					type="parent"
+					level="2"
+					table="jsn_fields"
+					where="a.type NOT LIKE 'password' AND a.type NOT LIKE 'delimeter' AND a.type NOT LIKE 'image' AND a.type NOT LIKE 'filetype'"
+					field_id="alias"
+					>
+					<option value="name">COM_JSN_FORMATNAME</option>
+					<option value="random">Random</option>
+				</field>
+				<field name="orderDir" type="list"
+					label="COM_JSN_ORDERDIR"
+					default="ASC"
+					description="COM_JSN_ORDERDIR_DESC">
+					<option value="ASC">COM_JSN_ORDERDIR_ASC</option>
+					<option value="DESC">COM_JSN_ORDERDIR_DESC</option>
+				</field>
+				<field name="orderCol1"
+					description="COM_JSN_ORDERCOL1_DESC"
+					label="COM_JSN_ORDERCOL1"
+					default=""
+					type="parent"
+					level="2"
+					table="jsn_fields"
+					where="a.type NOT LIKE 'password' AND a.type NOT LIKE 'delimeter' AND a.type NOT LIKE 'image' AND a.type NOT LIKE 'filetype'"
+					field_id="alias"
+					>
+					<option value="">JGLOBAL_SELECT_AN_OPTION</option>
+					<option value="name">COM_JSN_FORMATNAME</option>
+				</field>
+				<field name="orderDir1" type="list"
+					label="COM_JSN_ORDERDIR1"
+					default="ASC"
+					description="COM_JSN_ORDERDIR1_DESC">
+					<option value="ASC">COM_JSN_ORDERDIR_ASC</option>
+					<option value="DESC">COM_JSN_ORDERDIR_DESC</option>
+				</field>
+				<field name="orderCol2"
+					description="COM_JSN_ORDERCOL2_DESC"
+					label="COM_JSN_ORDERCOL2"
+					default=""
+					type="parent"
+					level="2"
+					table="jsn_fields"
+					where="a.type NOT LIKE 'password' AND a.type NOT LIKE 'delimeter' AND a.type NOT LIKE 'image' AND a.type NOT LIKE 'filetype'"
+					field_id="alias"
+					>
+					<option value="">JGLOBAL_SELECT_AN_OPTION</option>
+					<option value="name">COM_JSN_FORMATNAME</option>
+				</field>
+				<field name="orderDir2" type="list"
+					label="COM_JSN_ORDERDIR2"
+					default="ASC"
+					description="COM_JSN_ORDERDIR2_DESC">
+					<option value="ASC">COM_JSN_ORDERDIR_ASC</option>
+					<option value="DESC">COM_JSN_ORDERDIR_DESC</option>
+				</field>
+				<field name="where" type="text"
+					description="COM_JSN_SQLWHERE_DESC"
+					label="COM_JSN_SQLWHERE"
+					filter="raw"
+					default=""
+				/>	
+				
+				<field name="spacer_listradius" hr="true" type="spacer"/>
+				
+				<field name="mapenableradius" type="list"
+						default="0"
+						description="COM_JSN_MAPENABLERADIUS_DESC"
+						label="COM_JSN_MAPENABLERADIUS">
+						<option value="0">JNO</option>
+						<option value="1">JYES</option>
+				</field>
+				
+				<field name="mapradiusunit" type="list"
+					 	showon="mapenableradius:1"
+						default="Km"
+						description="COM_JSN_MAPRADIUSUNIT_DESC"
+						label="COM_JSN_MAPRADIUSUNIT">
+						<option value="Km">Km</option>
+						<option value="Miles">Miles</option>
+				</field>
+				
+				<field showon="mapenableradius:1" name="mapradiusrange" type="text" filter="double" default="100" description="COM_JSN_MAPRADIUSRANGE_DESC" label="COM_JSN_MAPRADIUSRANGE"/>
+				
+				<field showon="mapenableradius:1" name="mapradiuslat" type="text" filter="double" default="0" description="COM_JSN_MAPRADIUSLAT_DESC" label="COM_JSN_MAPRADIUSLAT"/>
+				
+				<field showon="mapenableradius:1" name="mapradiuslng" type="text" filter="double" default="0" description="COM_JSN_MAPRADIUSLNG_DESC" label="COM_JSN_MAPRADIUSLNG"/>
+
+				<field name="spacer_list1" hr="true" type="spacer"/>
+				<field
+					name="list_fields"
+					label="COM_JSN_LISTFIELDS"
+					description="COM_JSN_LISTFIELDS_DESC"
+					type="parent"
+					level="2"
+					table="jsn_fields"
+					where="a.type NOT LIKE 'password'"
+					field_id="alias"
+					multiple="true"
+					mini_img="1"
+					>
+					<option value="formatname">COM_JSN_FORMATNAME</option>
+					<option value="status">COM_JSN_STATUS</option>
+				</field>
+				<field name="show_titles" type="list"
+					description="COM_JSN_SHOWTITLES_DESC"
+					label="COM_JSN_SHOWTITLES"
+					size="3"
+					default="0"
+				>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+				<field name="spacer_list2" hr="true" type="spacer"/>
+				<field
+					name="syncUserlist"
+					label="COM_JSN_SYNCUSERLIST"
+					type="list"
+					default="0"
+					description="COM_JSN_SYNCUSERLIST_DESC">
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+
+			</fieldset>
+
+			<fieldset
+				name="advanced">
+
+				<field
+					name="layout"
+					type="modulelayout"
+					label="JFIELD_ALT_LAYOUT_LABEL"
+					description="JFIELD_ALT_MODULE_LAYOUT_DESC" />
+
+				<field
+					name="moduleclass_sfx"
+					type="textarea" rows="3"
+					label="COM_MODULES_FIELD_MODULECLASS_SFX_LABEL"
+					description="COM_MODULES_FIELD_MODULECLASS_SFX_DESC" />
+
+				<field
+					name="cache"
+					type="list"
+					default="1"
+					label="COM_MODULES_FIELD_CACHING_LABEL"
+					description="COM_MODULES_FIELD_CACHING_DESC">
+					<option
+						value="1">JGLOBAL_USE_GLOBAL</option>
+					<option
+						value="0">COM_MODULES_FIELD_VALUE_NOCACHING</option>
+				</field>
+
+				<field
+					name="cache_time"
+					type="text"
+					default="900"
+					label="COM_MODULES_FIELD_CACHE_TIME_LABEL"
+					description="COM_MODULES_FIELD_CACHE_TIME_DESC" />
+
+				<field
+					name="cachemode"
+					type="hidden"
+					default="static">
+					<option
+						value="static"></option>
+				</field>
+
+			</fieldset>
+		</fields>
+	</config>
+</extension>
