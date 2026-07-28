@@ -17,13 +17,22 @@ $username = is_object($userObj) ? ($userObj->username ?? ($userObj->name ?? 'use
 
 // 2. Extraer el nombre de la agencia con cascada de fallbacks
 $formatName = '';
-if (is_object($userObj) && method_exists($userObj, 'getField')) {
+if (is_object($userObj)) {
     $candidates = ['nombre_comercial', 'empresa_agencia', 'razon_social', 'nombre_comercial_ma', 'razon_social_ma'];
     foreach ($candidates as $candidate) {
-        $val = trim((string) strip_tags($userObj->getField($candidate, true)));
-        if (!empty($val) && $val !== '-' && strpos($val, 'COM_USERS_PROFILE_VALUE_NOT_FOUND') === false) {
-            $formatName = $val;
-            break;
+        if (!empty($userObj->$candidate)) {
+            $val = trim((string) strip_tags($userObj->$candidate));
+            if (!empty($val) && $val !== '-' && strpos($val, 'COM_USERS_PROFILE_VALUE_NOT_FOUND') === false) {
+                $formatName = $val;
+                break;
+            }
+        }
+        if (method_exists($userObj, 'getField')) {
+            $val = trim((string) strip_tags($userObj->getField($candidate, true)));
+            if (!empty($val) && $val !== '-' && strpos($val, 'COM_USERS_PROFILE_VALUE_NOT_FOUND') === false) {
+                $formatName = $val;
+                break;
+            }
         }
     }
 }
