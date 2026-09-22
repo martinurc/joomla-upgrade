@@ -99,23 +99,41 @@ class JsnHelper
 	
 	public static function getFormatName($user){
 		if(!($user instanceof JsnUser)){
-			$user = JsnHelper::getUser($user->id);
+			$user = JsnHelper::getUser(is_object($user) ? $user->id : $user);
 		}
+
+		// Priorizar campos de agencia si existen
+		$candidates = ['nombre_comercial', 'empresa_agencia', 'razon_social', 'nombre_comercial_ma', 'razon_social_ma'];
+		foreach ($candidates as $candidate) {
+			if (!empty($user->$candidate)) {
+				$val = trim((string) strip_tags($user->$candidate));
+				if (!empty($val) && $val !== '-' && strpos($val, 'COM_USERS_PROFILE_VALUE_NOT_FOUND') === false) {
+					return $val;
+				}
+			}
+			if (method_exists($user, 'getField')) {
+				$val = trim((string) strip_tags($user->getField($candidate, true)));
+				if (!empty($val) && $val !== '-' && strpos($val, 'COM_USERS_PROFILE_VALUE_NOT_FOUND') === false) {
+					return $val;
+				}
+			}
+		}
+
 		$config = JComponentHelper::getParams('com_jsn');
 		$formatName=$config->get('formatname', 'NAME');
 		$formatNameCustom=$config->get('formatnamecustom', '{firstname} {lastname}');
 		switch($formatName){
 			case 'NAME':
-				return $user->name;
+				return !empty($user->name) ? $user->name : ($user->username ?? '');
 			break;
 			case 'USERNAME':
-				return $user->username;
+				return $user->username ?? '';
 			break;
 			case 'NAMEUSERNAME':
-				return $user->name.' ('.$user->username.')';
+				return ($user->name ?? '').' ('.($user->username ?? '').')';
 			break;
 			case 'USERNAMENAME':
-				return $user->username.' ('.$user->name.')';
+				return ($user->username ?? '').' ('.($user->name ?? '').')';
 			break;
 			case 'CUSTOM':
 				$return = '';
@@ -124,11 +142,15 @@ class JsnHelper
 				foreach ($matches as $match) {
 					$formatNameCustom = preg_replace("|$match[0]|", $user->getField($match[1],true), $formatNameCustom, 1);
 				}
-				$formatNameCustom = str_replace('  ',' ',$formatNameCustom);// Remove multiple white space between fields
-				$formatNameCustom = str_replace('  ',' ',$formatNameCustom);// Remove multiple white space between fields
-				return trim($formatNameCustom);
+				$formatNameCustom = str_replace('  ',' ',$formatNameCustom);
+				$resultName = trim((string) strip_tags($formatNameCustom));
+				if (!empty($resultName) && $resultName !== '-' && strpos($resultName, 'COM_USERS_PROFILE_VALUE_NOT_FOUND') === false) {
+					return $resultName;
+				}
+				return !empty($user->name) ? $user->name : '';
 			break;
 		}
+		return !empty($user->name) ? $user->name : '';
 	}
 	
 	public static function addUserToGroup($user, $groupId)
@@ -554,17 +576,27 @@ class JsnUser extends JUser
 		}
 
 
-		//$dispatcher = JEventDispatcher::getInstance();
-		JPluginHelper::importPlugin('user');
-		// Código corregido para Joomla 5
+		\Joomla\CMS\Plugin\PluginHelper::importPlugin('user');
 		$app = \Joomla\CMS\Factory::getApplication();
-		// 1. Asegurar que $userData no sea null (convertir a objeto si está vacío)
-        if (empty($userData) || !is_object($userData)) {
-          $userData = (object) [];
-        }
+		$results = (array) $app->triggerEvent('onContentPrepareData', ['com_users.profile', $this]);
 
-// 2. Disparar el evento con la estructura de parámetros requerida por Joomla 5
-        $results = (array) $app->triggerEvent('onContentPrepareData', ['com_users.profile', $userData]);
+		// Fallback directo para garantizar la carga de los campos de jsn_users
+		if (empty($this->jsn_loaded) && !empty($this->id) && (int) $this->id > 0) {
+			$db = \Joomla\CMS\Factory::getContainer()->get('DatabaseDriver');
+			$query = $db->getQuery(true)
+				->select('*')
+				->from($db->quoteName('#__jsn_users'))
+				->where($db->quoteName('id') . ' = ' . (int) $this->id);
+			$db->setQuery($query);
+			$jsnData = $db->loadAssoc();
+			if (!empty($jsnData) && is_array($jsnData)) {
+				foreach ($jsnData as $k => $v) {
+					$this->$k = $v;
+				}
+				$this->jsn_loaded = true;
+			}
+		}
+
 		$this->excludeFromProfile=JsnHelper::excludeFromProfile($this,true);
 		
 	}

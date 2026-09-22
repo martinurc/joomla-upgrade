@@ -15,13 +15,30 @@ use Joomla\CMS\Router\Route;
 $userObj  = $this->user ?? null;
 $username = is_object($userObj) ? ($userObj->username ?? ($userObj->name ?? 'user')) : 'user';
 
-// 2. Extraer el nombre formateado con fallback de seguridad
+// 2. Extraer el nombre de la agencia con cascada de fallbacks
 $formatName = '';
-if (is_object($userObj) && method_exists($userObj, 'getField')) {
-    $formatName = $userObj->getField('formatname');
+if (is_object($userObj)) {
+    $candidates = ['nombre_comercial', 'empresa_agencia', 'razon_social', 'nombre_comercial_ma', 'razon_social_ma'];
+    foreach ($candidates as $candidate) {
+        if (!empty($userObj->$candidate)) {
+            $val = trim((string) strip_tags($userObj->$candidate));
+            if (!empty($val) && $val !== '-' && strpos($val, 'COM_USERS_PROFILE_VALUE_NOT_FOUND') === false) {
+                $formatName = $val;
+                break;
+            }
+        }
+        if (method_exists($userObj, 'getField')) {
+            $val = trim((string) strip_tags($userObj->getField($candidate, true)));
+            if (!empty($val) && $val !== '-' && strpos($val, 'COM_USERS_PROFILE_VALUE_NOT_FOUND') === false) {
+                $formatName = $val;
+                break;
+            }
+        }
+    }
 }
+
 if (empty($formatName) && is_object($userObj)) {
-    $formatName = $userObj->name ?? ($userObj->username ?? '');
+    $formatName = !empty($userObj->name) ? $userObj->name : '';
 }
 
 // 3. Generar enlace seguro y compatible con Joomla 5 usando el ID numérico real

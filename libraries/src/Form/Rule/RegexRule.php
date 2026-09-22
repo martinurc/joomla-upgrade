@@ -44,10 +44,23 @@ class RegexRule extends FormRule
     {
         if ((string) $element['validate_regex']) {
             $this->regex = (string) $element['validate_regex'];
+        } elseif ((string) $element['regex']) {
+            $this->regex = (string) $element['regex'];
+        } elseif ((string) $element['pattern']) {
+            $this->regex = (string) $element['pattern'];
         }
 
         if ((string) $element['validate_modifier']) {
             $this->modifiers = (string) $element['validate_modifier'];
+        }
+
+        if (!empty($this->regex)) {
+            if (preg_match('/^([\/#~])(.*)\1([a-z]*)$/i', $this->regex, $matches)) {
+                $this->regex = $matches[2];
+                if (!empty($matches[3])) {
+                    $this->modifiers .= $matches[3];
+                }
+            }
         }
 
         return parent::test($element, $value, $group, $input, $form);

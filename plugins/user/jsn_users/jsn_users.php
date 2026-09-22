@@ -54,8 +54,14 @@ class PlgUserJsn_Users extends JPlugin
 		}
 	}
 
-	public function onContentPrepareData($context, $data)
+	public function onContentPrepareData($context, $data = null)
 	{
+		if (is_object($context) && method_exists($context, 'getArgument')) {
+			$event   = $context;
+			$context = $event->getArgument('0') ?? ($event->getArgument('context') ?? 'com_users.profile');
+			$data    = $event->getArgument('1') ?? ($event->getArgument('data') ?? null);
+		}
+
 		// Check we are manipulating a valid form.
 		if (!in_array($context, array('com_users.profile', 'com_users.user', 'com_users.registration', 'com_admin.profile')))
 		{
@@ -66,8 +72,9 @@ class PlgUserJsn_Users extends JPlugin
 		{
 			$userId = isset($data->id) ? $data->id : 0;
 
-			if (!isset($data->firstname) and $userId > 0)
+			if (empty($data->jsn_loaded) and $userId > 0)
 			{	
+				$data->jsn_loaded = true;
 				$db = JFactory::getDbo();
 				
 				// Load the profile data from the database.

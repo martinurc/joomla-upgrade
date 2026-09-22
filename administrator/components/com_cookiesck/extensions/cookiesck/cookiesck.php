@@ -120,8 +120,8 @@ class plgSystemCookiesck extends CMSPlugin {
 			// remove external ressources if option set in the plugin
 			if ($pluginParams->get('blockingpolicy', '1') == '2')
 			{
-				@header("Content-Security-Policy: default-src 'self' 'unsafe-inline';");
-				@header("X-Content-Security-Policy: default-src 'self' 'unsafe-inline';");
+				@header("Content-Security-Policy: default-src 'self' 'unsafe-inline' https://maps.googleapis.com https://*.googleapis.com https://*.gstatic.com;");
+				@header("X-Content-Security-Policy: default-src 'self' 'unsafe-inline' https://maps.googleapis.com https://*.googleapis.com https://*.gstatic.com;");
 			}
 		}
 
